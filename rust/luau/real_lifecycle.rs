@@ -97,14 +97,18 @@ fn start_event_pump(
             let in_flight = InFlight::new(guard.live.clone(), backlog.clone());
             if !warned && backlog.load(Ordering::Relaxed) > BACKLOG_WARN {
                 warned = true;
-                eprintln!("[luau] event backlog: over {BACKLOG_WARN} handlers running for one bot (events are kept, not dropped)");
+                eprintln!(
+                    "[luau] event backlog: over {BACKLOG_WARN} handlers running for one bot (events are kept, not dropped)"
+                );
             }
             let (task_lua, task_handlers) = (lua.clone(), handlers.clone());
             tokio::task::spawn_local(async move {
                 let _in_flight = in_flight;
                 #[cfg(feature = "packets")]
                 if let Event::Packet(packet) = &event {
-                    if let Err(e) = real_events::dispatch_packet(&task_lua, &task_handlers, packet).await {
+                    if let Err(e) =
+                        real_events::dispatch_packet(&task_lua, &task_handlers, packet).await
+                    {
                         super::note_error();
                         eprintln!("[luau] {e}");
                     }

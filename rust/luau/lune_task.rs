@@ -195,7 +195,13 @@ pub fn module(lua: Lua) -> mlua::Result<Table> {
         let args: MultiValue = args
             .into_iter()
             .enumerate()
-            .map(|(i, v)| if i == 1 { Value::Thread(thread.clone()) } else { v })
+            .map(|(i, v)| {
+                if i == 1 {
+                    Value::Thread(thread.clone())
+                } else {
+                    v
+                }
+            })
             .collect();
         let wrapper = delay_inner.call::<Thread>(args)?;
         wrappers.set(thread.clone(), wrapper)?;

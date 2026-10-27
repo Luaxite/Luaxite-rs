@@ -147,7 +147,9 @@ fn index_of(client: &Client, registry: &str, wanted: &str) -> mlua::Result<Optio
     let name = registry_name(client, registry)?;
     client
         .with_registry_holder(|holder| {
-            scan_entries(holder, &name, |index, entry| (entry == wanted).then_some(index))
+            scan_entries(holder, &name, |index, entry| {
+                (entry == wanted).then_some(index)
+            })
         })
         .map_err(lua_err)
 }

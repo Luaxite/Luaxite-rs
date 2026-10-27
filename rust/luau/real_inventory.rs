@@ -37,7 +37,9 @@ impl Held {
             }
         }));
         if outcome.is_err() {
-            eprintln!("[luaxite] warning: closing a container panicked (the bot's world is probably gone); ignored");
+            eprintln!(
+                "[luaxite] warning: closing a container panicked (the bot's world is probably gone); ignored"
+            );
         }
     }
 }

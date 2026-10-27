@@ -78,9 +78,7 @@ impl Nearest {
 fn floor_coord(name: &str, n: f64) -> mlua::Result<i32> {
     let f = n.floor();
     if f.is_nan() || f < i32::MIN as f64 || f > i32::MAX as f64 {
-        return Err(lua_err(format!(
-            "`{name}` is {n}, not a usable coordinate"
-        )));
+        return Err(lua_err(format!("`{name}` is {n}, not a usable coordinate")));
     }
     Ok(f as i32)
 }
@@ -152,7 +150,10 @@ impl LuaWorld {
             .iter()
             .map(|&(x, z)| {
                 let pos = ChunkPos::new(x, z);
-                ((x, z), guard.chunks.in_range(&pos) && guard.chunks.has(&pos))
+                (
+                    (x, z),
+                    guard.chunks.in_range(&pos) && guard.chunks.has(&pos),
+                )
             })
             .collect();
         drop(guard);

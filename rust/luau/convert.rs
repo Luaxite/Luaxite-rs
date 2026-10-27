@@ -126,7 +126,8 @@ impl FromLua for LPathfinderOpts {
                 for pair in t.pairs::<Value, Value>() {
                     let (key, _) = pair?;
                     match &key {
-                        Value::String(k) if matches!(&*k.to_str()?, "allow_mining" | "retry_on_no_path") => {}
+                        Value::String(k)
+                            if matches!(&*k.to_str()?, "allow_mining" | "retry_on_no_path") => {}
                         Value::String(k) => {
                             return Err(mlua::Error::runtime(format!(
                                 "unknown PathfinderOpts field `{}` (known: allow_mining, retry_on_no_path)",

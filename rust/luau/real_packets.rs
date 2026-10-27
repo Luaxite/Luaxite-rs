@@ -87,13 +87,25 @@ mod tests {
     #[test]
     fn merge_keeps_concurrent_changes() {
         // untouched live list: the callback's list wins
-        assert_eq!(merge_injected(&v(&["a"]), v(&["a", "b"]), v(&["a"])), v(&["a", "b"]));
+        assert_eq!(
+            merge_injected(&v(&["a"]), v(&["a", "b"]), v(&["a"])),
+            v(&["a", "b"])
+        );
         // a packet queued during the yield survives; the callback's add is appended
-        assert_eq!(merge_injected(&v(&["a"]), v(&["a", "b"]), v(&["a", "x"])), v(&["a", "x", "b"]));
+        assert_eq!(
+            merge_injected(&v(&["a"]), v(&["a", "b"]), v(&["a", "x"])),
+            v(&["a", "x", "b"])
+        );
         // the callback's removal applies, a concurrent add survives
-        assert_eq!(merge_injected(&v(&["a", "b"]), v(&["b"]), v(&["a", "b", "x"])), v(&["b", "x"]));
+        assert_eq!(
+            merge_injected(&v(&["a", "b"]), v(&["b"]), v(&["a", "b", "x"])),
+            v(&["b", "x"])
+        );
         // a packet already consumed by azalea is not resurrected
-        assert_eq!(merge_injected(&v(&["a", "b"]), v(&["a"]), v(&["a"])), v(&["a"]));
+        assert_eq!(
+            merge_injected(&v(&["a", "b"]), v(&["a"]), v(&["a"])),
+            v(&["a"])
+        );
     }
 }
 

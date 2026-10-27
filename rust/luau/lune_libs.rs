@@ -140,7 +140,10 @@ mod tests {
         let mut over: &[u8] = b"abcde";
         assert_eq!(block_on(read_capped_to(&mut over, 4)).unwrap(), None);
         let mut empty: &[u8] = b"";
-        assert_eq!(block_on(read_capped_to(&mut empty, 0)).unwrap(), Some(Vec::new()));
+        assert_eq!(
+            block_on(read_capped_to(&mut empty, 0)).unwrap(),
+            Some(Vec::new())
+        );
         // an endless reader must not hang or grow past the cap
         let mut endless = tokio::io::repeat(7);
         assert_eq!(block_on(read_capped_to(&mut endless, 1000)).unwrap(), None);

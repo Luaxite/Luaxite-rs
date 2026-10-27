@@ -621,7 +621,10 @@ impl UserData for ServeRequest {
 fn parse_query(q: Option<&str>) -> Vec<(String, String)> {
     // form decoding: `+` is a space (what the client's query encoder writes); `%2B` stays a plus
     let dec = |s: &str| {
-        let spaced: Vec<u8> = s.bytes().map(|b| if b == b'+' { b' ' } else { b }).collect();
+        let spaced: Vec<u8> = s
+            .bytes()
+            .map(|b| if b == b'+' { b' ' } else { b })
+            .collect();
         String::from_utf8_lossy(&decode_bytes(&spaced)).into_owned()
     };
     q.unwrap_or("")
