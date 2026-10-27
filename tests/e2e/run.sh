@@ -43,7 +43,6 @@ run lune_datetime 30 tests/e2e/lune_datetime.luau
 run lune_luau 30 tests/e2e/lune_luau.luau
 run lune_task 30 tests/e2e/lune_task.luau
 run coroutine_async 30 tests/e2e/coroutine_async.luau
-run lune_require_gsub 30 tests/e2e/lune_require_gsub.luau   # first embedded require inside a non-yieldable string.gsub callback (no server, join is stubbed)
 run lune_stdio 30 tests/e2e/lune_stdio.luau /dev/null
 run lune_process 30 tests/e2e/lune_process.luau
 run lune_process_idle 30 tests/e2e/lune_process_idle.luau   # create() child must not hold the program open (timeout 30s < the child's sleep)

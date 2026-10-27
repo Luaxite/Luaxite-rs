@@ -122,26 +122,58 @@ class RequireAsync(unittest.TestCase):
         self.assertIn("scripts::SCRIPTS", self.body.split("let resolve")[1].split("let load_embedded =")[0])
         self.assertNotIn("begin_embedded(", self.src.replace(fn_body(self.src, "fn begin_embedded"), "").split("fn install_require")[0])
 
-    def test_gsub_e2e_exists_and_is_hooked_into_run_sh(self):
-        e2e = read("tests/e2e/lune_require_gsub.luau")
-        self.assertIn("string.gsub", e2e)
-        self.assertIn('require("hello")', e2e)
-        self.assertIn("coroutine.isyieldable()", e2e)
-        self.assertIn('E2E PASS lune_require_gsub"', e2e)
-        self.assertIn("process.exit(0)", e2e)
-        # the module it requires is really an embedded one, and joins no server once `azalea.join` is stubbed
-        self.assertIn("azalea.join = function", e2e)
-        self.assertTrue((ROOT / "src/hello.luau").exists())
-        # it must not hard-code how many handlers hello.luau registers (it once asserted 2 while the module has 3 bot:on calls, and failed in CI):
-        # it counts azalea.join calls instead, and src/hello.luau makes exactly one
-        self.assertNotRegex(e2e, r"handlers\s*==\s*\d")
-        self.assertIn("joins == 1", e2e)
-        hello = "\n".join(l for l in read("src/hello.luau").splitlines() if not l.lstrip().startswith("--"))   # code only, no comments
-        self.assertEqual(len(re.findall(r"azalea\.join\b", hello)), 1)
-        run = read("tests/e2e/run.sh")
-        self.assertRegex(run, r"(?m)^run lune_require_gsub \d+ tests/e2e/lune_require_gsub\.luau")
-        # server-less: it sits among the lune scripts that also run under LUNE_ONLY=1 (after the `fi` closing the server-needing block)
-        self.assertLess(run.index("\nfi\n"), run.index("run lune_require_gsub"))
+    def test_gsub_project_exists_and_is_hooked_into_ci(self):
+        main = read("tests/projects/require_gsub/src/main.luau")
+        self.assertIn("string.gsub", main)
+        self.assertIn('require("probe")', main)
+        self.assertIn("coroutine.isyieldable()", main)
+        self.assertIn('E2E PASS require_gsub"', main)
+        self.assertIn("process.exit(0)", main)
+        # the module it requires is the project's own, and joins no server once `azalea.join` is stubbed
+        self.assertIn("azalea.join = function", main)
+        self.assertTrue((ROOT / "tests/projects/require_gsub/src/probe.luau").exists())
+        # it must not hard-code how many handlers the module registers (it once asserted 2 while the module had 3 bot:on calls, and failed in CI):
+        # it counts azalea.join calls instead, and the probe makes exactly one
+        self.assertNotRegex(main, r"handlers\s*==\s*\d")
+        self.assertIn("joins == 1", main)
+        probe = "\n".join(l for l in read("tests/projects/require_gsub/src/probe.luau").splitlines() if not l.lstrip().startswith("--"))   # code only
+        self.assertEqual(len(re.findall(r"azalea\.join\b", probe)), 1)
+        self.assertIn("bot:on(", probe)
+        # it runs through tests/projects/run.sh, which a CI job calls (it is not one of the scripts of tests/e2e/run.sh)
+        self.assertIn("tests/projects/run.sh", read(".github/workflows/rust.yml"))
+        self.assertNotIn("lune_require_gsub", read("tests/e2e/run.sh"))
+
+
+class TestsOwnTheirModules(unittest.TestCase):
+    """No test depends on the repo's src/, and the binary build has no test options: a test that needs an embedded module is a project under
+    tests/projects with its own src/, built as its own binary by tests/projects/run.sh."""
+
+    def test_e2e_scripts_use_no_modules_of_their_own(self):
+        # tests/e2e scripts run through a binary built from the repo's src/, so they may only require Lune's modules
+        for path in sorted((ROOT / "tests/e2e").glob("*.luau")):
+            for name in re.findall(r'require\(\s*"([^"@][^"]*)"\s*\)', path.read_text()):
+                self.fail(f"{path.name} requires {name!r}: a test that needs its own module is a project in tests/projects")
+
+    def test_no_test_names_src(self):
+        for path in sorted((ROOT / "tests").glob("**/*.luau")):
+            code = "\n".join(l for l in path.read_text().splitlines() if not l.lstrip().startswith("--"))
+            self.assertNotIn("src/", code.replace("/src/", "").replace("tests/projects", ""), f"{path} reads from src/")
+
+    def test_every_project_has_its_own_entry_script(self):
+        projects = [d for d in (ROOT / "tests/projects").iterdir() if d.is_dir()]
+        self.assertTrue(projects)
+        for d in projects:
+            self.assertTrue((d / "src/main.luau").is_file(), f"{d.name}: no src/main.luau")
+            self.assertIn(f'E2E PASS {d.name}"', (d / "src/main.luau").read_text(), f"{d.name}: main.luau must print its PASS line")
+
+    def test_the_binary_build_has_no_test_options(self):
+        build = read("build.rs")
+        self.assertNotIn("tests/", build)
+        self.assertNotRegex(build, r'var_os\("LUAXITE_[A-Z_]*"\)')
+        run = read("tests/projects/run.sh")
+        # the project's src/ replaces the repo's in a scratch copy: the repo's own src/ is never an input
+        self.assertIn('cp -R "$proj/src" "$scratch/src"', run)
+        self.assertNotIn('"$root/src"', run)
 
 
 if __name__ == "__main__":

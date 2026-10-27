@@ -144,6 +144,36 @@ jobs:
                   cache-on-failure: true
             - run: cargo check --all-targets ${{ matrix.flags }}
 
+    projects:
+        # test projects (tests/projects): each has its own src/ and is built as its own luaxite binary, so no test depends on the repo's src/ and the
+        # binary build has no test options. Independent of `real`: its own build, in target/projects.
+        runs-on: ubuntu-24.04
+        timeout-minutes: 90
+        env:
+            AZL_RDJ_FORMAT_RANGE: "57-99"    # a nightly's format_version is not the 57 of stable 1.97.0
+        steps:
+            - uses: actions/checkout@v4
+            - uses: ./.github/actions/azalea
+            - uses: actions/setup-python@v5
+              with:
+                  python-version: "3.12"
+            - name: azalea toolchain
+              run: |
+                  ch=$(python3 -c 'import sys, tomllib; print(tomllib.load(open(sys.argv[1], "rb"))["toolchain"]["channel"])' bind/azalea-src/rust-toolchain.toml 2>/dev/null || true)
+                  ch=${ch:-nightly}
+                  echo "azalea toolchain: $ch"
+                  rustup toolchain install "$ch" --profile minimal --no-self-update
+                  echo "RUSTUP_TOOLCHAIN=$ch" >> "$GITHUB_ENV"
+            - uses: actions/cache@v4
+              with:
+                  # the project builds' dependencies (tests/projects/run.sh builds into target/projects/build) and make_rustdoc_json.sh's default target dir
+                  path: |
+                      target/projects/build
+                      /tmp/azl-rdj-target
+                  key: projects-${{ hashFiles('bind/azalea-src/Cargo.lock', 'Cargo.toml', 'build.rs') }}
+                  restore-keys: projects-
+            - run: sh tests/projects/run.sh
+
     lune:
         # `@lune/task`, `@lune/stdio`, `@lune/process`, `@lune/net` (and lune.luau): no Minecraft server needed. Runs the binary of `real`.
         needs: real
