@@ -93,7 +93,7 @@ class Config(unittest.TestCase):
             self.assertRegex(DLUAU + client, rf"\b{re.escape(new)}\b")
 
     def test_coverage_ledger_is_consistent(self):
-        p = run([sys.executable, TOOLS / "coverage.py", "--report", "harness/luau/GEN_REPORT.md", "--dluau", "harness/luau/azalea.d.luau", "--quiet"])
+        p = run([sys.executable, TOOLS / "coverage.py", "--report", "harness/luau/GEN_REPORT.json", "--dluau", "harness/luau/azalea.d.luau", "--quiet"])
         self.assertIn(p.returncode, (0, 1), p.stdout + p.stderr)  # the fixture is not the real azalea: only a crash fails here
         self.assertNotIn("Traceback", p.stderr)
 

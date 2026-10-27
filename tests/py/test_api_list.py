@@ -1,4 +1,5 @@
 """tools/api_list.py: the API list (API_list.md) from a generated .d.luau."""
+import json
 import re
 import tempfile
 import unittest
@@ -112,6 +113,39 @@ class Harness(unittest.TestCase):
     def test_types_match_the_real_list_prefix(self):
         d = (ROOT / "harness/luau/azalea.d.luau").read_text()
         self.assertEqual(bullets(api_list.build(d, CONFIG), "Types"), bullets(GOLDEN, "Types"))
+
+
+class ApiJson(unittest.TestCase):
+    """API.json is what tools and CI read; API_list.md is rendered from the same data and never parsed."""
+
+    def test_the_text_list_is_rendered_from_the_data(self):
+        api = api_list.build_dict(D_LUAU, CONFIG)
+        self.assertEqual(api_list.render(api), GOLDEN)
+
+    def test_dumps_round_trips_and_is_deterministic(self):
+        api = api_list.build_dict(D_LUAU, CONFIG)
+        self.assertEqual(json.loads(api_list.dumps(api)), api)
+        self.assertEqual(api_list.dumps(api), api_list.dumps(api_list.build_dict(D_LUAU, CONFIG)))
+
+    def test_declarations_are_data(self):
+        api = api_list.build_dict(D_LUAU, CONFIG)
+        self.assertEqual(api["schema"], api_list.API_SCHEMA)
+        bot = next(c for c in api["classes"] if c["name"] == "Bot")
+        self.assertFalse(bot["library"])
+        self.assertTrue(all(set(m) == {"name", "method", "params", "ret", "decl"} for m in bot["members"]))
+        self.assertIn({"name": "bot", "type": "Bot"}, api["globals"])
+        goal = next(c for c in api["classes"] if c["prefix"] == "goal")
+        self.assertTrue(goal["library"] and not any(m["method"] for m in goal["members"]))
+        # every bullet of the text list is one `decl` of the data, and the other way round
+        decls = [m["decl"] for c in api["classes"] for m in c["members"]]
+        self.assertEqual(sorted(decls), sorted(l[3:-1] for l in GOLDEN.splitlines() if l.startswith("- `declare function ")))
+
+    def test_cli_json_out(self):
+        with tempfile.TemporaryDirectory() as t:
+            out = Path(t) / "API.json"
+            p = run([sys.executable, TOOLS / "api_list.py", "--dluau", FIXTURE / "bindings.d.luau", "--config", CONFIG, "--json-out", out])
+            self.assertEqual(p.returncode, 0, p.stderr)
+            self.assertEqual(json.loads(out.read_text()), api_list.build_dict(D_LUAU, CONFIG))
 
 
 class Cli(unittest.TestCase):

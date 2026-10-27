@@ -1,5 +1,6 @@
 """tools/luaxite_gen.py end to end on the fixture: outputs, determinism, golden, structure, error handling."""
 import hashlib
+import json
 import re
 import tempfile
 import unittest
@@ -23,7 +24,8 @@ class Base(unittest.TestCase):
         cls.client = (cls.rust / "gen_client.rs").read_text()
         cls.events = (cls.rust / "gen_events.rs").read_text()
         cls.types = (cls.rust / "gen_types.rs").read_text()
-        cls.report = (cls.luau / "GEN_REPORT.md").read_text()
+        cls.report = (cls.luau / "GEN_REPORT.md").read_text()          # the text view: only checked for being rendered from the JSON
+        cls.report_json = json.loads((cls.luau / "GEN_REPORT.json").read_text())
 
 
 class Outputs(Base):
@@ -31,10 +33,10 @@ class Outputs(Base):
     def test_exit_status_is_zero(self):
         self.assertEqual(self.proc.returncode, 0, self.proc.stderr)
 
-    def test_all_five_files_are_written(self):
+    def test_all_six_files_are_written(self):
         for f in ["gen_client.rs", "gen_events.rs", "gen_types.rs"]:
             self.assertTrue((self.rust / f).stat().st_size > 500, f)
-        for f in ["azalea.d.luau", "GEN_REPORT.md"]:
+        for f in ["azalea.d.luau", "GEN_REPORT.json", "GEN_REPORT.md"]:
             self.assertTrue((self.luau / f).stat().st_size > 500, f)
 
     def test_generated_marker_in_every_file(self):
@@ -44,8 +46,20 @@ class Outputs(Base):
     def test_matches_the_committed_harness_output(self):
         for name, d in [("gen_client.rs", self.rust), ("gen_events.rs", self.rust), ("gen_types.rs", self.rust)]:
             self.assertEqual(sha(d / name), sha(ROOT / "harness/src/luau" / name), name)
-        for name in ["azalea.d.luau", "GEN_REPORT.md"]:
+        for name in ["azalea.d.luau", "GEN_REPORT.json", "GEN_REPORT.md"]:
             self.assertEqual(sha(self.luau / name), sha(ROOT / "harness/luau" / name), name)
+
+    def test_report_json_is_the_source_of_the_text_report(self):
+        import luaxite_gen
+        self.assertEqual(luaxite_gen.render_report_md(self.report_json), self.report)
+        self.assertEqual(self.report_json["schema"], luaxite_gen.REPORT_SCHEMA)
+
+    def test_report_json_names_every_skipped_method(self):
+        client = next(c for c in self.report_json["classes"] if c["name"] == "Client")
+        self.assertTrue(client["skipped"])
+        for sk in client["skipped"]:
+            self.assertEqual(sorted(sk), ["name", "origin", "reason", "sig"])
+            self.assertIn(f"fn {sk['name']}", sk["sig"])      # the name is data, not cut out of the signature by a reader
 
     def test_matches_golden_sha1_list(self):
         gold = {}
@@ -70,7 +84,7 @@ class Outputs(Base):
         self.assertEqual(sha(out / "l/azalea.d.luau"), sha(self.luau / "azalea.d.luau"))
 
     def test_no_absolute_paths_leak_into_outputs(self):
-        for t in (self.client, self.events, self.types, self.dl, self.report):
+        for t in (self.client, self.events, self.types, self.dl, self.report, json.dumps(self.report_json)):
             self.assertNotRegex(t, r"/home/|/tmp/|/Users/")
 
 
@@ -158,19 +172,19 @@ class Rust(Base):
 
 class Report(Base):
     def test_report_counts_match_d_luau(self):
-        m = re.search(r"`Client` -> `LuaClient` / `Bot`:\*\* (\d+) methods generated", self.report)
-        self.assertTrue(m)
+        client = next(c for c in self.report_json["classes"] if c["name"] == "Client")
+        self.assertEqual((client["rust"], client["luau"]), ("LuaClient", "Bot"))
         part = self.dl.split("declare extern type Bot with")[1].split("-- hand-written")[0]
         names = {n for _, n in d_luau_functions("declare extern type Bot with" + part + "\nend")} - {"on", "wait_for"}
-        self.assertEqual(int(m.group(1)), len(names))
+        self.assertEqual(len(client["generated"]), len(names))
 
     def test_report_lists_events(self):
+        listed = {e["name"] for e in self.report_json["events"]["generated"]}
         for ev in EVENTS:
-            self.assertIn(f"- `{ev}`", self.report)
+            self.assertIn(ev, listed)
 
     def test_report_lists_hand_written_methods(self):
-        self.assertIn("Hand-written methods", self.report)
-        self.assertIn("`block_at`", self.report)
+        self.assertIn("block_at", self.report_json["hand_written"]["Bot"])
 
 
 class Failures(unittest.TestCase):

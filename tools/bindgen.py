@@ -7,7 +7,8 @@
 2. tools/bindgen_rdj.py: rustdoc JSON of each crate into O/rdj (cached)
 3. tools/luaxite_gen.py on the JSON -> O/gen_*.rs (+ O/inc/gen_*.rs without `#![..]`), O/bindings.d.luau, O/GEN_REPORT.md; the .d.luau is copied to R/types/
    (only when its content changed, so cargo's rerun-if-changed does not fire every build)
-4. tools/api_list.py on that .d.luau -> O/API_list.md (the readable API list), copied to R/types/ the same way
+4. tools/api_list.py on that .d.luau -> O/API.json (the API list as data: what tools and CI read) and O/API_list.md (its text view for
+   people, never parsed), both copied to R/types/ the same way
 The generator reads the hand-written glue next to its output: R/rust/luau/{extra,real}_*.rs are copied to O first.
 
 stdout carries only `cargo:rerun-if-changed=PATH` and `cargo:warning=LINE` lines. Any failure: `error: ...` on stderr, exit 1, no stdout.
@@ -31,6 +32,7 @@ from bindgen_crates import CrateError  # noqa: E402
 
 D_LUAU = "bindings.d.luau"
 API_LIST = "API_list.md"
+API_JSON = "API.json"
 
 
 def stage_sources(crates: list[dict], out: Path) -> Path:
@@ -102,9 +104,11 @@ def run(root, out) -> list[str]:
         raise CrateError(f"generator wrote no {D_LUAU} in {out}")
     text = (out / D_LUAU).read_text()
     cfg = root / "bindgen.toml"
-    listing = api_list.build(text, cfg if cfg.is_file() else None)
+    api = api_list.build_dict(text, cfg if cfg.is_file() else None)
+    listing, api_json = api_list.render(api), api_list.dumps(api)
     (out / API_LIST).write_text(listing, encoding="utf-8")
-    for name, body in ((D_LUAU, text), (API_LIST, listing)):
+    (out / API_JSON).write_text(api_json, encoding="utf-8")
+    for name, body in ((D_LUAU, text), (API_LIST, listing), (API_JSON, api_json)):
         dest = root / "types" / name
         if not dest.is_file() or dest.read_text() != body:
             dest.parent.mkdir(parents=True, exist_ok=True)

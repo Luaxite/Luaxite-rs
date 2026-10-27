@@ -20,7 +20,7 @@ if shutil.which("rustdoc"):
         out, _ = fuzz.rdj(d)
         if out is None: return None
         code, last, ro, lo = fuzz.gen(d, "rd", out)
-        return code, (lo / "GEN_REPORT.md").read_text() if code == 0 else "", (lo / "azalea.d.luau").read_text() if code == 0 else "", "\n".join(p.read_text() for p in sorted(ro.glob("gen_*.rs")))
+        return code, (lo / "GEN_REPORT.json").read_text() if code == 0 else "", (lo / "azalea.d.luau").read_text() if code == 0 else "", "\n".join(p.read_text() for p in sorted(ro.glob("gen_*.rs")))
     for n in ("type_no_clone_optarc_event", "ev_arc_vec_noclone", "type_no_clone_arc_ret"):
         x = rd(n)
         if x: check("rdj " + n, x[0] == 0 and "LuaT((*v).clone())" not in x[3] and (n == "type_no_clone_arc_ret" or "not `Clone`" in x[1]), "non-Clone Arc not skipped under rustdoc")

@@ -1,0 +1,279 @@
+{
+  "schema": 1,
+  "source": {
+    "label": "fake @ 61bcab3d72",
+    "files": 1
+  },
+  "front_end": "rustdoc JSON (rustc 1.97.0 (2d8144b78 2026-07-07), format_version 57)",
+  "classes": [
+    {
+      "name": "Client",
+      "rust": "LuaClient",
+      "luau": "Bot",
+      "emitted": true,
+      "generated": [
+        "attack",
+        "attributes",
+        "broken",
+        "chat",
+        "direction",
+        "entity",
+        "entity_by_minecraft_id",
+        "entity_by_uuid",
+        "entity_id_by_minecraft_id",
+        "entity_id_by_uuid",
+        "entity_interact",
+        "entity_ref_for",
+        "experience",
+        "get_held_item",
+        "get_inventory",
+        "goto",
+        "goto_with_opts",
+        "goto_with_opts_xz",
+        "goto_xz",
+        "health",
+        "hit_result",
+        "look_at",
+        "menu",
+        "mine",
+        "mine_with_auto_tool",
+        "minecraft_id",
+        "nearby_players",
+        "open_container_at",
+        "open_container_at_with_timeout_ticks",
+        "open_inventory",
+        "physics",
+        "position",
+        "profile",
+        "set_direction",
+        "start_goto",
+        "start_goto_with_opts",
+        "start_goto_with_opts_xz",
+        "start_goto_xz",
+        "stop_pathfinding",
+        "tab_names",
+        "test_all_entities",
+        "test_count_boxed",
+        "test_count_entities",
+        "wait_for_container_open",
+        "wait_ticks",
+        "walk",
+        "write_chat_packet"
+      ],
+      "async_count": 10,
+      "skipped": [
+        {
+          "name": "account",
+          "sig": "pub fn account(&self) -> Account",
+          "origin": "Client (azalea/src/lib.rs)",
+          "reason": "tuple struct `Account`"
+        },
+        {
+          "name": "best_tool_in_hotbar_for_block",
+          "sig": "pub fn best_tool_in_hotbar_for_block(&self, block: block::BlockState) -> AzaleaResult<auto_tool::BestToolResult>",
+          "origin": "Client (azalea/src/lib.rs)",
+          "reason": "tuple struct `BlockState`"
+        },
+        {
+          "name": "component",
+          "sig": "pub fn component<T: FakeComponent>(&self) -> Result<T, MissingComponentError>",
+          "origin": "Client (azalea/src/lib.rs)",
+          "reason": "generic method"
+        },
+        {
+          "name": "fake",
+          "sig": "pub fn fake() -> Self",
+          "origin": "Client (azalea/src/lib.rs)",
+          "reason": "no `&self` receiver"
+        },
+        {
+          "name": "nearest_entities",
+          "sig": "pub fn nearest_entities<F>(&self) -> AzaleaResult<Box<[EntityRef]>>",
+          "origin": "Client (azalea/src/lib.rs)",
+          "reason": "generic method"
+        },
+        {
+          "name": "nearest_entities_by",
+          "sig": "pub fn nearest_entities_by<Q: FakeQuery, F>(&self, predicate: impl Fn(Q::Item<'_>) -> bool) -> AzaleaResult<Box<[EntityRef]>>",
+          "origin": "Client (azalea/src/lib.rs)",
+          "reason": "generic method"
+        },
+        {
+          "name": "set_client_information",
+          "sig": "pub fn set_client_information(&self, client_information: ClientInformation) -> AzaleaResult<()>",
+          "origin": "Client (azalea/src/lib.rs)",
+          "reason": "parameter `client_information`: not convertible"
+        },
+        {
+          "name": "tab_list",
+          "sig": "pub fn tab_list(&self) -> AzaleaResult<std::collections::HashMap<Uuid, PlayerInfo>>",
+          "origin": "Client (azalea/src/lib.rs)",
+          "reason": "`tab_list` is hand-written (extra_*.rs) or generated elsewhere"
+        },
+        {
+          "name": "world",
+          "sig": "pub fn world(&self) -> AzaleaResult<Arc<RwLock<world::World>>>",
+          "origin": "Client (azalea/src/lib.rs)",
+          "reason": "generic type `RwLock<World>`"
+        }
+      ]
+    },
+    {
+      "name": "EntityRef",
+      "rust": "LuaEntityRef",
+      "luau": "Entity",
+      "emitted": true,
+      "generated": [
+        "attack",
+        "attributes",
+        "health",
+        "minecraft_id",
+        "physics",
+        "position"
+      ],
+      "async_count": 0,
+      "skipped": [
+        {
+          "name": "id",
+          "sig": "pub fn id(&self) -> Entity",
+          "origin": "EntityRef (azalea/src/lib.rs)",
+          "reason": "denied: the raw ECS id is internal; scripts hold `Entity` handles instead"
+        },
+        {
+          "name": "new",
+          "sig": "pub fn new(client: Client, entity: Entity) -> Self",
+          "origin": "EntityRef (azalea/src/lib.rs)",
+          "reason": "no `&self` receiver"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "generated": 14,
+    "builtin": 8
+  },
+  "hand_written": {
+    "Bot": [
+      "block_at",
+      "best_tool_in_hotbar_for_block",
+      "best_tool_for",
+      "held_item",
+      "inventory",
+      "goto_reach",
+      "set_client_information",
+      "nearest_player",
+      "nearby_entities",
+      "account",
+      "tab_list"
+    ],
+    "Container": [
+      "slots",
+      "close",
+      "left_click",
+      "right_click",
+      "shift_click",
+      "middle_click",
+      "double_click",
+      "swap",
+      "throw",
+      "drop_cursor"
+    ],
+    "Entity": [
+      "distance_to"
+    ]
+  },
+  "events": {
+    "enabled": true,
+    "generated": [
+      {
+        "name": "init",
+        "arg": null,
+        "payload": null
+      },
+      {
+        "name": "login",
+        "arg": null,
+        "payload": null
+      },
+      {
+        "name": "chat",
+        "arg": "packet",
+        "payload": "ChatPacket"
+      },
+      {
+        "name": "tick",
+        "arg": null,
+        "payload": null
+      },
+      {
+        "name": "add_player",
+        "arg": "player",
+        "payload": "PlayerInfo"
+      },
+      {
+        "name": "keep_alive",
+        "arg": "id",
+        "payload": "number"
+      },
+      {
+        "name": "disconnect",
+        "arg": "reason",
+        "payload": "string?"
+      },
+      {
+        "name": "connection_failed",
+        "arg": "error",
+        "payload": "string"
+      },
+      {
+        "name": "death",
+        "arg": "info",
+        "payload": "ClientboundPlayerCombatKill?"
+      }
+    ],
+    "hand_fired": [
+      {
+        "name": "update",
+        "packet": null,
+        "why": "Fires on every ECS update (at least once per game tick, usually faster). Only handlers that finish quickly should use it."
+      }
+    ],
+    "not_exposed": []
+  },
+  "packets_out": null,
+  "ecs": null,
+  "packets_in": null,
+  "paths": {
+    "AttributeInstance": "azalea::AttributeInstance",
+    "Attributes": "azalea::Attributes",
+    "BestToolResult": "azalea::auto_tool::BestToolResult",
+    "BlockHitResult": "azalea::core::hit_result::BlockHitResult",
+    "BlockPosGoal": "azalea::pathfinder::goals::BlockPosGoal",
+    "ChatPacket": "azalea::ChatPacket",
+    "ChatVisibility": "azalea::protocol::common::client_information::ChatVisibility",
+    "ClientInformation": "azalea::ClientInformation",
+    "ClientboundPlayerCombatKill": "azalea::protocol::packets::game::ClientboundPlayerCombatKill",
+    "Direction": "azalea::core::hit_result::Direction",
+    "EntityHitResult": "azalea::core::hit_result::EntityHitResult",
+    "Experience": "azalea::Experience",
+    "GameProfile": "azalea::GameProfile",
+    "HitResult": "azalea::core::hit_result::HitResult",
+    "HumanoidArm": "azalea::entity::HumanoidArm",
+    "LookDirection": "azalea::LookDirection",
+    "ModelCustomization": "azalea::protocol::common::client_information::ModelCustomization",
+    "ParticleStatus": "azalea::protocol::common::client_information::ParticleStatus",
+    "Physics": "azalea::Physics",
+    "PlayerInfo": "azalea::PlayerInfo",
+    "WalkDirection": "azalea::WalkDirection",
+    "XZGoal": "azalea::pathfinder::goals::XZGoal"
+  },
+  "goals_not_exposed": [
+    {
+      "name": "ReachBlockPosGoal",
+      "why": "private fields; covered by `bot:goto_reach(pos, distance?)` in rust/luau/extra_misc.rs"
+    }
+  ],
+  "macros_not_expanded": [],
+  "enum_notes": [],
+  "front_end_skipped": []
+}

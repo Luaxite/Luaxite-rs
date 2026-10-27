@@ -8,7 +8,8 @@ Reads the rustdoc JSON of the azalea workspace you vendor (--azalea DIR, --rustd
   rust/luau/gen_events.rs   azalea -> Luau : azalea::Event variants fire `bot:on(...)` handlers
   rust/luau/gen_types.rs    value conversions (enums <-> strings, structs -> tables)
   luau/azalea.d.luau       Luau type definitions for luau-lsp (both directions)
-  luau/GEN_REPORT.md       what was generated, what was skipped and why
+  luau/GEN_REPORT.json     what was generated, what was skipped and why (the machine-readable report; tools read this)
+  luau/GEN_REPORT.md       the same report as text for people (rendered from the JSON, never parsed)
 
 Nothing is hand-listed: methods come from every `impl Client` / `XClientExt for Client`
 in the rustdoc JSON, events come from `enum Event`, and enums/structs/goals are discovered
@@ -20,13 +21,14 @@ Usage (from your project root; stdlib only):
 from __future__ import annotations
 
 import argparse
+import json
 import unicodedata
 import re
 import sys
 from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any, Callable, NamedTuple, Optional
 
 # =============================================================================
 # CONFIG - the only part you should need to edit
@@ -765,13 +767,21 @@ class Wrapper:
     is_async: bool = False
 
 
+class Skipped(NamedTuple):
+    """One azalea method no binding was made for. `name` is the Rust fn name, so nothing has to cut it out of `sig` again."""
+    origin: str
+    sig: str
+    reason: str
+    name: str
+
+
 @dataclass
 class ClassGen:
     """Everything collected for one target type (see CLASSES)."""
     name: str                   # azalea type, e.g. "Client"
     cfg: dict
     wrappers: list = field(default_factory=list)
-    skipped: list = field(default_factory=list)     # (origin, signature, reason)
+    skipped: list = field(default_factory=list)     # Skipped
     touched: set = field(default_factory=set)       # mapper keys this class's wrappers use
 
     @property
@@ -816,6 +826,7 @@ class Generator:
         self.m = Mapper(ix)
         self.classes: dict[str, ClassGen] = {n: ClassGen(n, c) for n, c in CLASSES.items()}
         self.goal_notes: list[str] = []
+        self.goal_rows: list[tuple] = []        # (goal name, why): the same notes as data, for GEN_REPORT.json
         self._goals: Optional[list] = None
         self._goals_touched: set = set()        # mapper keys goals() touched when it ran (re-credited on every later call)
         self.packets_in: list = []
@@ -824,6 +835,7 @@ class Generator:
         self.has_events = any(c["events"] for c in CLASSES.values())     # azalea mode: an events class (`bot`) is configured
         self.events: list = []          # filled by build_events (only when a class has `events = true`)
         self.event_notes: list = []
+        self.event_rows: list[tuple] = []       # (variant, why): the same notes as data, for GEN_REPORT.json
 
     # the `Client` class keeps the flat names the emitters grew up with
     @property
@@ -833,6 +845,10 @@ class Generator:
     @property
     def skipped(self) -> list:
         return self.classes["Client"].skipped if "Client" in self.classes else []
+
+    def event_note(self, variant: str, why: str) -> None:
+        self.event_notes.append(f"`{variant}`: {why}")
+        self.event_rows.append((variant, why))
 
     # ---- goals: `impl Goal + 'static` parameters expand to one method per concrete goal
     def goals(self) -> list:
@@ -873,6 +889,7 @@ class Generator:
             except Skip as e:
                 extra = f"; {HANDWRITTEN_GOALS[gname]}" if gname in HANDWRITTEN_GOALS else ""
                 self.goal_notes.append(f"`{gname}`: {e.reason}{extra}")
+                self.goal_rows.append((gname, f"{e.reason}{extra}"))
         self._goals = out
         self._goals_touched = self.m.touched
         self.m.touched = before | self._goals_touched
@@ -920,7 +937,7 @@ class Generator:
                 cg.wrappers += ws
             except Skip as e:
                 self.m.touched = snap
-                cg.skipped.append((f"{m.owner} ({m.file})", m.sig, e.reason))
+                cg.skipped.append(Skipped(f"{m.owner} ({m.file})", m.sig, e.reason, m.name))
 
     def build_method(self, m: Method) -> list[Wrapper]:
         if not m.is_pub:
@@ -1224,23 +1241,24 @@ class Generator:
         self.events = []
         lnames: dict[str, str] = {}
         self.event_notes = []
+        self.event_rows = []
         self.m.cur_class = None
         for v in d.variants:
             if v["name"] in HIDDEN_EVENTS:
-                self.event_notes.append(f"`{v['name']}`: {HIDDEN_EVENTS[v['name']]}, not exposed")
+                self.event_note(v["name"], f"{HIDDEN_EVENTS[v['name']]}, not exposed")
                 continue
             if any(a.startswith("#[cfg(") for a in v["attrs"]):
-                self.event_notes.append(f"`{v['name']}`: cfg-gated ({', '.join(a for a in v['attrs'] if 'cfg' in a)}), not exposed")
+                self.event_note(v["name"], f"cfg-gated ({', '.join(a for a in v['attrs'] if 'cfg' in a)}), not exposed")
                 continue
             lname = snake(bare(v["name"]))
             if lname in EXTRA_EVENT_PAYLOADS:
                 # `Event::Packet` is `#[cfg(feature = "packet-event")]`: rustdoc JSON drops the cfg (the front end re-reads it from the
                 # source, rdj_index.event_cfg_gates; unreadable source -> warning), so the variant can show up here: the
                 # hand-written extra event `packet` owns it.
-                self.event_notes.append(f"`{v['name']}`: handled by the hand-written extra event `{lname}`, not exposed")
+                self.event_note(v["name"], f"handled by the hand-written extra event `{lname}`, not exposed")
                 continue
             if lname in lnames:
-                self.event_notes.append(f"`{v['name']}`: Luau name `{lname}` is already taken by `{lnames[lname]}`, not exposed")
+                self.event_note(v["name"], f"Luau name `{lname}` is already taken by `{lnames[lname]}`, not exposed")
                 continue
             lnames[lname] = v["name"]
             payload = None
@@ -1253,9 +1271,9 @@ class Generator:
                     payload = ti
                 except Skip as e:
                     self.m.touched = snap
-                    self.event_notes.append(f"`{v['name']}`: payload `{type_text(v['types'][0])}` not exposed ({e.reason}); handlers get no arguments")
+                    self.event_note(v["name"], f"payload `{type_text(v['types'][0])}` not exposed ({e.reason}); handlers get no arguments")
             elif v["kind"] != "unit":
-                self.event_notes.append(f"`{v['name']}`: {v['kind']} variant payload not exposed; handlers get no arguments")
+                self.event_note(v["name"], f"{v['kind']} variant payload not exposed; handlers get no arguments")
             self.events.append(dict(
                 variant=v["name"], lname=lname, payload=payload, doc=v["doc"],
                 arg=EVENT_ARG_NAMES.get(v["name"], "value"),
@@ -1973,101 +1991,177 @@ def emit_dluau(gen: Generator, src_label: str, extras: dict) -> str:
     return "\n".join(L)
 
 
-def emit_report(gen: Generator, src_label: str, ix: Any, extras: dict) -> str:
+REPORT_SCHEMA = 1
+
+
+def report_model(gen: Generator, src_label: str, ix: Any, extras: dict) -> dict:
+    """Everything GEN_REPORT says, as plain data. This is what other tools read (GEN_REPORT.json); GEN_REPORT.md is only rendered from it."""
     m = gen.m
-    L = [f"# Luau bridge report", "", f"Source: `{src_label}` ({ix.files} files)",
-         f"Front end: {ix.frontend_label}", ""]
+    classes = []
     for cg in gen.classes.values():
-        state = "" if cg.emit else " (collected, bindings not emitted yet)"
-        L.append(
-            f"- **`{cg.name}` -> `{cg.rust}` / `{cg.luau}`{state}:** {len(cg.wrappers)} methods generated "
-            f"({sum(w.is_async for w in cg.wrappers)} async/yielding), {len(cg.skipped)} skipped"
+        classes.append(dict(
+            name=cg.name, rust=cg.rust, luau=cg.luau, emitted=bool(cg.emit),
+            generated=sorted(w.name for w in cg.wrappers),
+            async_count=sum(bool(w.is_async) for w in cg.wrappers),
+            skipped=[dict(name=sk.name, sig=sk.sig, origin=sk.origin, reason=sk.reason) for sk in cg.skipped],
+        ))
+    hand = {}
+    for cls, lines in extras.items():
+        names = [n for _f, ln in lines if (n := extra_fn_name(ln))]
+        if names:
+            hand[cls] = names
+    events = dict(
+        enabled=bool(gen.has_events),
+        generated=[dict(name=e["lname"], arg=e["arg"] if e["payload"] else None, payload=e["payload"].luau if e["payload"] else None)
+                   for e in gen.events],
+        hand_fired=[dict(name=n, packet=pay, why=why) for n, (why, pay) in active_extra_events(gen).items()],
+        not_exposed=[dict(variant=v, why=why) for v, why in gen.event_rows],
+    )
+    packets_out = None
+    if gen.packets_out:
+        packets_out = dict(
+            total=len(gen.packets_out),
+            buildable=sum(1 for p in gen.packets_out if p["ok"]),
+            unbuildable=[dict(name=p["name"], why=p["why"]) for p in gen.packets_out if not p["ok"]],
         )
-    if gen.has_events:
-        L.append(f"- **azalea -> Luau:** {len(gen.events)} events (`bot:on(...)`)")
+    ecs = None
+    if gen.ecs:
+        kinds = []
+        for kind in ("component", "resource"):
+            rows = [e for e in gen.ecs if e["kind"] == kind]
+            good = [e for e in rows if e["to_lua"]]
+            reasons: dict = {}
+            for e in rows:
+                if not e["to_lua"]:
+                    reasons.setdefault(e["reason"], []).append(e["name"])
+            kinds.append(dict(
+                kind=kind, total=len(rows), readable=len(good),
+                types=[dict(name=e["name"], luau=e["luau"]) for e in good if not e["marker"]],
+                markers=[e["name"] for e in good if e["marker"]],
+                unreadable=[dict(reason=r, names=names) for r, names in sorted(reasons.items())],
+            ))
+        ecs = dict(total=len(gen.ecs), readable=sum(1 for e in gen.ecs if e["to_lua"]), kinds=kinds)
+    packets_in = None
+    if gen.packets_in:
+        packets_in = dict(
+            total=len(gen.packets_in),
+            complete=sum(1 for p in gen.packets_in if not p["nodef"] and not p["skipped"]),
+            partial=[dict(name=p["name"], left_out=[dict(field=f, why=why) for f, why in p["skipped"]])
+                     for p in gen.packets_in if not p["nodef"] and p["skipped"]],
+            kind_only=[dict(name=p["name"], why=p["nodef"]) for p in gen.packets_in if p["nodef"]],
+        )
+    return dict(
+        schema=REPORT_SCHEMA,
+        source=dict(label=src_label, files=ix.files),
+        front_end=ix.frontend_label,
+        classes=classes,
+        types=dict(generated=len([1 for k, _ in m.touched if k == "type"]), builtin=len([1 for k, _ in m.touched if k == "builtin"])),
+        hand_written=hand,
+        events=events,
+        packets_out=packets_out,
+        ecs=ecs,
+        packets_in=packets_in,
+        paths=dict(sorted(m.paths.items())),
+        goals_not_exposed=[dict(name=n, why=why) for n, why in gen.goal_rows],
+        macros_not_expanded=[dict(macro=mac, file=f) for f, mac in sorted(set(ix.macro_notes))],
+        enum_notes=sorted(set(m.enum_notes)),
+        front_end_skipped=ix.report_items() if hasattr(ix, "report_items") else [],     # rustdoc front end only
+    )
+
+
+def emit_report_json(model: dict) -> str:
+    """GEN_REPORT.json: the machine-readable report (tools/coverage.py reads it). Same input, same bytes."""
+    return json.dumps(model, indent=2, ensure_ascii=False) + "\n"
+
+
+def render_report_md(r: dict) -> str:
+    """GEN_REPORT.md: a human-readable view of the model. Nothing reads it back; read GEN_REPORT.json instead."""
+    L = ["# Luau bridge report", "", f"Source: `{r['source']['label']}` ({r['source']['files']} files)",
+         f"Front end: {r['front_end']}", ""]
+    for c in r["classes"]:
+        state = "" if c["emitted"] else " (collected, bindings not emitted yet)"
+        L.append(
+            f"- **`{c['name']}` -> `{c['rust']}` / `{c['luau']}`{state}:** {len(c['generated'])} methods generated "
+            f"({c['async_count']} async/yielding), {len(c['skipped'])} skipped"
+        )
+    ev = r["events"]
+    if ev["enabled"]:
+        L.append(f"- **azalea -> Luau:** {len(ev['generated'])} events (`bot:on(...)`)")
     L += [
-        f"- **Types:** {len([1 for k, _ in m.touched if k == 'type'])} generated conversions, "
-        f"{len([1 for k, _ in m.touched if k == 'builtin'])} built-in",
+        f"- **Types:** {r['types']['generated']} generated conversions, {r['types']['builtin']} built-in",
         "",
         "## Generated methods",
         "",
     ]
-    for cg in gen.classes.values():
-        L += [f"### {cg.name}", "", ", ".join(f"`{w.name}`" for w in sorted(cg.wrappers, key=lambda w: w.name)) or "(none)", ""]
+    for c in r["classes"]:
+        L += [f"### {c['name']}", "", ", ".join(f"`{n}`" for n in c["generated"]) or "(none)", ""]
     L += ["## Hand-written methods (rust/luau/extra_*.rs)", ""]
-    any_extra = False
-    for cls, lines in extras.items():
-        names = [n for _f, ln in lines if (n := extra_fn_name(ln))]
-        if names:
-            any_extra = True
-            L.append(f"- `{cls}`: " + ", ".join(f"`{n}`" for n in names))
-    if not any_extra:
+    for cls, names in r["hand_written"].items():
+        L.append(f"- `{cls}`: " + ", ".join(f"`{n}`" for n in names))
+    if not r["hand_written"]:
         L.append("(none)")
     L += ["", "## Events", ""]
-    for e in gen.events:
-        arg = f"({e['arg']}: {e['payload'].luau})" if e["payload"] else "()"
-        L.append(f"- `{e['lname']}` {arg}")
-    L += [f"- `{n}` ({'packet: ' + pay if pay else ''}) - hand-fired: {why}" for n, (why, pay) in active_extra_events(gen).items()]
-    if gen.event_notes:
-        L += ["", "Notes:", ""] + [f"- {n}" for n in gen.event_notes]
-    if gen.packets_out:
-        okp = [p for p in gen.packets_out if p["ok"]]
-        bad = [p for p in gen.packets_out if not p["ok"]]
+    for e in ev["generated"]:
+        L.append(f"- `{e['name']}` " + (f"({e['arg']}: {e['payload']})" if e["payload"] else "()"))
+    L += [f"- `{h['name']}` ({'packet: ' + h['packet'] if h['packet'] else ''}) - hand-fired: {h['why']}" for h in ev["hand_fired"]]
+    if ev["not_exposed"]:
+        L += ["", "Notes:", ""] + [f"- `{n['variant']}`: {n['why']}" for n in ev["not_exposed"]]
+    po = r["packets_out"]
+    if po:
         L += ["", "## Packets out (Luau table -> ServerboundGamePacket, gen_packets_out.rs)", "",
-              f"{len(gen.packets_out)} packets: {len(okp)} can be built, {len(bad)} cannot (a field has no Luau -> Rust conversion).", ""]
-        L += [f"- `{p['name']}`: {p['why']}" for p in bad]
-    if gen.ecs:
-        readable = [e for e in gen.ecs if e["to_lua"]]
+              f"{po['total']} packets: {po['buildable']} can be built, {len(po['unbuildable'])} cannot (a field has no Luau -> Rust conversion).", ""]
+        L += [f"- `{p['name']}`: {p['why']}" for p in po["unbuildable"]]
+    ecs = r["ecs"]
+    if ecs:
         L += ["", "## ECS components and resources (gen_ecs.rs)", "",
-              f"{len(gen.ecs)} types: {len(readable)} readable, {len(gen.ecs) - len(readable)} not.", ""]
-        for kind in ("component", "resource"):
-            rows = [e for e in gen.ecs if e["kind"] == kind]
-            good = [e for e in rows if e["to_lua"]]
-            L += [f"### {kind}s: {len(good)} readable of {len(rows)}", ""]
-            L += [f"- `{e['name']}`: `{e['luau']}`" for e in good if not e["marker"]]
-            marks = [e["name"] for e in good if e["marker"]]
-            if marks:
-                L.append(f"- marker types (read as `true` when present): {len(marks)}, e.g. " + ", ".join(f"`{n}`" for n in marks[:8]))
-            reasons = {}
-            for e in rows:
-                if not e["to_lua"]:
-                    reasons.setdefault(e["reason"], []).append(e["name"])
-            for r, names in sorted(reasons.items()):
-                L.append(f"- not readable, {r}: {len(names)}: " + ", ".join(f"`{n}`" for n in names))
+              f"{ecs['total']} types: {ecs['readable']} readable, {ecs['total'] - ecs['readable']} not.", ""]
+        for k in ecs["kinds"]:
+            L += [f"### {k['kind']}s: {k['readable']} readable of {k['total']}", ""]
+            L += [f"- `{e['name']}`: `{e['luau']}`" for e in k["types"]]
+            if k["markers"]:
+                L.append(f"- marker types (read as `true` when present): {len(k['markers'])}, e.g. " + ", ".join(f"`{n}`" for n in k["markers"][:8]))
+            for u in k["unreadable"]:
+                L.append(f"- not readable, {u['reason']}: {len(u['names'])}: " + ", ".join(f"`{n}`" for n in u["names"]))
             L.append("")
-    if gen.packets_in:
-        full = [p for p in gen.packets_in if not p["nodef"] and not p["skipped"]]
-        part = [p for p in gen.packets_in if not p["nodef"] and p["skipped"]]
-        bare_ = [p for p in gen.packets_in if p["nodef"]]
+    pi = r["packets_in"]
+    if pi:
         L += ["", "## Packets in (ClientboundGamePacket -> gen_packets_in.rs)", "",
-              f"{len(gen.packets_in)} packets: {len(full)} complete, {len(part)} with fields left out, {len(bare_)} kind only.", ""]
-        for p in part:
-            L.append(f"- `{p['name']}`: left out " + ", ".join(f"`{f}` ({why})" for f, why in p["skipped"]))
-        for p in bare_:
-            L.append(f"- `{p['name']}`: kind only ({p['nodef']})")
+              f"{pi['total']} packets: {pi['complete']} complete, {len(pi['partial'])} with fields left out, {len(pi['kind_only'])} kind only.", ""]
+        for p in pi["partial"]:
+            L.append(f"- `{p['name']}`: left out " + ", ".join(f"`{x['field']}` ({x['why']})" for x in p["left_out"]))
+        for p in pi["kind_only"]:
+            L.append(f"- `{p['name']}`: kind only ({p['why']})")
     L += ["", "## Resolved public paths", ""]
-    for n, p in sorted(m.paths.items()):
-        L.append(f"- `{n}` -> `{p}`")
-    if gen.goal_notes:
-        L += ["", "## Goals not exposed", ""] + [f"- {n}" for n in gen.goal_notes]
-    if ix.macro_notes:
+    for n, path in r["paths"].items():
+        L.append(f"- `{n}` -> `{path}`")
+    if r["goals_not_exposed"]:
+        L += ["", "## Goals not exposed", ""] + [f"- `{g['name']}`: {g['why']}" for g in r["goals_not_exposed"]]
+    if r["macros_not_expanded"]:
         L += ["", "## Macros not expanded (their methods are missing)", ""]
-        L += [f"- `{mac}!` in `{f}`" for f, mac in sorted(set(ix.macro_notes))]
+        L += [f"- `{x['macro']}!` in `{x['file']}`" for x in r["macros_not_expanded"]]
     L += ["", "## Skipped methods", ""]
-    for cg in gen.classes.values():
-        L += [f"### {cg.name}", ""]
+    for c in r["classes"]:
+        L += [f"### {c['name']}", ""]
         by_reason = defaultdict(list)
-        for origin, sig, reason in cg.skipped:
-            by_reason[re.sub(r"`[^`]*`", "`_`", reason) if reason.startswith("duplicate") else reason].append(sig)
+        for sk in c["skipped"]:
+            reason = sk["reason"]
+            by_reason[re.sub(r"`[^`]*`", "`_`", reason) if reason.startswith("duplicate") else reason].append(sk["sig"])
         for reason, sigs in sorted(by_reason.items(), key=lambda kv: (-len(kv[1]), kv[0])):
             L += [f"#### {reason} ({len(sigs)})", ""]
-            L += [f"- `{s}`" for s in sorted(sigs)]
+            L += [f"- `{sig}`" for sig in sorted(sigs)]
             L.append("")
         if not by_reason:
             L += ["(none)", ""]
-    if m.enum_notes:                                                      # variants missing from the JSON index
-        L += ["## Enums with variants not emitted", ""] + [f"- {n}" for n in sorted(set(m.enum_notes))] + [""]
-    notes = ix.report_lines() if hasattr(ix, "report_lines") else []       # rustdoc front end only; empty = no section
+    if r["enum_notes"]:                                                  # variants missing from the JSON index
+        L += ["## Enums with variants not emitted", ""] + [f"- {n}" for n in r["enum_notes"]] + [""]
+    notes = []
+    for it in r["front_end_skipped"]:
+        if it["kind"] == "type":
+            notes.append(f"- type `{it['subject']}`: {it['why']}")
+        elif it["kind"] == "reexport":
+            notes.append(f"- `{it['crate']}` re-exports `{it['path']}`: {it['why']}")
+        else:
+            notes.append(f"- `{it['subject']}`: {it['why']}")
     if notes:
         L += ["## rustdoc front end: skipped items", "", "Never fatal: the rest of the bindings were generated without them.", ""] + notes + [""]
     return "\n".join(L)
@@ -2084,7 +2178,7 @@ def main():
     ap = CliArgs(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--azalea", default="bind/azalea-src", help="path to the azalea workspace (default: bind/azalea-src)")
     ap.add_argument("--rust-out", default="rust/luau", help="where gen_*.rs go (default: rust/luau)")
-    ap.add_argument("--luau-out", default="luau", help="where azalea.d.luau and GEN_REPORT.md go (default: luau)")
+    ap.add_argument("--luau-out", default="luau", help="where azalea.d.luau and GEN_REPORT.json/.md go (default: luau)")
     ap.add_argument("--rustdoc", required=True, help="directory of <crate>.json files (cargo rustdoc --output-format json)")
     ap.add_argument("--config", default=None, metavar="PATH",
                     help="TOML data tables (default: <project root>/bindgen.toml; when that file is missing the built-in empty tables apply; "
@@ -2152,7 +2246,9 @@ def main():
         ecs_rs.unlink()
     extras = scan_extras(rust_out)
     (luau_out / "azalea.d.luau").write_text(emit_dluau(gen, src_label, extras))
-    (luau_out / "GEN_REPORT.md").write_text(emit_report(gen, src_label, ix, extras))
+    report = report_model(gen, src_label, ix, extras)
+    (luau_out / "GEN_REPORT.json").write_text(emit_report_json(report))
+    (luau_out / "GEN_REPORT.md").write_text(render_report_md(report))
     print(
         f"generated {sum(len(c.wrappers) for c in gen.classes.values())} methods ({sum(len(c.skipped) for c in gen.classes.values())} skipped), "
         f"{len(gen.events)} events, "

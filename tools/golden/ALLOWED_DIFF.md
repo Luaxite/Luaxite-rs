@@ -4,13 +4,12 @@
 dropped in bindgen s3, real outputs are no longer committed). Generated output must stay byte-identical to it. A diff is only acceptable when a slice
 logs it here, with the reason, in the same step.
 
-Format, one line per file that may differ (matched by `sh tools/golden.sh compare` only under `GOLDEN_ALLOW=1`, i.e.
-for outputs made into another directory; the golden itself is never loosened):
+Files that may differ are listed in `tools/golden/allowed_diff.json` (`{"allowed": {"<set>/<logical name>": "<why it differs>, <slice>"}}`;
+matched by `sh tools/golden.sh compare` only under `GOLDEN_ALLOW=1`, i.e. for outputs made into another directory; the golden itself is never
+loosened). This file is the history for people; no script reads it.
 
-    - `<set>/<logical name>`: <why it differs>, <slice that introduced it>
-
-`<logical name>` is `rust/gen_client.rs`, `rust/gen_events.rs`, `rust/gen_types.rs`, `luau/azalea.d.luau` or
-`luau/GEN_REPORT.md`. Changing a golden on purpose (e.g. the fake crate was extended): `GOLDEN_FORCE=1 sh tools/golden.sh write fake`
+`<logical name>` is `rust/gen_client.rs`, `rust/gen_events.rs`, `rust/gen_types.rs`, `luau/azalea.d.luau`,
+`luau/GEN_REPORT.json` or `luau/GEN_REPORT.md`. Changing a golden on purpose (e.g. the fake crate was extended): `GOLDEN_FORCE=1 sh tools/golden.sh write fake`
 and add a line below naming the slice and why.
 
 ## Entries
@@ -18,6 +17,12 @@ and add a line below naming the slice and why.
 (none: the only golden set is `fake`, always compared strictly; the older per-front-end entries are history below)
 
 ## Golden changes (GOLDEN_FORCE)
+
+- `fake/luau/GEN_REPORT.json` (new golden file, JSON report): the generator now writes `GEN_REPORT.json`, the machine-readable report that
+  `tools/coverage.py` reads (it used to parse `GEN_REPORT.md` line by line); `GEN_REPORT.md` is rendered from the same data and is
+  byte-identical to before. The golden grew from 5 to 6 files (`fake.sha1` re-written once: `GOLDEN_FORCE=1 sh tools/golden.sh write fake`);
+  `gen_client.rs`, `gen_events.rs`, `gen_types.rs`, `azalea.d.luau` and `GEN_REPORT.md` kept their hashes. The "may differ" list that `golden.sh`
+  reads is now `tools/golden/allowed_diff.json` (this file is only the history).
 
 - `fake/luau/GEN_REPORT.md` (golden, bindgen s3): the generator reads rustdoc JSON only, so the golden is now the rdj output of `harness/fake`
   (the earlier tree-sitter one is history below). Exactly two lines of `GEN_REPORT.md` changed, both already listed here as the rdj-vs-source differences:

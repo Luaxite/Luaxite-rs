@@ -1,0 +1,4 @@
+{
+  "_doc": "Files that may differ from tools/golden/<set>.sha1 under GOLDEN_ALLOW=1 (outputs made into another directory). Key: `<set>/<logical name>` (e.g. fake/luau/GEN_REPORT.md), value: why it differs and which slice introduced it. The golden itself is never loosened. Empty = nothing may differ. Read by tools/golden.sh; the history of golden changes stays in ALLOWED_DIFF.md (text for people, never read by a script).",
+  "allowed": {}
+}

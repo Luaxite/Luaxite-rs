@@ -6,7 +6,7 @@
 #      against the committed fixture; also fails when the
 #      fixture is stale (harness/fake/azalea changed without re-running tools/make_rustdoc_json.sh)
 #   3b. the generator on harness/fake into a scratch dir equals the golden
-#   3e. coverage ledger (tools/coverage.py: selftest, then every API GEN_REPORT.md lists as not generated is classified in
+#   3e. coverage ledger (tools/coverage.py: selftest, then every API GEN_REPORT.json lists as not generated is classified in
 #       tools/coverage.toml; `--strict`, run by hand, is the finish line of the full-coverage chain: no `todo` left)
 #   4. nothing in tools/baseline_api.txt vanished from types/bindings.d.luau (when a build produced it)
 #   5. hand-written glue in harness/src/luau matches the real rust/luau (real_*.rs, cargo feature `real`: only declared in mod.rs, never in the harness)
@@ -47,7 +47,7 @@ python3 tools/bindgen_selftest.py || bad "tools/bindgen_selftest.py failed"
 
 echo "== coverage ledger (tools/coverage.py)"
 python3 tools/coverage.py --selftest || bad "tools/coverage.py --selftest failed"
-# The real report/d.luau only exist after a build against a bind/azalea-src checkout: GEN_REPORT=<OUT_DIR>/GEN_REPORT.md and types/bindings.d.luau.
+# The real report/d.luau only exist after a build against a bind/azalea-src checkout: GEN_REPORT=<OUT_DIR>/GEN_REPORT.json and types/bindings.d.luau.
 if [ -f "${GEN_REPORT:-/nonexistent}" ] && [ -f types/bindings.d.luau ]; then
     python3 tools/coverage.py || bad "coverage ledger: unclassified or stale rows (see above; fix tools/coverage.toml)"
 else

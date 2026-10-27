@@ -73,13 +73,13 @@ jobs:
             - run: cargo build
             - name: generated report and ledger
               run: |
-                  report=$(find target/debug/build -path '*/luaxite*/out/GEN_REPORT.md' -exec ls -t {} + | head -1)
-                  test -n "$report" || { echo "no GEN_REPORT.md under target/debug/build (did build.rs run?)"; exit 1; }
+                  report=$(find target/debug/build -path '*/luaxite*/out/GEN_REPORT.json' -exec ls -t {} + | head -1)
+                  test -n "$report" || { echo "no GEN_REPORT.json under target/debug/build (did build.rs run?)"; exit 1; }
                   echo "report: $report"
-                  mkdir -p gen && cp "$report" gen/GEN_REPORT.md
-                  grep -F 'Front end: rustdoc JSON' gen/GEN_REPORT.md
+                  mkdir -p gen && cp "$report" gen/GEN_REPORT.json
+                  python3 -c 'import json, sys; r = json.load(open(sys.argv[1])); assert r["front_end"].startswith("rustdoc JSON"), r["front_end"]; print(r["front_end"])' gen/GEN_REPORT.json
                   test -f types/bindings.d.luau
-                  GEN_REPORT=gen/GEN_REPORT.md python3 tools/coverage.py --strict
+                  GEN_REPORT=gen/GEN_REPORT.json python3 tools/coverage.py --strict
             - name: azalea API surface (tools/baseline_api.txt vs types/bindings.d.luau)
               run: python3 tools/api_surface.py
             - run: cargo run -q -- --help
@@ -110,7 +110,7 @@ jobs:
               with:
                   name: rdj-real-build
                   path: |
-                      gen/GEN_REPORT.md
+                      gen/GEN_REPORT.json
                       /tmp/azl-rdj-target/*.log
                   if-no-files-found: ignore
 

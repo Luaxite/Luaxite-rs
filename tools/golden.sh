@@ -4,20 +4,30 @@
 #   sh tools/golden.sh write   [SET [RUST_DIR LUAU_DIR]]   record the sha1 of the current outputs
 #   sh tools/golden.sh compare [SET [RUST_DIR LUAU_DIR]]   exit 1 if an output differs from its golden
 #
-# SET: fake    harness/fake -> harness/src/luau/gen_*.rs + harness/luau/{azalea.d.luau,GEN_REPORT.md}
+# SET: fake    harness/fake -> harness/src/luau/gen_*.rs + harness/luau/{azalea.d.luau,GEN_REPORT.json,GEN_REPORT.md}
 #      all     = fake (default; RUST_DIR/LUAU_DIR need a single SET: compare any other output dir)
 # Lists live in tools/golden/<SET>.sha1 (logical names rust/<file>, luau/<file>); header `# src:` = the label the
 # generator wrote ("fake @ <digest>").
 #
-# `write` refuses to replace a golden that would change unless GOLDEN_FORCE=1 (then log why in tools/golden/ALLOWED_DIFF.md).
+# `write` refuses to replace a golden that would change unless GOLDEN_FORCE=1 (then log why in tools/golden/ALLOWED_DIFF.md, the history for people).
 # `compare`: always strict.
-#   GOLDEN_ALLOW=1: a file listed in ALLOWED_DIFF.md as - `<SET>/<logical name>` may differ (ALLOWED_DIFF.md has no such entry now).
+#   GOLDEN_ALLOW=1: a file listed under "allowed" in tools/golden/allowed_diff.json as `<SET>/<logical name>` may differ (none is listed now).
 # Env: GOLDEN_FORCE, GOLDEN_ALLOW (above).
 set -u
 cd "$(dirname "$0")/.." || exit 2
 GOLD=tools/golden
-ALLOWED=$GOLD/ALLOWED_DIFF.md
-FILES="rust/gen_client.rs rust/gen_events.rs rust/gen_types.rs luau/azalea.d.luau luau/GEN_REPORT.md"
+ALLOWED=$GOLD/allowed_diff.json
+LOG=$GOLD/ALLOWED_DIFF.md       # history of golden changes: text for people, never read here
+
+# is_allowed NAME FILE -> 0 when allowed_diff.json lists "NAME/FILE" under "allowed"
+is_allowed() {
+    python3 - "$ALLOWED" "$1/$2" <<'PY' 2>/dev/null
+import json, sys
+path, key = sys.argv[1:3]
+sys.exit(0 if key in json.load(open(path)).get("allowed", {}) else 1)
+PY
+}
+FILES="rust/gen_client.rs rust/gen_events.rs rust/gen_types.rs luau/azalea.d.luau luau/GEN_REPORT.json luau/GEN_REPORT.md"
 
 sha1() {
     if command -v sha1sum >/dev/null 2>&1; then sha1sum "$1" | cut -d' ' -f1; else shasum -a 1 "$1" | cut -d' ' -f1; fi
@@ -56,13 +66,13 @@ run_set() { # MODE NAME [RUST_DIR LUAU_DIR]
         mkdir -p "$GOLD"
         tmp=$(mktemp) || return 2
         {
-            echo "# golden sha1 of the generated files, set '$name'. Written by tools/golden.sh (see ALLOWED_DIFF.md)."
+            echo "# golden sha1 of the generated files, set '$name'. Written by tools/golden.sh (see allowed_diff.json / ALLOWED_DIFF.md)."
             echo "# src: $have"
             for f in $files; do echo "$(sha1 "$(phys "$rdir" "$ldir" "$f")")  $f"; done
         } > "$tmp"
         if [ -f "$gfile" ] && ! cmp -s "$tmp" "$gfile"; then
             if [ "${GOLDEN_FORCE:-0}" != 1 ]; then
-                echo "golden $name: REFUSED, $gfile would change (GOLDEN_FORCE=1 to overwrite; log the reason in $ALLOWED)" >&2
+                echo "golden $name: REFUSED, $gfile would change (GOLDEN_FORCE=1 to overwrite; log the reason in $LOG)" >&2
                 rm -f "$tmp"; return 1
             fi
         fi
@@ -80,12 +90,12 @@ run_set() { # MODE NAME [RUST_DIR LUAU_DIR]
         n=$((n + 1))
         p=$(phys "$rdir" "$ldir" "$f")
         if [ -z "$p" ] || [ ! -f "$p" ]; then
-            # a file the front end does not write at all may be listed in ALLOWED_DIFF.md too (GOLDEN_ALLOW=1 only)
-            if [ "${GOLDEN_ALLOW:-0}" = 1 ] && grep -q "^- \`$name/$f\`" "$ALLOWED" 2>/dev/null; then allowed="$allowed $f(missing)"; continue; fi
+            # a file the front end does not write at all may be listed in allowed_diff.json too (GOLDEN_ALLOW=1 only)
+            if [ "${GOLDEN_ALLOW:-0}" = 1 ] && is_allowed "$name" "$f"; then allowed="$allowed $f(missing)"; continue; fi
             bad="$bad $f(missing)"; miss=1; continue
         fi
         [ "$(sha1 "$p")" = "$h" ] && continue
-        if [ "${GOLDEN_ALLOW:-0}" = 1 ] && grep -q "^- \`$name/$f\`" "$ALLOWED" 2>/dev/null; then
+        if [ "${GOLDEN_ALLOW:-0}" = 1 ] && is_allowed "$name" "$f"; then
             allowed="$allowed $f"
         else
             bad="$bad $f"
@@ -96,7 +106,7 @@ run_set() { # MODE NAME [RUST_DIR LUAU_DIR]
         echo "golden $name: OK ($n files${allowed:+; allowed to differ:$allowed})"
         return 0
     fi
-    echo "golden $name: FAIL, differs from $gfile:$bad (generator output changed; if intended: GOLDEN_FORCE=1 sh tools/golden.sh write $name, and log it in $ALLOWED)"
+    echo "golden $name: FAIL, differs from $gfile:$bad (generator output changed; if intended: GOLDEN_FORCE=1 sh tools/golden.sh write $name, and log it in $LOG)"
     return 1
 }
 

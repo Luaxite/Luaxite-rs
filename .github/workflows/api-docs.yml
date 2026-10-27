@@ -5,7 +5,8 @@ name: api-docs
 #   api-latest     rolling: replaced on every push to the default branch that touches the bindings (and on a manual run)
 #   api-v0.1.0     pushed with the binary tag v0.1.0: the API list of that version, kept
 #
-# Each release holds API_list.md (tools/api_list.py: one line per declaration) and bindings.d.luau (the definitions for luau-lsp, `--defs=`).
+# Each release holds API.json (tools/api_list.py: the API as data, what tools read), API_list.md (the same list as text for people, rendered from
+# it) and bindings.d.luau (the definitions for luau-lsp, `--defs=`).
 # They are prereleases on purpose: install.sh / install.ps1 download `releases/latest`, which must stay the newest binary release.
 # The tags are `api-*`, so release.yml (`v*`) does not fire for them.
 
@@ -66,13 +67,18 @@ jobs:
                   python3 tools/bindgen.py --root . --out "$RUNNER_TEMP/gen" > "$RUNNER_TEMP/bindgen.log"
                   grep '^cargo:warning=' "$RUNNER_TEMP/bindgen.log" || true
                   mkdir -p dist
-                  cp types/API_list.md types/bindings.d.luau dist/
+                  cp types/API.json types/API_list.md types/bindings.d.luau dist/
             - name: the list is a real one
               run: |
-                  head -n 1 dist/API_list.md | grep -qx '# Luaxite Luau API'
-                  grep -qx '## Bot' dist/API_list.md
-                  grep -qF 'declare bot: Bot' dist/API_list.md
-                  echo "$(grep -c '^- `declare function' dist/API_list.md) functions"
+                  python3 - dist/API.json <<'PY'
+                  import json, sys
+                  api = json.load(open(sys.argv[1]))
+                  assert api["schema"] == 1, api["schema"]
+                  bot = next((c for c in api["classes"] if c["name"] == "Bot"), None)
+                  assert bot and bot["members"], "no Bot class (or it has no members)"
+                  assert {"name": "bot", "type": "Bot"} in api["globals"], "no `declare bot: Bot`"
+                  print(sum(len(c["members"]) for c in api["classes"]), "functions")
+                  PY
             - name: publish
               env:
                   # the input goes through an environment variable, never straight into the script text (${{ }} is pasted in before the shell runs: script injection)
@@ -87,15 +93,15 @@ jobs:
                   fi
                   printf '%s' "$TAG" | grep -Eqx '[A-Za-z0-9._-]+' || { echo "tag '$TAG' has characters outside A-Za-z0-9._-"; exit 1; }
                   case "$TAG" in api-*) ;; *) echo "tag '$TAG' must start with api- (v* is the binary release)"; exit 1;; esac
-                  notes="Luau API of ${GITHUB_SHA::10} (\`tools/api_list.py\`). \`API_list.md\` is the readable list; \`bindings.d.luau\` is the luau-lsp definitions file. Not a binary release: binaries are the \`v*\` releases."
+                  notes="Luau API of ${GITHUB_SHA::10} (\`tools/api_list.py\`). \`API.json\` is the list as data; \`API_list.md\` is the same list as text; \`bindings.d.luau\` is the luau-lsp definitions file. Not a binary release: binaries are the \`v*\` releases."
                   if [ "$TAG" = api-latest ]; then
                       # rolling: the tag moves to this commit, so the old release goes first
                       gh release delete "$TAG" --cleanup-tag --yes --repo "$GITHUB_REPOSITORY" 2>/dev/null || true
                   fi
                   if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
-                      gh release upload "$TAG" dist/API_list.md dist/bindings.d.luau --clobber --repo "$GITHUB_REPOSITORY"
+                      gh release upload "$TAG" dist/API.json dist/API_list.md dist/bindings.d.luau --clobber --repo "$GITHUB_REPOSITORY"
                   else
-                      gh release create "$TAG" dist/API_list.md dist/bindings.d.luau --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+                      gh release create "$TAG" dist/API.json dist/API_list.md dist/bindings.d.luau --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
                           --title "Luau API ($TAG)" --notes "$notes" --prerelease --latest=false
                   fi
                   echo "https://github.com/$GITHUB_REPOSITORY/releases/tag/$TAG" >> "$GITHUB_STEP_SUMMARY"

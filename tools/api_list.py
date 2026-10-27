@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""api_list.py - the Luau API list (API_list.md) from a generated .d.luau (stdlib only; called by tools/bindgen.py).
+"""api_list.py - the Luau API list (API.json, plus API_list.md rendered from it) from a generated .d.luau (stdlib only; called by tools/bindgen.py).
 
-    python3 tools/api_list.py [--dluau types/bindings.d.luau] [--config bindgen.toml] [--out API_list.md]
+    python3 tools/api_list.py [--dluau types/bindings.d.luau] [--config bindgen.toml] [--out API_list.md] [--json-out API.json]
 
-Reads the declarations tools/luaxite_gen.py wrote (`type ..`, `declare extern type X with .. end`, `declare name: X`) and prints one bullet per
-declaration, no doc comments:
+Reads the declarations tools/luaxite_gen.py wrote (`type ..`, `declare extern type X with .. end`, `declare name: X`) and lists one entry per
+declaration, no doc comments. API.json holds it as data (`types`, `globals`, `classes[].members[]`); API_list.md is only the text view of it:
 
     # Luaxite Luau API
     ## Types       every `type ..` line (a multi-line union is joined onto one line)
@@ -18,6 +18,7 @@ Same input, same bytes. Exit status: 0 = written, 1 = unreadable input, 2 = usag
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import sys
 from pathlib import Path
@@ -192,58 +193,82 @@ def bullets(rows: list[str]) -> list[str]:
     return [f"- {code(r)}" for r in rows] + [""]
 
 
-def render(model: Model, priority: list[str] | None = None) -> str:
+API_SCHEMA = 1
+
+
+def to_dict(model: Model, priority: list[str] | None = None) -> dict:
+    """The API as plain data (the API.json that tools and CI read; API_list.md is rendered from it). Classes come in list order: library
+    tables first (by global name), then the `priority` classes, then the rest in .d.luau order. Members are sorted by name (stable)."""
     lib_global = {}                                         # library class -> the global that holds it
     for g, c in sorted(model.globals.items()):
         cls = model.classes.get(c)
         if cls is not None and cls.is_library:
             lib_global.setdefault(c, g)
 
-    out = [TITLE, "", INTRO, ""]
-    if model.types:
-        out += ["## Types", ""] + bullets(model.types)
-    if model.globals:
-        out += ["## Globals", ""] + bullets([f"declare {g}: {c}" for g, c in sorted(model.globals.items())])
-
-    def section(cls: Class, title: str, prefix: str) -> list[str]:
-        rows = []
+    def entry(cls: Class, prefix: str, library: bool) -> dict:
+        members = []
         for mem in sorted(cls.members, key=lambda m: m.name):      # stable: overloads keep their order
             sep = ":" if mem.method else "."
-            rows.append(f"declare function {prefix}{sep}{mem.name}({mem.params}): {mem.ret}")
-        return [f"## {title}", ""] + bullets(rows) if rows else []
+            members.append(dict(name=mem.name, method=mem.method, params=mem.params, ret=mem.ret,
+                                decl=f"declare function {prefix}{sep}{mem.name}({mem.params}): {mem.ret}"))
+        return dict(name=cls.name, prefix=prefix, library=library, members=members)
 
-    libs = sorted((g, c) for c, g in lib_global.items())
-    for g, c in libs:
-        out += section(model.classes[c], f"`{g}`", g)
+    classes = [entry(model.classes[c], g, True) for g, c in sorted((g, c) for c, g in lib_global.items())]
     first = [c for c in (priority or []) if c in model.classes]
     rest = [c for c in model.classes if c not in first]
-    for name in first + rest:
-        cls = model.classes[name]
-        if name in lib_global:
-            continue
-        prefix = name
-        out += section(cls, name, prefix)
+    classes += [entry(model.classes[n], n, False) for n in first + rest if n not in lib_global]
+    return dict(
+        schema=API_SCHEMA,
+        types=list(model.types),
+        globals=[dict(name=g, type=c) for g, c in sorted(model.globals.items())],
+        classes=classes,
+    )
+
+
+def render(api: dict) -> str:
+    """API_list.md: a human-readable view of `to_dict`'s data. Nothing reads it back; read API.json instead."""
+    out = [TITLE, "", INTRO, ""]
+    if api["types"]:
+        out += ["## Types", ""] + bullets(api["types"])
+    if api["globals"]:
+        out += ["## Globals", ""] + bullets([f"declare {g['name']}: {g['type']}" for g in api["globals"]])
+    for cls in api["classes"]:
+        rows = [m["decl"] for m in cls["members"]]
+        if rows:
+            out += [f"## `{cls['prefix']}`" if cls["library"] else f"## {cls['name']}", ""] + bullets(rows)
     while out and out[-1] == "":
         out.pop()
     return "\n".join(out) + "\n"
 
 
+def build_dict(dluau: str, config: Path | None = None) -> dict:
+    return to_dict(parse(dluau), class_priority(config))
+
+
 def build(dluau: str, config: Path | None = None) -> str:
-    model = parse(dluau)
-    return render(model, class_priority(config))
+    return render(build_dict(dluau, config))
+
+
+def dumps(api: dict) -> str:
+    """API.json text. Same input, same bytes."""
+    return json.dumps(api, indent=2, ensure_ascii=False) + "\n"
 
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--dluau", default=str(ROOT / "types" / "bindings.d.luau"))
     ap.add_argument("--config", default=str(ROOT / "bindgen.toml"), help="bindgen.toml: its [classes.*] decide which classes come first")
-    ap.add_argument("--out", default="-", help="file to write (default: stdout)")
+    ap.add_argument("--out", default="-", help="API_list.md (the text view) to write (default: stdout)")
+    ap.add_argument("--json-out", default=None, help="API.json (the machine-readable list) to write")
     a = ap.parse_args(argv)
     src = Path(a.dluau)
     if not src.is_file():
         print(f"error: {src} not found (it is written by tools/bindgen.py)", file=sys.stderr)
         return 1
-    text = build(src.read_text(encoding="utf-8"), Path(a.config))
+    api = build_dict(src.read_text(encoding="utf-8"), Path(a.config))
+    text = render(api)
+    if a.json_out:
+        Path(a.json_out).write_text(dumps(api), encoding="utf-8")
     if a.out == "-":
         sys.stdout.write(text)
     else:

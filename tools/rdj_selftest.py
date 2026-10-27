@@ -1090,9 +1090,9 @@ def test_generator_cli_modes():
     assert p.returncode == 0 and "Traceback" not in p.stderr, p.stderr
     for f, committed in (("rust/gen_client.rs", "src/luau/gen_client.rs"), ("rust/gen_events.rs", "src/luau/gen_events.rs"),
                          ("rust/gen_types.rs", "src/luau/gen_types.rs"), ("luau/azalea.d.luau", "luau/azalea.d.luau"),
-                         ("luau/GEN_REPORT.md", "luau/GEN_REPORT.md")):
+                         ("luau/GEN_REPORT.json", "luau/GEN_REPORT.json"), ("luau/GEN_REPORT.md", "luau/GEN_REPORT.md")):
         assert (rd / f).read_bytes() == (ROOT / "harness" / committed).read_bytes(), f
-    assert (rd / "luau/GEN_REPORT.md").read_text().splitlines()[3].startswith("Front end: rustdoc JSON (rustc ")
+    assert json.loads((rd / "luau/GEN_REPORT.json").read_text())["front_end"].startswith("rustdoc JSON (rustc ")
     p, _ = run("none")
     assert p.returncode != 0 and "--rustdoc" in p.stderr and "Traceback" not in p.stderr
     p, _ = run("bad", "--rustdoc", str(ROOT / "tools"))
@@ -1105,15 +1105,15 @@ WEIRD = ROOT / "tools" / "testdata" / "weird"
 
 
 def run_generator(azalea_root, rdj_dir, out_dir, extra=()):
-    """Run the generator in a subprocess: (CompletedProcess, GEN_REPORT text or None). `extra` = more CLI args."""
+    """Run the generator in a subprocess: (CompletedProcess, the parsed GEN_REPORT.json or None). `extra` = more CLI args."""
     import subprocess
     out = Path(out_dir)
     (out / "rust").mkdir(parents=True, exist_ok=True)
     p = subprocess.run([sys.executable, str(ROOT / "tools" / "luaxite_gen.py"), "--azalea", str(azalea_root),
                         "--rustdoc", str(rdj_dir), "--rust-out", str(out / "rust"), "--luau-out", str(out / "luau"), *extra],
                        capture_output=True, text=True)
-    rep = out / "luau" / "GEN_REPORT.md"
-    return p, rep.read_text() if rep.exists() else None
+    rep = out / "luau" / "GEN_REPORT.json"
+    return p, json.loads(rep.read_text()) if rep.exists() else None
 
 
 def weird_copy(mutate=None):
@@ -1177,8 +1177,8 @@ def test_weird_generator_finishes():
     root, rdir = weird_copy()
     p, rep = run_generator(root, rdir, Path(root) / "out")
     assert p.returncode == 0 and "Traceback" not in p.stderr and p.stdout.startswith("generated"), (p.stdout, p.stderr)
-    assert "rustdoc front end: skipped items" not in rep                      # nothing unreadable in a well-formed JSON
-    assert "## Skipped methods" in rep
+    assert rep["front_end_skipped"] == []                                     # nothing unreadable in a well-formed JSON
+    assert rep["classes"] and all("skipped" in c for c in rep["classes"])
 
 
 @test
@@ -1191,15 +1191,15 @@ def test_skipped_items_reported():
     root, rdir = weird_copy(mutate)
     p, rep = run_generator(root, rdir, Path(root) / "out")
     assert p.returncode == 0 and "Traceback" not in p.stderr and p.stdout.startswith("generated"), (p.stdout, p.stderr)
-    sec = rep[rep.index("## rustdoc front end: skipped items"):]
-    lines = [ln for ln in sec.splitlines() if ln.startswith("- ")]
-    assert len(lines) == 3, sec
-    by = {ln.split("`")[1]: ln for ln in lines}
+    items = rep["front_end_skipped"]
+    assert len(items) == 3, items
+    by = {it["subject"]: it for it in items}
     assert sorted(by) == ["azalea::Client::nested", "azalea::Kind", "azalea::inner::DeepAlias"] or \
         any(k.startswith("azalea#") or k.endswith("DeepAlias") for k in by), sorted(by)
-    assert all(": " in ln.split("`", 2)[2] for ln in lines)                                        # item path, then a reason
-    assert "`nested`" not in rep.split("## rustdoc front end")[0]                                  # the rest is generated without it
-    assert "`waits`" in rep
+    assert all(it["why"] for it in items)                                                          # item path, then a reason
+    generated = {n for c in rep["classes"] for n in c["generated"]}
+    assert "nested" not in generated and not any(sk["name"] == "nested" for c in rep["classes"] for sk in c["skipped"])   # the rest is generated without it
+    assert "waits" in generated
 
 
 @test
@@ -1222,7 +1222,8 @@ def test_dropped_variants_reported_per_variant():
     root, rdir = weird_copy(lambda raw: raw["index"].pop("22"))                                 # weird::Kind::Pair
     p, rep = run_generator(root, rdir, Path(root) / "out")
     assert p.returncode == 0 and "Traceback" not in p.stderr, p.stderr
-    assert "- `azalea::Kind::variant #22`: variant dropped: not in the JSON index" in rep, rep
+    assert any(it["subject"] == "azalea::Kind::variant #22" and it["why"].startswith("variant dropped: not in the JSON index")
+               for it in rep["front_end_skipped"]), rep["front_end_skipped"]
 
 
 @test
@@ -1278,8 +1279,8 @@ def test_dropped_variant_warning_on_generator_stderr():
     assert p.returncode == 0 and "Traceback" not in p.stderr, p.stderr
     warns = [ln for ln in p.stderr.splitlines() if ln.startswith("warning: enum `Direction`")]
     assert len(warns) == 1 and "5 of 6 variants emitted" in warns[0], p.stderr
-    assert "## Enums with variants not emitted" in rep and "- `Direction`: 5 of 6 variants emitted" in rep, rep
-    assert "variant dropped: not in the JSON index" in rep, rep
+    assert any(n.startswith("`Direction`: 5 of 6 variants emitted") for n in rep["enum_notes"]), rep["enum_notes"]
+    assert any("variant dropped: not in the JSON index" in it["why"] for it in rep["front_end_skipped"]), rep["front_end_skipped"]
 
 
 @test
@@ -1290,10 +1291,10 @@ def test_rdj_hidden_cli_flag_and_report():
         item_named(raw, "nested", "function")["attrs"] = [{"other": "#[doc(hidden)]"}]
     root, rdir = weird_copy(hide)
     p, keep = run_generator(root, rdir, Path(root) / "o_keep")
-    assert p.returncode == 0 and "doc(hidden)" not in keep, p.stderr
+    assert p.returncode == 0 and not any("doc(hidden)" in it["why"] for it in keep["front_end_skipped"]), p.stderr
     p, skip = run_generator(root, rdir, Path(root) / "o_skip", extra=("--rdj-hidden", "skip"))
     assert p.returncode == 0 and "Traceback" not in p.stderr, p.stderr
-    assert "- `Client::nested`: #[doc(hidden)] fn skipped (--rdj-hidden skip)" in skip[skip.index("## rustdoc front end"):], skip
+    assert dict(kind="hidden_fn", subject="Client::nested", why="#[doc(hidden)] fn skipped (--rdj-hidden skip)") in skip["front_end_skipped"], skip["front_end_skipped"]
     p, _ = run_generator(root, rdir, Path(root) / "o_bad", extra=("--rdj-hidden", "maybe"))
     assert p.returncode != 0 and "--rdj-hidden" in p.stderr, p.stderr
     ix = rdj_index.RdjIndex(root, rdir, hidden="skip")
@@ -1458,7 +1459,7 @@ def test_mutation_never_crashes():
         if p.returncode == 0:
             assert p.stdout.startswith("generated") and rep, f"mutation #{i}: {p.stdout!r}"
             clean += 1
-            skipped += "rustdoc front end: skipped items" in rep
+            skipped += bool(rep["front_end_skipped"])
         else:       # the one thing a mutation may legitimately cost: a class the bindings cannot do without (its path, its enum Event)
             assert len(err) == 1 and err[0].startswith("error: "), f"mutation #{i}: expected a one-line error, got:\n{p.stderr[-600:]}"
     assert clean >= 20, f"only {clean} of 24 mutated JSONs generated bindings"
@@ -1564,7 +1565,7 @@ def test_config_flag_and_builtin_defaults():
     p0, o0 = run()
     p1, o1 = run("--config", str(ROOT / "bindgen.toml"))
     assert p0.returncode == 0 and p1.returncode == 0, p0.stderr + p1.stderr
-    for f in ("rust/gen_client.rs", "rust/gen_types.rs", "rust/gen_events.rs", "luau/azalea.d.luau", "luau/GEN_REPORT.md"):
+    for f in ("rust/gen_client.rs", "rust/gen_types.rs", "rust/gen_events.rs", "luau/azalea.d.luau", "luau/GEN_REPORT.json", "luau/GEN_REPORT.md"):
         assert (o0 / f).read_bytes() == (o1 / f).read_bytes(), f
     (tmp / "bad.toml").write_text("deny_methods = [\n")
     (tmp / "keys.toml").write_text((ROOT / "bindgen.toml").read_text().replace("[renames]", "[renamez]"))
@@ -1669,8 +1670,9 @@ def test_generator_cli_on_toy_crate():
     assert 'lua.globals().set("toy", t)' in rs and "Ok(toy::double(x))" in rs and "register_toy(lua)?;" in rs
     luau = (out / "lu" / "azalea.d.luau").read_text()
     assert "declare extern type Counter with" in luau and "double: (x: number) -> number," in luau and "declare bot" not in luau
-    rep = (out / "lu" / "GEN_REPORT.md").read_text()
-    assert "azalea -> Luau" not in rep and "async free fn" in rep and "type `Pair`: not bound as a class (generic type)" in rep
+    rep = json.loads((out / "lu" / "GEN_REPORT.json").read_text())
+    assert not rep["events"]["enabled"] and any(sk["reason"] == "async free fn" for c in rep["classes"] for sk in c["skipped"]), rep["classes"]
+    assert any(it["kind"] == "type" and it["subject"] == "Pair" and it["why"] == "not bound as a class (generic type)" for it in rep["front_end_skipped"])
     p2 = subprocess.run(p.args, capture_output=True, text=True)         # a rerun on the same dir is stable
     assert p2.returncode == 0 and (out / "rs" / "gen_client.rs").read_text() == rs
 

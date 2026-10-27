@@ -331,17 +331,24 @@ def test_bindgen_on_fake_crate():
         full = [l for l in (out / f).read_text().splitlines() if not l.startswith("#![")]
         assert inc == full and not any(l.startswith("#![") for l in inc) and len(full) < len((out / f).read_text().splitlines()), f
     assert not (out / "azalea.d.luau").exists() and (out / "GEN_REPORT.md").is_file()
+    report = json.loads((out / "GEN_REPORT.json").read_text())                  # the machine-readable report sits beside the text one
+    assert report["schema"] == 1 and report["classes"][0]["luau"] == "Bot", report["classes"][0]
     assert (r / "types/bindings.d.luau").read_text() == (out / "bindings.d.luau").read_text()      # copied into R/types
     # the API list: made from that .d.luau (tools/api_list.py), in O and in R/types next to it
     import api_list
     want = api_list.build((out / "bindings.d.luau").read_text(), r / "bindgen.toml")
     assert (out / "API_list.md").read_text() == want and (r / "types/API_list.md").read_text() == want
     assert want.startswith("# Luaxite Luau API\n") and "- `declare function Bot:chat(content: string): ()`" in want and "declare bot: Bot" in want
+    api = api_list.build_dict((out / "bindings.d.luau").read_text(), r / "bindgen.toml")      # the same list as data: what CI and tools read
+    assert (out / "API.json").read_text() == api_list.dumps(api) and (r / "types/API.json").read_text() == api_list.dumps(api)
+    bot = next(c for c in api["classes"] if c["name"] == "Bot")
+    assert any(m["decl"] == "declare function Bot:chat(content: string): ()" for m in bot["members"]) and {"name": "bot", "type": "Bot"} in api["globals"]
     # second run: R/types/bindings.d.luau and API_list.md are not rewritten (a rewrite would re-trigger cargo's rerun-if-changed)
     st = (r / "types/bindings.d.luau").stat().st_mtime_ns
     st2 = (r / "types/API_list.md").stat().st_mtime_ns
+    st3 = (r / "types/API.json").stat().st_mtime_ns
     assert run_bindgen(r, out).returncode == 0 and (r / "types/bindings.d.luau").stat().st_mtime_ns == st
-    assert (r / "types/API_list.md").stat().st_mtime_ns == st2
+    assert (r / "types/API_list.md").stat().st_mtime_ns == st2 and (r / "types/API.json").stat().st_mtime_ns == st3
 
 
 @test
@@ -429,7 +436,9 @@ def test_bindgen_on_toy_crate_without_config():
     assert sorted(f.name for f in out.glob("gen_*.rs")) == ["gen_client.rs", "gen_types.rs"]
     rs = (out / "gen_client.rs").read_text()
     assert "pub struct LuaCounter" in rs and "Ok(toy::double(x))" in rs and "azalea::" not in rs
-    assert (out / "inc" / "gen_client.rs").is_file() and "async free fn" in (out / "GEN_REPORT.md").read_text()
+    assert (out / "inc" / "gen_client.rs").is_file()
+    skipped = [sk for c in json.loads((out / "GEN_REPORT.json").read_text())["classes"] for sk in c["skipped"]]
+    assert any("async free fn" in sk["reason"] for sk in skipped), skipped
     assert "declare extern type Counter with" in (tmp / "types" / "bindings.d.luau").read_text()
 
 

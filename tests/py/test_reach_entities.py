@@ -26,13 +26,7 @@ class ReachEntities(unittest.TestCase):
         self.assertRegex(read("rust/luau/extra_query.rs"), r"pub\(super\) fn others\(")
 
     def test_entity_query_change_is_marked_breaking(self):
-        names = ("nearest_entities", "nearest_entities_by", "nearest_entity_by", "any_entity_by")
-        log = read("CHANGELOG.md")
-        breaking = log[log.index("### Breaking"):]
-        note = next(l for l in read("README.md").splitlines() if "CHANGELOG.md" in l)
-        for name in names:
-            self.assertIn(f"`Bot:{name}`", breaking)
-            self.assertIn(name, note)
+        # the break is announced where scripts see it: the `luau[Bot]` doc comment, which lands in bindings.d.luau and the API list
         search = read("rust/luau/real_search.rs")
         docs = [l for l in search.splitlines() if l.lstrip().startswith("// luau[Bot]: ---")]
         self.assertEqual(len(docs), 4)

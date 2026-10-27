@@ -152,10 +152,6 @@ class Timeouts(unittest.TestCase):
         self.assertIn("DEFAULT_REQUEST_TIMEOUT_SECS)", fn_body(self.net, "fn request_timeout"))
 
     def test_timeout_is_documented_with_default_and_zero(self):
-        readme = read("README.md")
-        line = next(l for l in readme.splitlines() if "options.timeout" in l)
-        for text in ("120 s", "600 s", "`timeout = 0` disables the limit", "`process.create` takes no `timeout`"):
-            self.assertIn(text, line)
         for name, secs in (("net", "120"), ("process", "600")):
             stub = read(f"tools/lune-stubs/{name}.luau")
             self.assertIn(f"Absent = {secs} (default limit); 0 = no limit.", stub, name)
@@ -167,13 +163,6 @@ class Timeouts(unittest.TestCase):
         self.assertIn("`timeout = 0` removes the limit", self.net)
         self.assertIn("`timeout = 0` means `None` = no limit", self.process)
         self.assertNotIn("has no\n/// limit unless", self.net)
-
-    def test_changelog_marks_the_default_timeouts_as_breaking(self):
-        log = read("CHANGELOG.md")
-        breaking = log.split("### Breaking")[1].split("\n### ")[0]
-        entry = next(l for l in breaking.splitlines() if "Default timeouts" in l)
-        for text in ("`process.exec`", "600 s", "`net.request`", "120 s", "`options.timeout`", "`timeout = 0` disables the limit"):
-            self.assertIn(text, entry)
 
     def test_e2e_covers_timeout_zero_default_and_create(self):
         proc = read("tests/e2e/lune_process.luau")

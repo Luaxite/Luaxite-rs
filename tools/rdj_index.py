@@ -922,19 +922,32 @@ class RdjIndex:
         `Rdj.not_found`); filled lazily by the path walk, so read it after the run."""
         return self.paths.unresolved
 
-    def report_lines(self) -> list:
-        """Lines of GEN_REPORT's \"rustdoc front end: skipped items\" section (empty = no section): items the JSON reader could not
-        handle (never fatal) and `use` targets it could not follow. Deduplicated, sorted."""
+    def report_items(self) -> list:
+        """The items of GEN_REPORT's "rustdoc front end: skipped items" section as data (empty = no section): items the JSON reader could
+        not handle (never fatal) and `use` targets it could not follow. Deduplicated, sorted. Each is a dict with a `kind`
+        (item | hidden_fn | type | reexport), the `subject` it is about and the `why`."""
         self.paths.public_paths()                      # the walk fills `unresolved`; run it so the section is complete
-        out = [f"- `{p}`: {why}" for p, why in sorted(set(self.skipped_items))]
-        out += [f"- `{t}::{n}`: #[doc(hidden)] fn skipped (--rdj-hidden skip)"           # kept ones are bound as usual: nothing lost
+        out = [dict(kind="item", subject=p, why=why) for p, why in sorted(set(self.skipped_items))]
+        out += [dict(kind="hidden_fn", subject=f"{t}::{n}", why="#[doc(hidden)] fn skipped (--rdj-hidden skip)")      # kept ones are bound as usual: nothing lost
                 for t, n, how in sorted({(t, str(n), h) for t, n, h in self.hidden_fns}) if how == "skipped"]
-        out += [f"- type `{n}`: not bound as a class ({why})" for n, why in sorted(set(self.discover_skipped))]     # generic mode only
+        out += [dict(kind="type", subject=n, why=f"not bound as a class ({why})") for n, why in sorted(set(self.discover_skipped))]     # generic mode only
         nf = self.rdj.not_found if self.rdj else set()
-        out += [f"- `{crate}` re-exports `{path}`: "
-                + ("not found in its loaded JSON" if (crate, path) in nf else "its crate has no loaded JSON")
-                + " (items behind it are not followed)"
+        out += [dict(kind="reexport", subject=f"{crate}::{path}", crate=crate, path=path,
+                     why=("not found in its loaded JSON" if (crate, path) in nf else "its crate has no loaded JSON")
+                     + " (items behind it are not followed)")
                 for crate, path in sorted(set(self.unresolved))]
+        return out
+
+    def report_lines(self) -> list:
+        """`report_items` as the bullet lines of GEN_REPORT.md (human view; nothing parses them)."""
+        out = []
+        for it in self.report_items():
+            if it["kind"] == "type":
+                out.append(f"- type `{it['subject']}`: {it['why']}")
+            elif it["kind"] == "reexport":
+                out.append(f"- `{it['crate']}` re-exports `{it['path']}`: {it['why']}")
+            else:
+                out.append(f"- `{it['subject']}`: {it['why']}")
         return out
 
     def _safe(self, what, default, fn, *a):

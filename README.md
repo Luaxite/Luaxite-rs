@@ -20,7 +20,7 @@ Release zips: Linux (`x86_64`, `aarch64`; static musl), Termux (`aarch64`, `x86_
 
 ## Luau API
 
-The list of everything scripts can call, generated from the bindings: the [`api-latest` release](https://github.com/Luaxite/Luaxite-rs/releases/tag/api-latest) (take `API_list.md`; run the `api-docs` workflow once if the page is missing, or run `cargo build` and read `types/API_list.md`; each binary release `vX` also has an `api-vX` one). `bindings.d.luau` in the same release is the definitions file for luau-lsp.
+The list of everything scripts can call, generated from the bindings: the [`api-latest` release](https://github.com/Luaxite/Luaxite-rs/releases/tag/api-latest) (take `API_list.md` to read it, `API.json` to process it in a script; run the `api-docs` workflow once if the page is missing, or run `cargo build` and read `types/API_list.md` / `types/API.json`; each binary release `vX` also has an `api-vX` one). `bindings.d.luau` in the same release is the definitions file for luau-lsp.
 
 ## Notes
 
