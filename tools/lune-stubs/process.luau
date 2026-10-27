@@ -1,0 +1,15 @@
+-- luau-lsp stub (see .luaurc): the luaxite binary provides @lune/process
+--
+-- Behavior notes (not typed here; the binary is the source of truth):
+--   process.exec(program, args?, options?)
+--     options.timeout: number?   seconds for output collection plus the exit wait. Absent = 600 (default limit); 0 = no limit.
+--                                Negative or NaN raises "process.exec: options.timeout must be a positive number of seconds".
+--                                On expiry the child (and, on Unix, its whole process group) is killed and the call
+--                                errors "process.exec: timed out after Ns".
+--     stdout and stderr are each capped at 64 MiB; going over errors "process.exec: stdout exceeds 64 MiB" (or stderr)
+--     and kills the child.
+--   process.create(program, args?, options?)
+--     rejects options.timeout (0 included). child.stdout:readToEnd() / child.stderr:readToEnd() are capped at 64 MiB.
+--     child:kill() and the exit-time cleanup kill the whole process group on Unix (taskkill /T on Windows),
+--     so grandchildren of a `shell = true` command do not survive.
+return nil :: any

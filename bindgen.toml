@@ -1,0 +1,172 @@
+# bindgen.toml - the data tables of tools/luaxite_gen.py (read with stdlib tomllib; `--config PATH` picks another file).
+# Edit here, not in the generator. A wrong key/type stops the generator with `error: bindgen.toml: key `..`: ..`.
+# Absent file = built-in empty tables. Stay in Python (not expressible here, they hold nulls): SKIP_DIRS, BUILTIN, keyword sets.
+
+# Client methods that scripts must never get.
+deny_methods = []
+
+# Public paths the resolver can't find on its own (macro-made `pub use`, e.g. declare_state_packets!).
+[path_overrides]
+ClientboundPlayerCombatKill = "azalea::protocol::packets::game::ClientboundPlayerCombatKill"
+# Unit enums that only serverbound packets use (their modules are `pub mod s_<name>` made by declare_state_packets!, invisible to the front ends).
+InteractionHand = "azalea::protocol::packets::game::s_interact::InteractionHand"
+RecipeBookType = "azalea::protocol::packets::game::s_recipe_book_change_settings::RecipeBookType"
+UpdateType = "azalea::protocol::packets::game::s_set_structure_block::UpdateType"
+StructureMode = "azalea::protocol::packets::game::s_set_structure_block::StructureMode"
+TestBlockMode = "azalea::protocol::packets::game::s_set_test_block::TestBlockMode"
+Mode = "azalea::protocol::packets::game::s_set_command_block::Mode"
+
+# Friendlier Luau names for goal-expanded overloads: the BlockPos goal becomes the default.
+[renames]
+goto_block_pos = "goto"
+goto_with_opts_block_pos = "goto_with_opts"
+start_goto_block_pos = "start_goto"
+start_goto_with_opts_block_pos = "start_goto_with_opts"
+
+# Goals the generator can't build but a hand-written method covers; the reason goes into GEN_REPORT.md.
+[handwritten_goals]
+AndGoal = "covered by `goal.all(a, b)` in rust/luau/real_goal.rs"
+AndGoals = "covered by `goal.all(...)` in rust/luau/real_goal.rs"
+OrGoal = "covered by `goal.any(a, b)` in rust/luau/real_goal.rs"
+OrGoals = "covered by `goal.any(...)` in rust/luau/real_goal.rs"
+InverseGoal = "covered by `goal.inverse(g)` in rust/luau/real_goal.rs"
+ReachBlockPosGoal = "covered by `bot:goto_reach(pos, distance?)` in rust/luau/extra_misc.rs"
+
+# Luau callback parameter names for event payloads (cosmetic).
+[event_arg_names]
+Chat = "packet"
+AddPlayer = "player"
+RemovePlayer = "player"
+UpdatePlayer = "player"
+Death = "info"
+KeepAlive = "id"
+Disconnect = "reason"
+ConnectionFailed = "error"
+ReceiveChunk = "chunk"
+
+# Events scripts never see (and why).
+[hidden_events]
+
+# Event names scripts can use with `bot:on(..)` / `bot:wait_for(..)` that are not `azalea::Event` variants: hand-written glue fires them
+# (name = doc line for the .d.luau; the payload is always empty). `update`: rust/luau/real_events.rs (real azalea only; never fires in the harness).
+[extra_events]
+update = "Fires on every ECS update (at least once per game tick, usually faster). Only handlers that finish quickly should use it."
+packet = "Fires for every clientbound game packet the server sends (a table tagged by `kind`; see `ClientboundPacket`). Use `bot:on_packet(kind, fn)` for one kind only. Busy servers send hundreds per second: keep handlers short."
+
+# Payload type of an extra event (default: none). Only `ClientboundPacket` exists; such an event is declared only when that type is generated
+# (real azalea), so the fake azalea's outputs do not change. `packet`: rust/luau/real_events.rs (cargo feature `packets`, default on).
+[extra_event_payloads]
+packet = "ClientboundPacket"
+
+# Luau classes that have no azalea type behind them: pure hand-written userdata (name = doc line for the .d.luau). The class is declared in
+# azalea.d.luau when some rust/luau/extra_*.rs / real_*.rs has `// luau[Name]:` lines for it (so the harness, without rust/luau/real_world.rs,
+# does not get `World`). `World`: rust/luau/real_world.rs, returned by `bot:world()` / `bot:partial_world()`.
+[hand_classes]
+World = "The bot's loaded world: block reads and block searches. Get one with `bot:world()`."
+Goal = "A pathfinding goal. Make one with the `goal` functions or `bot:reach_goal(..)`; combine them with `goal.all/any/inverse`; use it with `bot:goto_goal(goal)`."
+GoalLib = "The `goal` global: goal constructors and combinators."
+Swarm = "A running azalea swarm. Start one with `azalea.swarm{ address }`, add bots with `swarm:add(account)`."
+AzaleaLib = "The `azalea` global: `join` a server with a bot, start a `swarm`, `wait` for the bots to leave."
+ProcessLib = "The `process` global: `process.exit(code)` ends the process."
+
+# Globals (name = class) for hand-only classes; declared only when the class is (like [hand_classes]). rust/luau/real_goal.rs installs `goal`.
+[hand_globals]
+goal = "GoalLib"
+azalea = "AzaleaLib"
+process = "ProcessLib"
+
+# Parameter names for tuple-struct goals, by field type.
+[goal_param_names]
+BlockPos = "pos"
+Vec3 = "pos"
+
+# Target types whose methods are collected, one table per Luau class.
+#   rust: generated struct   luau: `declare extern type` name   field: struct field holding the azalea value
+#   renames: a table of Luau name overrides, or "@renames" = the [renames] table above
+#   deny: {method = reason} never exposed   emit: false = collect and report only   events: class carries `on(..)`
+#   doc: comment above the class in the .d.luau
+
+[classes.Client]
+rust = "LuaClient"
+luau = "Bot"
+field = "client"
+renames = "@renames"
+events = true
+emit = true
+deny = {}
+doc = "The `bot` global: the azalea client."
+
+[classes.EntityRef]
+rust = "LuaEntityRef"
+luau = "Entity"
+field = "entity"
+renames = {}
+events = false
+emit = true
+deny = { id = "the raw ECS id is internal; scripts hold `Entity` handles instead" }
+doc = "A reference to an entity in the world (compare with ==)."
+
+# Types that become a plain Luau string/number. `{x}` is the value expression (for an `Arc<T>` return it is the `Arc`, not a clone of `T`:
+# `to` must work on a borrow, e.g. `{x}.to_string()`, as `T` need not be `Clone`).
+
+[scalar.Uuid]
+luau = "string"
+to = "{x}.to_string()"
+frm = "{x}.parse().map_err(lua_err)?"
+fallible = true
+
+[scalar.FormattedText]
+luau = "string"
+to = "{x}.to_string()"
+
+[scalar.ConnectionError]
+luau = "string"
+to = "{x}.to_string()"
+
+# Types that can't be derived from their fields: [luau field, luau type, rust expr over `v`].
+
+[records]
+PlayerInfo = [
+    ["name", "string", "v.profile.name.clone()"],
+    ["uuid", "string", "v.uuid.to_string()"],
+    ["latency", "number", "v.latency"],
+    ["gamemode", "string", "format!(\"{:?}\", v.gamemode).to_lowercase()"],
+]
+
+ChatPacket = [
+    ["message", "string", "v.message().to_string()"],
+    ["sender", "string?", "v.sender()"],
+    ["content", "string", "v.content()"],
+    ["is_whisper", "boolean", "v.is_whisper()"],
+]
+
+# Structs with private fields, read through their public getters. `fields` = public fields (mapped by the generator, so a nested
+# accessor struct works too), `getters` = [luau field, luau type, rust expr over `v`] rows. Same output as [records]; names must exist in
+# harness/fake as well (the hand-written extras are shared), so only what the fake mirrors is listed.
+
+[accessors.LookDirection]
+getters = [
+    ["y_rot", "number", "v.y_rot()"],
+    ["x_rot", "number", "v.x_rot()"],
+]
+
+[accessors.Physics]
+fields = ["velocity", "horizontal_collision", "vertical_collision", "was_touching_water", "fall_distance", "remaining_fire_ticks"]
+getters = [["on_ground", "boolean", "v.on_ground()"]]
+
+[accessors.AttributeInstance]
+fields = ["base"]
+getters = [["value", "number", "v.calculate()"]]
+
+[accessors.Attributes]
+fields = ["movement_speed", "sneaking_speed", "attack_speed", "water_movement_efficiency", "mining_efficiency", "block_break_speed", "block_interaction_range", "entity_interaction_range", "step_height"]
+
+[accessors.GameProfile]
+fields = ["uuid", "name"]
+
+[accessors.Identifier]
+getters = [
+    ["namespace", "string", "v.namespace().to_string()"],
+    ["path", "string", "v.path().to_string()"],
+    ["name", "string", "v.to_string()"],
+]

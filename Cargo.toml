@@ -1,0 +1,65 @@
+[package]
+name = "luaxite"
+version = "0.1.0"
+edition = "2024"
+
+# This project is its own workspace root (the checkouts under bind/ have their own). bind/ sits inside this directory, so it must be excluded:
+# otherwise cargo finds this manifest first as the workspace root of bind/azalea-src/azalea and `edition.workspace = true` there fails with
+# "`workspace.package.edition` was not defined".
+[workspace]
+exclude = ["bind", "vendor"]
+
+# Rust lives in rust/; src/ holds only the .luau scripts that build.rs embeds.
+[[bin]]
+name = "luaxite"
+path = "rust/main.rs"
+
+[dependencies]
+# Point at the same checkout build.rs binds (every crate under bind/ and every path dependency here is bound), so bindings and library can't drift apart.
+azalea = { path = "bind/azalea-src/azalea" }  # Event::Packet needs azalea's `packet-event` feature (a default one; feature `packets` below names it)
+mlua = { version = "0.12", features = ["luau", "async", "send", "macros"] }
+# mlua-sys 0.13 hardcodes LBC_VERSION_MAX = 11 but accepts any luau0-src ^0.22.0; 0.22.1 (Luau 744) compiles to bytecode v13, so mlua rejects its own
+# compiled chunks ("attempt to load a text chunk (mode is 'b')") and Lua::new() panics. Luau 740 (0.22.0) emits v9. Unused here: it only constrains
+# resolution (there is no root Cargo.lock). Drop it once mlua-sys raises LBC_VERSION_MAX.
+luau0-src = "=0.22.0"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "sync", "time", "process", "io-util", "io-std", "net", "signal"] }
+anyhow = "1"
+# Lune's built-in modules for `require("@lune/<n>")` (feature `lune`, rust/luau/lune_libs.rs). fs / serde / regex / datetime / luau come from Lune's own
+# crates (they run on a plain mlua state). net / process / stdio / task are written in-tree (rust/luau/lune_{net,process,stdio,task}.rs) on tokio:
+# Lune's versions need Lune's task-scheduler crate, which keeps Rc/Cell values in Lua app data (does not build with mlua's `send`) and must drive the
+# Luau state. roblox stays unsupported. Lune releases its crates in lockstep and they must sit on the same mlua minor as this crate: pinned exactly (=0.4.0, the only release so far; vendor/lune-utils is 0.4.0 too), so a fresh resolve (there is no root Cargo.lock yet) cannot pick a mismatched one. Bump all of them together with mlua.
+lune-std-datetime = { version = "=0.4.0", optional = true }
+lune-std-fs = { version = "=0.4.0", optional = true }
+lune-std-luau = { version = "=0.4.0", optional = true }
+lune-std-regex = { version = "=0.4.0", optional = true }
+lune-std-serde = { version = "=0.4.0", optional = true }
+# Scheduler-free helpers of Lune (TableBuilder, value formatter, process args/env); already in the build through lune-std-fs.
+# Patched copy in vendor/lune-utils (see [patch.crates-io] below): upstream's TableBuilder closures lack the `Send` bound mlua's `send` feature needs.
+lune-utils = { version = "=0.4.0", optional = true }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "gzip", "deflate", "brotli"], optional = true }  # `@lune/net` request
+dialoguer = { version = "0.12", optional = true }  # `@lune/stdio` prompt
+tokio-tungstenite = { version = "0.26", default-features = false, features = ["connect", "rustls-tls-webpki-roots"], optional = true }  # `@lune/net` socket
+hyper = { version = "1", default-features = false, features = ["http1", "server"], optional = true }  # `@lune/net` serve
+hyper-util = { version = "0.1", default-features = false, features = ["tokio"], optional = true }
+http-body-util = { version = "0.1", optional = true }
+futures-util = { version = "0.3", optional = true }  # StreamExt for the in-tree `task` module (azalea already pulls it)
+
+[features]
+default = ["real", "packets", "lune"]
+# Glue that needs azalea APIs the harness's fake azalea lacks lives in rust/luau/real_*.rs and is built only with this feature.
+# harness/Cargo.toml has no such feature, so the harness never sees those files (tools/sync_harness.sh does not copy them).
+real = []
+# `bot:on("packet", fn)` / `bot:on_packet(kind, fn)` / `bot:wait_for_packet(kind)` (rust/luau/real_events.rs, gen_packets_in.rs). Off = no packet code is
+# built and those names are accepted by `on` but never fire. Needs `real`. Does not strip azalea's own `packet-event` (a default azalea feature).
+packets = ["real", "azalea/packet-event"]
+# `require("@lune/fs")`, `@lune/serde`, `@lune/regex`, `@lune/datetime`, `@lune/luau`, `@lune/net`, `@lune/process`, `@lune/stdio`, `@lune/task` (rust/luau/lune_libs.rs, lune_*.rs). Independent of `real`; off = `@lune/*` raises a clear error.
+# Extra deps of the in-tree modules: lune-utils, futures-util (task), dialoguer (stdio prompt), reqwest (net request), tokio-tungstenite (socket), hyper* (serve).
+lune = ["dep:lune-std-datetime", "dep:lune-std-fs", "dep:lune-std-luau", "dep:lune-std-regex", "dep:lune-std-serde", "dep:lune-utils", "dep:futures-util", "dep:dialoguer", "dep:reqwest", "dep:tokio-tungstenite", "dep:hyper", "dep:hyper-util", "dep:http-body-util"]
+
+# lune-utils 0.4.0 does not compile with mlua's `send` feature (`F: MaybeSend` not satisfied in table_builder.rs); this copy adds the bound.
+# Details in vendor/lune-utils/PATCHED.md. Drop it once upstream fixes it.
+[patch.crates-io]
+lune-utils = { path = "vendor/lune-utils" }
+
+[profile.dev]
+opt-level = 1

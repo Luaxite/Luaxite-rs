@@ -1,0 +1,45 @@
+{
+ "packages": [
+  {
+   "name": "azalea",
+   "version": "0.0.0",
+   "id": "path+file://@ROOT@/bind/azalea#azalea@0.0.0",
+   "source": null,
+   "manifest_path": "@ROOT@/bind/azalea/Cargo.toml",
+   "edition": "2024",
+   "targets": [
+    {
+     "kind": [
+      "lib"
+     ],
+     "crate_types": [
+      "lib"
+     ],
+     "name": "azalea",
+     "src_path": "@ROOT@/bind/azalea/src/lib.rs"
+    }
+   ],
+   "dependencies": [
+    {
+     "name": "tokio",
+     "source": "registry+https://github.com/rust-lang/crates.io-index",
+     "req": "^1",
+     "kind": null,
+     "optional": false,
+     "rename": null
+    }
+   ]
+  }
+ ],
+ "workspace_members": [
+  "path+file://@ROOT@/bind/azalea#azalea@0.0.0"
+ ],
+ "workspace_default_members": [
+  "path+file://@ROOT@/bind/azalea#azalea@0.0.0"
+ ],
+ "resolve": null,
+ "target_directory": "@ROOT@/bind/azalea/target",
+ "version": 1,
+ "workspace_root": "@ROOT@/bind/azalea",
+ "metadata": null
+}

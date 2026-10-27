@@ -1,0 +1,5 @@
+[toolchain]
+# Floating on purpose until a date is verified: azalea (the commit in .github/actions/azalea) pins plain `nightly` itself, and a dated nightly that
+# does not build azalea would break every job. CI prints the exact nightly it used (`rustc -V` in the "azalea toolchain" steps of rust.yml): once a
+# green run shows e.g. `nightly-2026-10-20`, put that here (and keep AZL_RDJ_FORMAT_RANGE covering its rustdoc JSON format_version).
+channel = "nightly"

@@ -1,0 +1,2028 @@
+{
+ "crate_version": "0.0.0",
+ "external_crates": {
+  "1": {
+   "html_root_url": null,
+   "name": "std",
+   "path": "/synth/libstd.rmeta"
+  },
+  "2": {
+   "html_root_url": null,
+   "name": "alloc",
+   "path": "/synth/liballoc.rmeta"
+  },
+  "3": {
+   "html_root_url": null,
+   "name": "core",
+   "path": "/synth/libcore.rmeta"
+  }
+ },
+ "format_version": 57,
+ "includes_private": true,
+ "index": {
+  "1": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": null,
+   "id": 1,
+   "inner": {
+    "module": {
+     "is_crate": true,
+     "is_stripped": false,
+     "items": [
+      2,
+      7,
+      9,
+      11,
+      13,
+      18,
+      23,
+      24,
+      25,
+      41
+     ]
+    }
+   },
+   "links": {},
+   "name": "azalea",
+   "span": null,
+   "visibility": "public"
+  },
+  "10": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": null,
+   "id": 10,
+   "inner": {
+    "struct_field": {
+     "array": {
+      "len": "W",
+      "type": {
+       "primitive": "u8"
+      }
+     }
+    }
+   },
+   "links": {},
+   "name": "cells",
+   "span": null,
+   "visibility": "public"
+  },
+  "11": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": "Const generics.",
+   "id": 11,
+   "inner": {
+    "struct": {
+     "generics": {
+      "params": [
+       {
+        "kind": {
+         "const": {
+          "default": null,
+          "type": {
+           "primitive": "usize"
+          }
+         }
+        },
+        "name": "W"
+       },
+       {
+        "kind": {
+         "const": {
+          "default": "4",
+          "type": {
+           "primitive": "usize"
+          }
+         }
+        },
+        "name": "H"
+       }
+      ],
+      "where_predicates": []
+     },
+     "impls": [],
+     "kind": {
+      "plain": {
+       "fields": [
+        10
+       ],
+       "has_stripped_fields": false
+      }
+     }
+    }
+   },
+   "links": {},
+   "name": "Grid",
+   "span": null,
+   "visibility": "public"
+  },
+  "12": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": null,
+   "id": 12,
+   "inner": {
+    "struct_field": {
+     "primitive": "u32"
+    }
+   },
+   "links": {},
+   "name": "r#type",
+   "span": null,
+   "visibility": "public"
+  },
+  "13": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": "Raw identifier field and variant.",
+   "id": 13,
+   "inner": {
+    "struct": {
+     "generics": {
+      "params": [],
+      "where_predicates": []
+     },
+     "impls": [],
+     "kind": {
+      "plain": {
+       "fields": [
+        12
+       ],
+       "has_stripped_fields": false
+      }
+     }
+    }
+   },
+   "links": {},
+   "name": "Raw",
+   "span": null,
+   "visibility": "public"
+  },
+  "18": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": null,
+   "id": 18,
+   "inner": {
+    "enum": {
+     "generics": {
+      "params": [],
+      "where_predicates": []
+     },
+     "has_stripped_variants": false,
+     "impls": [],
+     "variants": [
+      19,
+      22
+     ]
+    }
+   },
+   "links": {},
+   "name": "Kind",
+   "span": null,
+   "visibility": "public"
+  },
+  "19": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": null,
+   "id": 19,
+   "inner": {
+    "variant": {
+     "discriminant": null,
+     "kind": "plain"
+    }
+   },
+   "links": {},
+   "name": "r#Loop",
+   "span": null,
+   "visibility": "default"
+  },
+  "2": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": null,
+   "id": 2,
+   "inner": {
+    "module": {
+     "is_crate": false,
+     "is_stripped": false,
+     "items": [
+      3,
+      6
+     ]
+    }
+   },
+   "links": {},
+   "name": "inner",
+   "span": null,
+   "visibility": "public"
+  },
+  "20": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": null,
+   "id": 20,
+   "inner": {
+    "struct_field": {
+     "primitive": "u8"
+    }
+   },
+   "links": {},
+   "name": "0",
+   "span": null,
+   "visibility": "default"
+  },
+  "21": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": null,
+   "id": 21,
+   "inner": {
+    "struct_field": {
+     "resolved_path": {
+      "args": {
+       "angle_bracketed": {
+        "args": [
+         {
+          "type": {
+           "resolved_path": {
+            "args": null,
+            "id": 17,
+            "path": "String"
+           }
+          }
+         },
+         {
+          "type": {
+           "resolved_path": {
+            "args": {
+             "angle_bracketed": {
+              "args": [
+               {
+                "type": {
+                 "resolved_path": {
+                  "args": {
+                   "angle_bracketed": {
+                    "args": [
+                     {
+                      "type": {
+                       "primitive": "u32"
+                      }
+                     }
+                    ],
+                    "constraints": []
+                   }
+                  },
+                  "id": 16,
+                  "path": "Option"
+                 }
+                }
+               }
+              ],
+              "constraints": []
+             }
+            },
+            "id": 15,
+            "path": "Vec"
+           }
+          }
+         }
+        ],
+        "constraints": []
+       }
+      },
+      "id": 14,
+      "path": "HashMap"
+     }
+    }
+   },
+   "links": {},
+   "name": "1",
+   "span": null,
+   "visibility": "default"
+  },
+  "22": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": null,
+   "id": 22,
+   "inner": {
+    "variant": {
+     "discriminant": null,
+     "kind": {
+      "tuple": [
+       20,
+       21
+      ]
+     }
+    }
+   },
+   "links": {},
+   "name": "Pair",
+   "span": null,
+   "visibility": "default"
+  },
+  "23": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": null,
+   "id": 23,
+   "inner": {
+    "struct": {
+     "generics": {
+      "params": [],
+      "where_predicates": []
+     },
+     "impls": [],
+     "kind": "unit"
+    }
+   },
+   "links": {},
+   "name": "Client",
+   "span": null,
+   "visibility": "public"
+  },
+  "24": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": null,
+   "id": 24,
+   "inner": {
+    "struct": {
+     "generics": {
+      "params": [],
+      "where_predicates": []
+     },
+     "impls": [],
+     "kind": "unit"
+    }
+   },
+   "links": {},
+   "name": "EntityRef",
+   "span": null,
+   "visibility": "public"
+  },
+  "25": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": null,
+   "id": 25,
+   "inner": {
+    "trait": {
+     "bounds": [],
+     "generics": {
+      "params": [],
+      "where_predicates": []
+     },
+     "implementations": [],
+     "is_auto": false,
+     "is_dyn_compatible": true,
+     "is_unsafe": false,
+     "items": [
+      26
+     ]
+    }
+   },
+   "links": {},
+   "name": "Tick",
+   "span": null,
+   "visibility": "public"
+  },
+  "26": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": "async fn in trait",
+   "id": 26,
+   "inner": {
+    "function": {
+     "generics": {
+      "params": [],
+      "where_predicates": []
+     },
+     "has_body": true,
+     "header": {
+      "abi": "Rust",
+      "is_async": true,
+      "is_const": false,
+      "is_unsafe": false
+     },
+     "sig": {
+      "inputs": [
+       [
+        "self",
+        {
+         "borrowed_ref": {
+          "is_mutable": false,
+          "lifetime": null,
+          "type": {
+           "generic": "Self"
+          }
+         }
+        }
+       ]
+      ],
+      "is_c_variadic": false,
+      "output": {
+       "primitive": "u32"
+      }
+     }
+    }
+   },
+   "links": {},
+   "name": "tick",
+   "span": {
+    "begin": [
+     33,
+     5
+    ],
+    "end": [
+     33,
+     25
+    ],
+    "filename": "azalea/src/lib.rs"
+   },
+   "visibility": "public"
+  },
+  "27": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": null,
+   "id": 27,
+   "inner": {
+    "impl": {
+     "blanket_impl": null,
+     "for": {
+      "resolved_path": {
+       "args": null,
+       "id": 23,
+       "path": "Client"
+      }
+     },
+     "generics": {
+      "params": [],
+      "where_predicates": []
+     },
+     "is_negative": false,
+     "is_synthetic": false,
+     "is_unsafe": false,
+     "items": [
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35
+     ],
+     "provided_trait_methods": [],
+     "trait": null
+    }
+   },
+   "links": {},
+   "name": null,
+   "span": {
+    "begin": [
+     38,
+     1
+    ],
+    "end": [
+     58,
+     2
+    ],
+    "filename": "azalea/src/lib.rs"
+   },
+   "visibility": "default"
+  },
+  "28": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": "nested generics",
+   "id": 28,
+   "inner": {
+    "function": {
+     "generics": {
+      "params": [],
+      "where_predicates": []
+     },
+     "has_body": true,
+     "header": {
+      "abi": "Rust",
+      "is_async": false,
+      "is_const": false,
+      "is_unsafe": false
+     },
+     "sig": {
+      "inputs": [
+       [
+        "self",
+        {
+         "borrowed_ref": {
+          "is_mutable": false,
+          "lifetime": null,
+          "type": {
+           "generic": "Self"
+          }
+         }
+        }
+       ],
+       [
+        "m",
+        {
+         "resolved_path": {
+          "args": {
+           "angle_bracketed": {
+            "args": [
+             {
+              "type": {
+               "resolved_path": {
+                "args": null,
+                "id": 17,
+                "path": "String"
+               }
+              }
+             },
+             {
+              "type": {
+               "resolved_path": {
+                "args": {
+                 "angle_bracketed": {
+                  "args": [
+                   {
+                    "type": {
+                     "resolved_path": {
+                      "args": {
+                       "angle_bracketed": {
+                        "args": [
+                         {
+                          "type": {
+                           "tuple": [
+                            {
+                             "primitive": "u8"
+                            },
+                            {
+                             "primitive": "u16"
+                            }
+                           ]
+                          }
+                         }
+                        ],
+                        "constraints": []
+                       }
+                      },
+                      "id": 16,
+                      "path": "Option"
+                     }
+                    }
+                   }
+                  ],
+                  "constraints": []
+                 }
+                },
+                "id": 15,
+                "path": "Vec"
+               }
+              }
+             }
+            ],
+            "constraints": []
+           }
+          },
+          "id": 14,
+          "path": "HashMap"
+         }
+        }
+       ]
+      ],
+      "is_c_variadic": false,
+      "output": {
+       "resolved_path": {
+        "args": {
+         "angle_bracketed": {
+          "args": [
+           {
+            "type": {
+             "resolved_path": {
+              "args": {
+               "angle_bracketed": {
+                "args": [
+                 {
+                  "type": {
+                   "primitive": "u32"
+                  }
+                 }
+                ],
+                "constraints": []
+               }
+              },
+              "id": 15,
+              "path": "Vec"
+             }
+            }
+           }
+          ],
+          "constraints": []
+         }
+        },
+        "id": 16,
+        "path": "Option"
+       }
+      }
+     }
+    }
+   },
+   "links": {},
+   "name": "nested",
+   "span": {
+    "begin": [
+     40,
+     5
+    ],
+    "end": [
+     40,
+     25
+    ],
+    "filename": "azalea/src/lib.rs"
+   },
+   "visibility": "public"
+  },
+  "29": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": "impl Trait argument and return",
+   "id": 29,
+   "inner": {
+    "function": {
+     "generics": {
+      "params": [
+       {
+        "kind": {
+         "type": {
+          "bounds": [
+           {
+            "trait_bound": {
+             "generic_params": [],
+             "modifier": "none",
+             "trait": {
+              "args": null,
+              "id": 0,
+              "path": "Fn"
+             }
+            }
+           },
+           {
+            "trait_bound": {
+             "generic_params": [],
+             "modifier": "none",
+             "trait": {
+              "args": null,
+              "id": 0,
+              "path": "Send"
+             }
+            }
+           }
+          ],
+          "default": null,
+          "is_synthetic": true
+         }
+        },
+        "name": "impl Fn(u32) -> u32 + Send"
+       }
+      ],
+      "where_predicates": []
+     },
+     "has_body": true,
+     "header": {
+      "abi": "Rust",
+      "is_async": false,
+      "is_const": false,
+      "is_unsafe": false
+     },
+     "sig": {
+      "inputs": [
+       [
+        "self",
+        {
+         "borrowed_ref": {
+          "is_mutable": false,
+          "lifetime": null,
+          "type": {
+           "generic": "Self"
+          }
+         }
+        }
+       ],
+       [
+        "f",
+        {
+         "generic": "impl Fn(u32) -> u32 + Send"
+        }
+       ]
+      ],
+      "is_c_variadic": false,
+      "output": {
+       "impl_trait": [
+        {
+         "trait_bound": {
+          "generic_params": [],
+          "modifier": "none",
+          "trait": {
+           "args": {
+            "angle_bracketed": {
+             "args": [],
+             "constraints": [
+              {
+               "args": null,
+               "binding": {
+                "equality": {
+                 "type": {
+                  "primitive": "u32"
+                 }
+                }
+               },
+               "name": "Item"
+              }
+             ]
+            }
+           },
+           "id": 0,
+           "path": "Iterator"
+          }
+         }
+        }
+       ]
+      }
+     }
+    }
+   },
+   "links": {},
+   "name": "imp",
+   "span": {
+    "begin": [
+     42,
+     5
+    ],
+    "end": [
+     42,
+     25
+    ],
+    "filename": "azalea/src/lib.rs"
+   },
+   "visibility": "public"
+  },
+  "3": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": null,
+   "id": 3,
+   "inner": {
+    "module": {
+     "is_crate": false,
+     "is_stripped": false,
+     "items": [
+      5
+     ]
+    }
+   },
+   "links": {},
+   "name": "deep",
+   "span": null,
+   "visibility": "public"
+  },
+  "30": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": "where clause",
+   "id": 30,
+   "inner": {
+    "function": {
+     "generics": {
+      "params": [
+       {
+        "kind": {
+         "type": {
+          "bounds": [],
+          "default": null,
+          "is_synthetic": false
+         }
+        },
+        "name": "T"
+       }
+      ],
+      "where_predicates": [
+       {
+        "bound_predicate": {
+         "bounds": [
+          {
+           "trait_bound": {
+            "generic_params": [],
+            "modifier": "none",
+            "trait": {
+             "args": {
+              "angle_bracketed": {
+               "args": [
+                {
+                 "type": {
+                  "primitive": "u32"
+                 }
+                }
+               ],
+               "constraints": []
+              }
+             },
+             "id": 0,
+             "path": "Into"
+            }
+           }
+          },
+          {
+           "trait_bound": {
+            "generic_params": [],
+            "modifier": "none",
+            "trait": {
+             "args": null,
+             "id": 0,
+             "path": "Copy"
+            }
+           }
+          }
+         ],
+         "generic_params": [],
+         "type": {
+          "generic": "T"
+         }
+        }
+       }
+      ]
+     },
+     "has_body": true,
+     "header": {
+      "abi": "Rust",
+      "is_async": false,
+      "is_const": false,
+      "is_unsafe": false
+     },
+     "sig": {
+      "inputs": [
+       [
+        "self",
+        {
+         "borrowed_ref": {
+          "is_mutable": false,
+          "lifetime": null,
+          "type": {
+           "generic": "Self"
+          }
+         }
+        }
+       ],
+       [
+        "t",
+        {
+         "generic": "T"
+        }
+       ]
+      ],
+      "is_c_variadic": false,
+      "output": {
+       "primitive": "u32"
+      }
+     }
+    }
+   },
+   "links": {},
+   "name": "bound",
+   "span": {
+    "begin": [
+     44,
+     5
+    ],
+    "end": [
+     44,
+     25
+    ],
+    "filename": "azalea/src/lib.rs"
+   },
+   "visibility": "public"
+  },
+  "31": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": "mutable reference",
+   "id": 31,
+   "inner": {
+    "function": {
+     "generics": {
+      "params": [],
+      "where_predicates": []
+     },
+     "has_body": true,
+     "header": {
+      "abi": "Rust",
+      "is_async": false,
+      "is_const": false,
+      "is_unsafe": false
+     },
+     "sig": {
+      "inputs": [
+       [
+        "self",
+        {
+         "borrowed_ref": {
+          "is_mutable": false,
+          "lifetime": null,
+          "type": {
+           "generic": "Self"
+          }
+         }
+        }
+       ],
+       [
+        "v",
+        {
+         "borrowed_ref": {
+          "is_mutable": true,
+          "lifetime": null,
+          "type": {
+           "resolved_path": {
+            "args": {
+             "angle_bracketed": {
+              "args": [
+               {
+                "type": {
+                 "primitive": "u8"
+                }
+               }
+              ],
+              "constraints": []
+             }
+            },
+            "id": 15,
+            "path": "Vec"
+           }
+          }
+         }
+        }
+       ]
+      ],
+      "is_c_variadic": false,
+      "output": null
+     }
+    }
+   },
+   "links": {},
+   "name": "mutref",
+   "span": {
+    "begin": [
+     46,
+     5
+    ],
+    "end": [
+     46,
+     25
+    ],
+    "filename": "azalea/src/lib.rs"
+   },
+   "visibility": "public"
+  },
+  "32": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": "raw identifier method",
+   "id": 32,
+   "inner": {
+    "function": {
+     "generics": {
+      "params": [],
+      "where_predicates": []
+     },
+     "has_body": true,
+     "header": {
+      "abi": "Rust",
+      "is_async": false,
+      "is_const": false,
+      "is_unsafe": false
+     },
+     "sig": {
+      "inputs": [
+       [
+        "self",
+        {
+         "borrowed_ref": {
+          "is_mutable": false,
+          "lifetime": null,
+          "type": {
+           "generic": "Self"
+          }
+         }
+        }
+       ]
+      ],
+      "is_c_variadic": false,
+      "output": {
+       "primitive": "u32"
+      }
+     }
+    }
+   },
+   "links": {},
+   "name": "r#match",
+   "span": {
+    "begin": [
+     48,
+     5
+    ],
+    "end": [
+     48,
+     25
+    ],
+    "filename": "azalea/src/lib.rs"
+   },
+   "visibility": "public"
+  },
+  "33": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": "const generic argument",
+   "id": 33,
+   "inner": {
+    "function": {
+     "generics": {
+      "params": [],
+      "where_predicates": []
+     },
+     "has_body": true,
+     "header": {
+      "abi": "Rust",
+      "is_async": false,
+      "is_const": false,
+      "is_unsafe": false
+     },
+     "sig": {
+      "inputs": [
+       [
+        "self",
+        {
+         "borrowed_ref": {
+          "is_mutable": false,
+          "lifetime": null,
+          "type": {
+           "generic": "Self"
+          }
+         }
+        }
+       ],
+       [
+        "g",
+        {
+         "resolved_path": {
+          "args": {
+           "angle_bracketed": {
+            "args": [
+             {
+              "const": {
+               "expr": "3",
+               "is_literal": true,
+               "value": "3"
+              }
+             },
+             {
+              "const": {
+               "expr": "4",
+               "is_literal": true,
+               "value": "4"
+              }
+             }
+            ],
+            "constraints": []
+           }
+          },
+          "id": 11,
+          "path": "Grid"
+         }
+        }
+       ]
+      ],
+      "is_c_variadic": false,
+      "output": {
+       "primitive": "u32"
+      }
+     }
+    }
+   },
+   "links": {},
+   "name": "grid",
+   "span": {
+    "begin": [
+     50,
+     5
+    ],
+    "end": [
+     50,
+     25
+    ],
+    "filename": "azalea/src/lib.rs"
+   },
+   "visibility": "public"
+  },
+  "34": {
+   "attrs": [
+    {
+     "other": "#[doc(hidden)]"
+    }
+   ],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": "hidden",
+   "id": 34,
+   "inner": {
+    "function": {
+     "generics": {
+      "params": [],
+      "where_predicates": []
+     },
+     "has_body": true,
+     "header": {
+      "abi": "Rust",
+      "is_async": false,
+      "is_const": false,
+      "is_unsafe": false
+     },
+     "sig": {
+      "inputs": [
+       [
+        "self",
+        {
+         "borrowed_ref": {
+          "is_mutable": false,
+          "lifetime": null,
+          "type": {
+           "generic": "Self"
+          }
+         }
+        }
+       ]
+      ],
+      "is_c_variadic": false,
+      "output": {
+       "primitive": "u32"
+      }
+     }
+    }
+   },
+   "links": {},
+   "name": "hidden",
+   "span": {
+    "begin": [
+     55,
+     5
+    ],
+    "end": [
+     55,
+     25
+    ],
+    "filename": "azalea/src/lib.rs"
+   },
+   "visibility": "public"
+  },
+  "35": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": null,
+   "id": 35,
+   "inner": {
+    "function": {
+     "generics": {
+      "params": [],
+      "where_predicates": []
+     },
+     "has_body": true,
+     "header": {
+      "abi": "Rust",
+      "is_async": true,
+      "is_const": false,
+      "is_unsafe": false
+     },
+     "sig": {
+      "inputs": [
+       [
+        "self",
+        {
+         "borrowed_ref": {
+          "is_mutable": false,
+          "lifetime": null,
+          "type": {
+           "generic": "Self"
+          }
+         }
+        }
+       ]
+      ],
+      "is_c_variadic": false,
+      "output": {
+       "primitive": "u32"
+      }
+     }
+    }
+   },
+   "links": {},
+   "name": "waits",
+   "span": {
+    "begin": [
+     57,
+     5
+    ],
+    "end": [
+     57,
+     25
+    ],
+    "filename": "azalea/src/lib.rs"
+   },
+   "visibility": "public"
+  },
+  "36": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": null,
+   "id": 36,
+   "inner": {
+    "impl": {
+     "blanket_impl": null,
+     "for": {
+      "resolved_path": {
+       "args": null,
+       "id": 24,
+       "path": "EntityRef"
+      }
+     },
+     "generics": {
+      "params": [],
+      "where_predicates": []
+     },
+     "is_negative": false,
+     "is_synthetic": false,
+     "is_unsafe": false,
+     "items": [
+      37,
+      38
+     ],
+     "provided_trait_methods": [],
+     "trait": null
+    }
+   },
+   "links": {},
+   "name": null,
+   "span": {
+    "begin": [
+     64,
+     1
+    ],
+    "end": [
+     64,
+     28
+    ],
+    "filename": "azalea/src/lib.rs"
+   },
+   "visibility": "default"
+  },
+  "37": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": null,
+   "id": 37,
+   "inner": {
+    "function": {
+     "generics": {
+      "params": [],
+      "where_predicates": []
+     },
+     "has_body": true,
+     "header": {
+      "abi": "Rust",
+      "is_async": false,
+      "is_const": false,
+      "is_unsafe": false
+     },
+     "sig": {
+      "inputs": [
+       [
+        "self",
+        {
+         "borrowed_ref": {
+          "is_mutable": false,
+          "lifetime": null,
+          "type": {
+           "generic": "Self"
+          }
+         }
+        }
+       ]
+      ],
+      "is_c_variadic": false,
+      "output": {
+       "primitive": "u32"
+      }
+     }
+    }
+   },
+   "links": {},
+   "name": "health",
+   "span": {
+    "begin": [
+     64,
+     1
+    ],
+    "end": [
+     64,
+     28
+    ],
+    "filename": "azalea/src/lib.rs"
+   },
+   "visibility": "public"
+  },
+  "38": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": null,
+   "id": 38,
+   "inner": {
+    "function": {
+     "generics": {
+      "params": [],
+      "where_predicates": []
+     },
+     "has_body": true,
+     "header": {
+      "abi": "Rust",
+      "is_async": false,
+      "is_const": false,
+      "is_unsafe": false
+     },
+     "sig": {
+      "inputs": [
+       [
+        "self",
+        {
+         "borrowed_ref": {
+          "is_mutable": false,
+          "lifetime": null,
+          "type": {
+           "generic": "Self"
+          }
+         }
+        }
+       ]
+      ],
+      "is_c_variadic": false,
+      "output": {
+       "primitive": "u32"
+      }
+     }
+    }
+   },
+   "links": {},
+   "name": "hunger",
+   "span": {
+    "begin": [
+     64,
+     1
+    ],
+    "end": [
+     64,
+     28
+    ],
+    "filename": "azalea/src/lib.rs"
+   },
+   "visibility": "public"
+  },
+  "39": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": null,
+   "id": 39,
+   "inner": {
+    "impl": {
+     "blanket_impl": null,
+     "for": {
+      "resolved_path": {
+       "args": null,
+       "id": 23,
+       "path": "Client"
+      }
+     },
+     "generics": {
+      "params": [],
+      "where_predicates": []
+     },
+     "is_negative": false,
+     "is_synthetic": false,
+     "is_unsafe": false,
+     "items": [
+      40
+     ],
+     "provided_trait_methods": [],
+     "trait": {
+      "args": null,
+      "id": 25,
+      "path": "Tick"
+     }
+    }
+   },
+   "links": {},
+   "name": null,
+   "span": {
+    "begin": [
+     66,
+     1
+    ],
+    "end": [
+     68,
+     2
+    ],
+    "filename": "azalea/src/lib.rs"
+   },
+   "visibility": "default"
+  },
+  "4": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": null,
+   "id": 4,
+   "inner": {
+    "struct_field": {
+     "primitive": "u32"
+    }
+   },
+   "links": {},
+   "name": "n",
+   "span": null,
+   "visibility": "public"
+  },
+  "40": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": null,
+   "id": 40,
+   "inner": {
+    "function": {
+     "generics": {
+      "params": [],
+      "where_predicates": []
+     },
+     "has_body": true,
+     "header": {
+      "abi": "Rust",
+      "is_async": true,
+      "is_const": false,
+      "is_unsafe": false
+     },
+     "sig": {
+      "inputs": [
+       [
+        "self",
+        {
+         "borrowed_ref": {
+          "is_mutable": false,
+          "lifetime": null,
+          "type": {
+           "generic": "Self"
+          }
+         }
+        }
+       ]
+      ],
+      "is_c_variadic": false,
+      "output": {
+       "primitive": "u32"
+      }
+     }
+    }
+   },
+   "links": {},
+   "name": "tick",
+   "span": {
+    "begin": [
+     67,
+     5
+    ],
+    "end": [
+     67,
+     25
+    ],
+    "filename": "azalea/src/lib.rs"
+   },
+   "visibility": "default"
+  },
+  "41": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": null,
+   "id": 41,
+   "inner": {
+    "enum": {
+     "generics": {
+      "params": [],
+      "where_predicates": []
+     },
+     "has_stripped_variants": false,
+     "impls": [],
+     "variants": [
+      42,
+      43,
+      44,
+      46
+     ]
+    }
+   },
+   "links": {},
+   "name": "Event",
+   "span": null,
+   "visibility": "public"
+  },
+  "42": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": null,
+   "id": 42,
+   "inner": {
+    "variant": {
+     "discriminant": null,
+     "kind": "plain"
+    }
+   },
+   "links": {},
+   "name": "Init",
+   "span": null,
+   "visibility": "default"
+  },
+  "43": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": null,
+   "id": 43,
+   "inner": {
+    "variant": {
+     "discriminant": null,
+     "kind": "plain"
+    }
+   },
+   "links": {},
+   "name": "Login",
+   "span": null,
+   "visibility": "default"
+  },
+  "44": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": null,
+   "id": 44,
+   "inner": {
+    "variant": {
+     "discriminant": null,
+     "kind": "plain"
+    }
+   },
+   "links": {},
+   "name": "Tick",
+   "span": null,
+   "visibility": "default"
+  },
+  "45": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": null,
+   "id": 45,
+   "inner": {
+    "struct_field": {
+     "resolved_path": {
+      "args": {
+       "angle_bracketed": {
+        "args": [
+         {
+          "type": {
+           "resolved_path": {
+            "args": null,
+            "id": 17,
+            "path": "String"
+           }
+          }
+         },
+         {
+          "type": {
+           "resolved_path": {
+            "args": {
+             "angle_bracketed": {
+              "args": [
+               {
+                "type": {
+                 "resolved_path": {
+                  "args": {
+                   "angle_bracketed": {
+                    "args": [
+                     {
+                      "type": {
+                       "tuple": [
+                        {
+                         "primitive": "u8"
+                        },
+                        {
+                         "primitive": "u16"
+                        }
+                       ]
+                      }
+                     }
+                    ],
+                    "constraints": []
+                   }
+                  },
+                  "id": 16,
+                  "path": "Option"
+                 }
+                }
+               }
+              ],
+              "constraints": []
+             }
+            },
+            "id": 15,
+            "path": "Vec"
+           }
+          }
+         }
+        ],
+        "constraints": []
+       }
+      },
+      "id": 14,
+      "path": "HashMap"
+     }
+    }
+   },
+   "links": {},
+   "name": "0",
+   "span": null,
+   "visibility": "default"
+  },
+  "46": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": null,
+   "id": 46,
+   "inner": {
+    "variant": {
+     "discriminant": null,
+     "kind": {
+      "tuple": [
+       45
+      ]
+     }
+    }
+   },
+   "links": {},
+   "name": "Odd",
+   "span": null,
+   "visibility": "default"
+  },
+  "5": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": "Reached through a re-export chain and a glob.",
+   "id": 5,
+   "inner": {
+    "struct": {
+     "generics": {
+      "params": [],
+      "where_predicates": []
+     },
+     "impls": [],
+     "kind": {
+      "plain": {
+       "fields": [
+        4
+       ],
+       "has_stripped_fields": false
+      }
+     }
+    }
+   },
+   "links": {},
+   "name": "Deep",
+   "span": null,
+   "visibility": "public"
+  },
+  "6": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": null,
+   "id": 6,
+   "inner": {
+    "use": {
+     "id": 5,
+     "is_glob": false,
+     "name": "DeepAlias",
+     "source": "self::deep::Deep"
+    }
+   },
+   "links": {},
+   "name": null,
+   "span": null,
+   "visibility": "public"
+  },
+  "7": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": null,
+   "id": 7,
+   "inner": {
+    "module": {
+     "is_crate": false,
+     "is_stripped": false,
+     "items": [
+      8
+     ]
+    }
+   },
+   "links": {},
+   "name": "chain",
+   "span": null,
+   "visibility": "public"
+  },
+  "8": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": null,
+   "id": 8,
+   "inner": {
+    "use": {
+     "id": 3,
+     "is_glob": true,
+     "name": "deep",
+     "source": "crate::inner::deep"
+    }
+   },
+   "links": {},
+   "name": null,
+   "span": null,
+   "visibility": "public"
+  },
+  "9": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": null,
+   "id": 9,
+   "inner": {
+    "use": {
+     "id": 5,
+     "is_glob": false,
+     "name": "Deep",
+     "source": "chain::Deep"
+    }
+   },
+   "links": {},
+   "name": null,
+   "span": null,
+   "visibility": "public"
+  }
+ },
+ "paths": {
+  "1": {
+   "crate_id": 0,
+   "kind": "module",
+   "path": [
+    "azalea"
+   ]
+  },
+  "11": {
+   "crate_id": 0,
+   "kind": "struct",
+   "path": [
+    "azalea",
+    "Grid"
+   ]
+  },
+  "13": {
+   "crate_id": 0,
+   "kind": "struct",
+   "path": [
+    "azalea",
+    "Raw"
+   ]
+  },
+  "14": {
+   "crate_id": 1,
+   "kind": "struct",
+   "path": [
+    "std",
+    "collections",
+    "hash",
+    "map",
+    "HashMap"
+   ]
+  },
+  "15": {
+   "crate_id": 2,
+   "kind": "struct",
+   "path": [
+    "alloc",
+    "vec",
+    "Vec"
+   ]
+  },
+  "16": {
+   "crate_id": 3,
+   "kind": "enum",
+   "path": [
+    "core",
+    "option",
+    "Option"
+   ]
+  },
+  "17": {
+   "crate_id": 2,
+   "kind": "struct",
+   "path": [
+    "alloc",
+    "string",
+    "String"
+   ]
+  },
+  "18": {
+   "crate_id": 0,
+   "kind": "enum",
+   "path": [
+    "azalea",
+    "Kind"
+   ]
+  },
+  "19": {
+   "crate_id": 0,
+   "kind": "variant",
+   "path": [
+    "azalea",
+    "Kind",
+    "r#Loop"
+   ]
+  },
+  "2": {
+   "crate_id": 0,
+   "kind": "module",
+   "path": [
+    "azalea",
+    "inner"
+   ]
+  },
+  "22": {
+   "crate_id": 0,
+   "kind": "variant",
+   "path": [
+    "azalea",
+    "Kind",
+    "Pair"
+   ]
+  },
+  "23": {
+   "crate_id": 0,
+   "kind": "struct",
+   "path": [
+    "azalea",
+    "Client"
+   ]
+  },
+  "24": {
+   "crate_id": 0,
+   "kind": "struct",
+   "path": [
+    "azalea",
+    "EntityRef"
+   ]
+  },
+  "25": {
+   "crate_id": 0,
+   "kind": "trait",
+   "path": [
+    "azalea",
+    "Tick"
+   ]
+  },
+  "3": {
+   "crate_id": 0,
+   "kind": "module",
+   "path": [
+    "azalea",
+    "inner",
+    "deep"
+   ]
+  },
+  "41": {
+   "crate_id": 0,
+   "kind": "enum",
+   "path": [
+    "azalea",
+    "Event"
+   ]
+  },
+  "42": {
+   "crate_id": 0,
+   "kind": "variant",
+   "path": [
+    "azalea",
+    "Event",
+    "Init"
+   ]
+  },
+  "43": {
+   "crate_id": 0,
+   "kind": "variant",
+   "path": [
+    "azalea",
+    "Event",
+    "Login"
+   ]
+  },
+  "44": {
+   "crate_id": 0,
+   "kind": "variant",
+   "path": [
+    "azalea",
+    "Event",
+    "Tick"
+   ]
+  },
+  "46": {
+   "crate_id": 0,
+   "kind": "variant",
+   "path": [
+    "azalea",
+    "Event",
+    "Odd"
+   ]
+  },
+  "5": {
+   "crate_id": 0,
+   "kind": "struct",
+   "path": [
+    "azalea",
+    "inner",
+    "deep",
+    "Deep"
+   ]
+  },
+  "7": {
+   "crate_id": 0,
+   "kind": "module",
+   "path": [
+    "azalea",
+    "chain"
+   ]
+  }
+ },
+ "root": 1,
+ "target": {
+  "target_features": [],
+  "triple": "x86_64-unknown-linux-gnu"
+ }
+}

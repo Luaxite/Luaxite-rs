@@ -1,0 +1,18 @@
+name: tests
+
+on:
+    push:
+    pull_request:
+
+jobs:
+    python:
+        # the stdlib-only suite: rustdoc generator, Luau generator, bindings, Lune surface, script structure. No Rust, no server.
+        runs-on: ubuntu-24.04
+        timeout-minutes: 15
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-python@v5
+              with:
+                  python-version: "3.12"
+            - run: python3 -m unittest discover -s tests/py -t tests/py -v
+            - run: SKIP_HARNESS=1 sh tools/check.sh

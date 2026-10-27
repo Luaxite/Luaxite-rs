@@ -1,0 +1,224 @@
+name: rust
+
+# The real binary is compiled ONCE here (job `real`, Linux x86_64, debug) and handed to the jobs that only run it (`lune`, `server`) as an artifact,
+# so nothing below compiles it again. (tests/e2e used to be its own workflow, e2e.yml, which built the same binary twice more.)
+# A pushed `v*` tag only runs release.yml: the commit was already built on its branch.
+
+on:
+    push:
+        branches: ["**"]
+        tags-ignore: ["v*"]
+    pull_request:
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+concurrency:
+    group: rust-${{ github.ref }}
+    cancel-in-progress: true
+
+defaults:
+    run:
+        shell: bash
+
+jobs:
+    harness:
+        # bindings + runtime against the fake azalea, run through harness/test.luau
+        runs-on: ubuntu-24.04    # Linux x86_64 only
+        steps:
+            - uses: actions/checkout@v4
+            - uses: dtolnay/rust-toolchain@nightly
+            - uses: Swatinem/rust-cache@v2
+              with:
+                  workspaces: harness
+                  cache-on-failure: true    # save deps even when a later step fails, or a red build recompiles everything next run
+            - run: cargo build --locked
+              working-directory: harness
+            - run: cargo run --locked -q 2>&1 | tee run.log
+              working-directory: harness
+            - name: no [luau] error line
+              run: if grep -F '[luau]' harness/run.log; then exit 1; fi
+
+    real:
+        # the real binary: real azalea, every real_*.rs and the gen_*.rs build.rs makes from rustdoc JSON (tools/bindgen.py); the one build of it
+        runs-on: ubuntu-24.04    # Linux x86_64 only
+        env:
+            AZL_RDJ_FORMAT_RANGE: "57-99"    # a nightly's format_version is not the 57 of stable 1.97.0
+        steps:
+            - uses: actions/checkout@v4
+            - uses: ./.github/actions/azalea
+            - uses: actions/setup-python@v5
+              with:
+                  python-version: "3.12"
+            - name: azalea toolchain
+              run: |
+                  # azalea uses nightly-only features, so document and build with the nightly its rust-toolchain.toml names
+                  ch=$(python3 -c 'import sys, tomllib; print(tomllib.load(open(sys.argv[1], "rb"))["toolchain"]["channel"])' bind/azalea-src/rust-toolchain.toml 2>/dev/null || true)
+                  ch=${ch:-nightly}
+                  echo "azalea toolchain: $ch"
+                  rustup toolchain install "$ch" --profile minimal --no-self-update
+                  echo "RUSTUP_TOOLCHAIN=$ch" >> "$GITHUB_ENV"
+                  rustc +"$ch" -V    # the exact nightly this run used: copy its date into rust-toolchain.toml to pin it
+            - uses: Swatinem/rust-cache@v2
+              with:
+                  shared-key: rdj
+                  key: ${{ hashFiles('bind/azalea-src/Cargo.lock') }}
+                  workspaces: |
+                      .
+                      bind/azalea-src -> /tmp/azl-rdj-target    # make_rustdoc_json.sh's default CARGO_TARGET_DIR
+                  cache-on-failure: true
+            # build.rs runs tools/bindgen.py: crates under bind/ -> rustdoc JSON -> bindings (into target/*/build/luaxite*/out; a nightly cargo with the
+            # new build-dir layout writes build/luaxite/<hash>/out, an older one build/luaxite-<hash>/out, so the report is found, not globbed)
+            - run: cargo build
+            - name: generated report and ledger
+              run: |
+                  report=$(find target/debug/build -path '*/luaxite*/out/GEN_REPORT.md' -exec ls -t {} + | head -1)
+                  test -n "$report" || { echo "no GEN_REPORT.md under target/debug/build (did build.rs run?)"; exit 1; }
+                  echo "report: $report"
+                  mkdir -p gen && cp "$report" gen/GEN_REPORT.md
+                  grep -F 'Front end: rustdoc JSON' gen/GEN_REPORT.md
+                  test -f types/bindings.d.luau
+                  GEN_REPORT=gen/GEN_REPORT.md python3 tools/coverage.py --strict
+            - name: azalea API surface (tools/baseline_api.txt vs types/bindings.d.luau)
+              run: python3 tools/api_surface.py
+            - run: cargo run -q -- --help
+            - name: a failing script exits non-zero
+              run: |
+                  echo 'error("e2e-expected")' > /tmp/fail.luau
+                  if cargo run -q -- /tmp/fail.luau; then exit 1; fi
+            - name: an erroring task.spawn thread exits non-zero
+              run: |
+                  printf 'local task = require("@lune/task")\ntask.spawn(function()\n\terror("e2e-expected")\nend)\n' > /tmp/fail_task.luau
+                  if cargo run -q -- /tmp/fail_task.luau; then exit 1; fi
+            - name: unknown flag is an error
+              run: if cargo run -q -- --nope; then exit 1; fi
+            - name: the binary for the jobs that only run it
+              run: |
+                  mkdir -p dist
+                  cp target/debug/luaxite dist/luaxite
+                  strip --strip-debug dist/luaxite    # the debug info is most of a debug build's size, and the e2e jobs do not need it
+                  ls -l dist/luaxite
+            - uses: actions/upload-artifact@v4
+              with:
+                  name: luaxite-linux-debug
+                  path: dist/luaxite
+                  retention-days: 1
+                  compression-level: 6
+            - uses: actions/upload-artifact@v4
+              if: always()
+              with:
+                  name: rdj-real-build
+                  path: |
+                      gen/GEN_REPORT.md
+                      /tmp/azl-rdj-target/*.log
+                  if-no-files-found: ignore
+
+    features:
+        # the cargo feature ladder: default (real + packets) is built above
+        strategy:
+            fail-fast: false
+            matrix:
+                flags: ["--no-default-features", "--no-default-features --features real", "--no-default-features --features packets"]
+        runs-on: ubuntu-24.04
+        env:
+            AZL_RDJ_FORMAT_RANGE: "57-99"    # build.rs documents azalea with this toolchain: a nightly's format_version is not the 57 of stable (same as `real`)
+        steps:
+            - uses: actions/checkout@v4
+            - uses: ./.github/actions/azalea
+            - uses: actions/setup-python@v5
+              with:
+                  python-version: "3.12"    # build.rs runs tools/bindgen.py (3.11+ for tomllib)
+            - name: azalea toolchain
+              run: |
+                  # same toolchain choice as `real`: the one bind/azalea-src/rust-toolchain.toml names, not a separately floating nightly
+                  ch=$(python3 -c 'import sys, tomllib; print(tomllib.load(open(sys.argv[1], "rb"))["toolchain"]["channel"])' bind/azalea-src/rust-toolchain.toml 2>/dev/null || true)
+                  ch=${ch:-nightly}
+                  echo "azalea toolchain: $ch"
+                  rustup toolchain install "$ch" --profile minimal --no-self-update
+                  echo "RUSTUP_TOOLCHAIN=$ch" >> "$GITHUB_ENV"
+                  rustc +"$ch" -V    # the exact nightly this run used: copy its date into rust-toolchain.toml to pin it
+            - uses: Swatinem/rust-cache@v2
+              with:
+                  key: ${{ matrix.flags }}-${{ hashFiles('bind/azalea-src/Cargo.lock') }}    # every matrix entry builds different artifacts: one cache each
+                  cache-on-failure: true
+            - run: cargo check --all-targets ${{ matrix.flags }}
+
+    lune:
+        # `@lune/task`, `@lune/stdio`, `@lune/process`, `@lune/net` (and lune.luau): no Minecraft server needed. Runs the binary of `real`.
+        needs: real
+        runs-on: ubuntu-24.04
+        timeout-minutes: 30
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/download-artifact@v4
+              with:
+                  name: luaxite-linux-debug
+                  path: target/debug
+            - run: chmod +x target/debug/luaxite    # an artifact does not keep the executable bit
+            - run: LUNE_ONLY=1 sh tests/e2e/run.sh target/debug/luaxite
+
+    server:
+        # the binary of `real` against a vanilla server of the Minecraft version azalea targets (offline mode, flat world)
+        runs-on: ubuntu-24.04
+        timeout-minutes: 45
+        needs: real    # runs the binary of `real`; azalea's source is only checked out to read its Minecraft version
+        steps:
+            - uses: actions/checkout@v4
+            - uses: ./.github/actions/azalea
+            - uses: actions/download-artifact@v4
+              with:
+                  name: luaxite-linux-debug
+                  path: target/debug
+            - run: chmod +x target/debug/luaxite    # an artifact does not keep the executable bit
+            - name: find the server jar for azalea's Minecraft version
+              id: mc
+              run: |
+                  v=$(sed -n 's/.*VERSION_NAME: &str = "\(.*\)";/\1/p' bind/azalea-src/azalea-protocol/src/packets/mod.rs)
+                  meta=$(curl -fsSL https://piston-meta.mojang.com/mc/game/version_manifest_v2.json | jq -r --arg v "$v" '.versions[] | select(.id == $v) | .url')
+                  [ -n "$meta" ] || { echo "Minecraft $v is not in Mojang's version manifest"; exit 1; }
+                  info=$(curl -fsSL "$meta")
+                  echo "version=$v" >> "$GITHUB_OUTPUT"
+                  echo "jar=$(echo "$info" | jq -r .downloads.server.url)" >> "$GITHUB_OUTPUT"
+                  echo "java=$(echo "$info" | jq -r .javaVersion.majorVersion)" >> "$GITHUB_OUTPUT"
+            - uses: actions/setup-java@v4
+              with:
+                  distribution: temurin
+                  java-version: ${{ steps.mc.outputs.java }}
+            - name: start the server
+              run: |
+                  mkdir -p server
+                  # a restored world must not bring back the bots' last positions
+                  find server/world \( -path '*playerdata*' -o -path '*players*' \) -type f -delete 2>/dev/null || true
+                  curl -fsSL -o server/server.jar "${{ steps.mc.outputs.jar }}"
+                  echo "eula=true" > server/eula.txt
+                  printf '%s\n' online-mode=false enforce-secure-profile=false 'level-type=minecraft\:flat' generate-structures=false spawn-protection=0 \
+                      difficulty=peaceful spawn-monsters=false spawn-animals=false spawn-npcs=false view-distance=6 simulation-distance=4 max-tick-time=-1 > server/server.properties
+                  cd server
+                  # console input comes from cmd.txt (append a line to run a server command)
+                  : > cmd.txt
+                  nohup sh -c 'tail -f cmd.txt | java -Xmx2G -jar server.jar nogui' > server.log 2>&1 &
+                  for _ in $(seq 150); do grep -q 'Done (' server.log && break; sleep 2; done
+                  grep -q 'Done (' server.log || { cat server.log; exit 1; }
+                  # rule names differ between Minecraft versions: send both spellings, the one that does not exist just logs an error
+                  for c in 'gamerule spawn_mobs false' 'gamerule advance_weather false' 'weather clear' 'time set day'; do
+                      echo "$c" >> cmd.txt
+                  done
+                  # always day: reset the time every 5s instead of stopping the clock (the server keeps sending time packets)
+                  nohup sh -c 'while sleep 5; do echo "time set day" >> cmd.txt; done' > /dev/null 2>&1 &
+            - run: sh tests/e2e/run.sh target/debug/luaxite localhost
+            - name: stop the server (flushes the world to disk)
+              if: always()
+              run: |
+                  pkill -f 'while sleep 5' || true
+                  pkill -TERM -f 'java.*server.jar' || true
+                  for _ in $(seq 30); do pgrep -f 'java.*server.jar' > /dev/null || break; sleep 1; done
+                  pkill -f 'tail -f cmd.txt' || true
+            - uses: actions/upload-artifact@v4
+              if: always()
+              with:
+                  name: e2e-logs
+                  path: |
+                      server/server.log
+                      server/logs/latest.log
+                      /tmp/e2e-*.log

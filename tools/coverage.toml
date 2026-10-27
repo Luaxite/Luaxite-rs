@@ -1,0 +1,75 @@
+# tools/coverage.toml - ledger of every azalea API the generator does not bind (checked by tools/coverage.py, see its docstring).
+# Status: `hand <Luau name | Class.name>` | `todo sN <what>` (N = owner slice 2..20 of the PROMPT.md chain) | `no <reason>`.
+# A slice that binds an API flips its entry to `hand ...`; one that makes the generator emit it deletes the entry (stale otherwise).
+# Rust is not compiled in this chain (PROMPT.md): prefer small hand-written bindings; `sh tools/check.sh` with cargo is the compile check.
+# azalea's #[doc(hidden)] #[deprecated] methods (get_component, try_query_self, try_query_entity) are not in the rustdoc JSON, so the report never
+# lists them and they have no row; the hand bindings of the same names stay (extra_query.rs).
+
+[Client]
+# entity searches with a Luau predicate -> s19
+any_entity_by = "hand any_entity_by"
+any_entity_id_by = "hand any_entity_by"
+nearest_entity_by = "hand nearest_entity_by"
+nearest_entity_id_by = "hand nearest_entity_by"
+nearest_entities = "hand nearest_entities"
+nearest_entities_by = "hand nearest_entities_by"
+nearest_entity_ids_by = "hand nearest_entities_by"
+# components, resources, queries by name -> s18 (name table: s17)
+component = "hand component"
+entity_component = "hand entity_component"
+get_entity_component = "hand get_entity_component"
+query_self = "hand query_self"
+query_entity = "hand query_entity"
+resource = "hand resource"
+map_resource = "hand map_resource"
+map_get_resource = "hand map_get_resource"
+# registries -> s9
+resolve_registry_key = "hand registry_resolve"
+resolve_registry_name = "hand registry_name"
+with_registry_holder = "hand registry_entries"
+with_resolved_registry = "hand registry_get"
+# raw connection / packets -> s16
+with_raw_connection = "hand raw_connection"
+with_raw_connection_mut = "hand raw_connection_mut"
+write_packet = "hand write_packet"
+# world -> s6
+world = "hand world"
+partial_world = "hand partial_world"
+# broadcasters -> s5
+get_tick_broadcaster = "hand wait_tick"
+get_update_broadcaster = "hand wait_update"
+# lifecycle -> s11
+join = "hand AzaleaLib.join"
+join_with_proxy = "hand AzaleaLib.join"
+start_client = "hand AzaleaLib.join"
+new = "no raw ECS constructor (entity + world); scripts get a Bot from azalea.join or the `bot` global"
+world_name = "hand Bot.world_name"
+# already bound by hand (extra_state.rs / extra_misc.rs / extra_block.rs); a later slice may replace them with generated ones (then delete the row)
+tab_list = "hand tab_list"
+account = "hand account"
+set_client_information = "hand set_client_information"
+best_tool_in_hotbar_for_block = "hand best_tool_in_hotbar_for_block"
+
+[EntityRef]
+kind = "hand kind"
+component = "hand component"
+get_component = "hand get_component"
+query_self = "hand query_self"
+id = "no the raw ECS id is internal; Entity handles compare with == and are the id"
+new = "no raw ECS constructor; Entity handles come from bot queries"
+world_name = "hand Entity.world_name"
+fmt = "no Debug/Display impl, not an API"
+
+[Goal]
+AndGoal = "hand GoalLib.all"
+AndGoals = "hand GoalLib.all"
+OrGoal = "hand GoalLib.any"
+OrGoals = "hand GoalLib.any"
+InverseGoal = "hand GoalLib.inverse"
+ReachBlockPosGoal = "hand goto_reach"
+
+[Event]
+Packet = "hand on_packet"
+
+[extra]
+# Work the report cannot see (README "Still missing", PROMPT.md slices). One row per slice that has no report-visible API.

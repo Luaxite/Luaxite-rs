@@ -1,0 +1,10 @@
+name: azalea
+description: Check out the azalea commit the bindings are generated and golden-tested against, into ./bind/azalea-src
+runs:
+    using: composite
+    steps:
+        - uses: actions/checkout@v4
+          with:
+              repository: azalea-rs/azalea
+              ref: 0d38e0dcf47eb258c41b1b09ebc2bcde7253e185
+              path: bind/azalea-src

@@ -1,0 +1,4 @@
+rustc: hand-built by tools/rdj_synth.py (no rustc in the sandbox)
+format_version: 57
+private_items: 1
+source_sha1: 21d335c13136dc8351f6d9c6d96c9271524d5703

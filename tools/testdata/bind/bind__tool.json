@@ -1,0 +1,46 @@
+{
+ "packages": [
+  {
+   "name": "tool",
+   "version": "0.1.0",
+   "id": "path+file://@ROOT@/bind/tool#tool@0.1.0",
+   "source": null,
+   "manifest_path": "@ROOT@/bind/tool/Cargo.toml",
+   "edition": "2021",
+   "targets": [
+    {
+     "kind": [
+      "bin"
+     ],
+     "crate_types": [
+      "bin"
+     ],
+     "name": "tool",
+     "src_path": "@ROOT@/bind/tool/src/main.rs"
+    }
+   ],
+   "dependencies": [
+    {
+     "name": "ws-c",
+     "source": null,
+     "req": "*",
+     "kind": null,
+     "optional": false,
+     "rename": null,
+     "path": "@ROOT@/bind/ws/c"
+    }
+   ]
+  }
+ ],
+ "workspace_members": [
+  "path+file://@ROOT@/bind/tool#tool@0.1.0"
+ ],
+ "workspace_default_members": [
+  "path+file://@ROOT@/bind/tool#tool@0.1.0"
+ ],
+ "resolve": null,
+ "target_directory": "@ROOT@/bind/tool/target",
+ "version": 1,
+ "workspace_root": "@ROOT@/bind/tool",
+ "metadata": null
+}

@@ -1,0 +1,46 @@
+{
+ "packages": [
+  {
+   "name": "cyca",
+   "version": "0.1.0",
+   "id": "path+file://@ROOT@/bind/cyca#cyca@0.1.0",
+   "source": null,
+   "manifest_path": "@ROOT@/bind/cyca/Cargo.toml",
+   "edition": "2021",
+   "targets": [
+    {
+     "kind": [
+      "lib"
+     ],
+     "crate_types": [
+      "lib"
+     ],
+     "name": "cyca",
+     "src_path": "@ROOT@/bind/cyca/src/lib.rs"
+    }
+   ],
+   "dependencies": [
+    {
+     "name": "cycb",
+     "source": null,
+     "req": "*",
+     "kind": null,
+     "optional": false,
+     "rename": null,
+     "path": "@ROOT@/bind/cycb"
+    }
+   ]
+  }
+ ],
+ "workspace_members": [
+  "path+file://@ROOT@/bind/cyca#cyca@0.1.0"
+ ],
+ "workspace_default_members": [
+  "path+file://@ROOT@/bind/cyca#cyca@0.1.0"
+ ],
+ "resolve": null,
+ "target_directory": "@ROOT@/bind/cyca/target",
+ "version": 1,
+ "workspace_root": "@ROOT@/bind/cyca",
+ "metadata": null
+}

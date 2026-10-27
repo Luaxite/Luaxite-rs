@@ -1,0 +1,39 @@
+name: rustdoc front end
+
+on:
+    push:
+    pull_request:
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+concurrency:
+    group: rustdoc-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    fixture:
+        # harness/fake/rustdoc is rebuilt with the pinned rustc and must load, equal the fake golden, and still be fresh
+        runs-on: ubuntu-24.04
+        env:
+            RUSTUP_TOOLCHAIN: "1.97.0"
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-python@v5
+              with:
+                  python-version: "3.12"
+            - uses: dtolnay/rust-toolchain@master
+              with:
+                  toolchain: "1.97.0"
+            - uses: Swatinem/rust-cache@v2
+              with:
+                  workspaces: harness/fake/azalea -> /tmp/azl-rdj-target    # make_rustdoc_json.sh's default CARGO_TARGET_DIR
+                  cache-on-failure: true
+            - run: AZL_RDJ_ENV=0 AZL_RDJ_OFFLINE=0 sh tools/make_rustdoc_json.sh harness/fake/azalea /tmp/fixture
+            - run: |
+                  mkdir -p /tmp/out/rust /tmp/out/luau
+                  cp harness/src/luau/extra_*.rs /tmp/out/rust/
+                  python3 tools/luaxite_gen.py --azalea harness/fake --rustdoc /tmp/fixture --rust-out /tmp/out/rust --luau-out /tmp/out/luau
+            - run: GOLDEN_ALLOW=1 sh tools/golden.sh compare fake /tmp/out/rust /tmp/out/luau
+            - run: python3 tools/rdj_selftest.py

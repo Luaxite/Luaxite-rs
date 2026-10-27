@@ -1,0 +1,12 @@
+# Known gaps of the rustdoc front end against the committed bindings, for tools/rdj_superset.py --allow.
+# One `<file>: <item>` per line. Delete a line once the gap is fixed (the checker prints a note when an entry is no longer needed).
+#
+# rdj lists the ECS components Chest, Player and Tnt but cannot read them (`rust: "", readable: false`, committed bindings: readable marker
+# types `azalea::entity::metadata::<Name>`). Probable cause, not checked: the name exists twice in the JSON (a block/entity type of the
+# same name), so rdj_index finds no unique public definition. Fix in rdj_index.py or add [path_overrides] entries.
+gen_ecs.rs: read_component::Chest
+gen_ecs.rs: read_component::Player
+gen_ecs.rs: read_component::Tnt
+gen_ecs.rs: read_ref_component::Chest
+gen_ecs.rs: read_ref_component::Player
+gen_ecs.rs: read_ref_component::Tnt

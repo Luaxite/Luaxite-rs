@@ -1,0 +1,107 @@
+name: api-docs
+
+# Publishes the Luau API list as its own GitHub release, separate from the binary releases of release.yml.
+#
+#   api-latest     rolling: replaced on every push to the default branch that touches the bindings (and on a manual run)
+#   api-v0.1.0     pushed with the binary tag v0.1.0: the API list of that version, kept
+#
+# Each release holds API_list.md (tools/api_list.py: one line per declaration) and bindings.d.luau (the definitions for luau-lsp, `--defs=`).
+# They are prereleases on purpose: install.sh / install.ps1 download `releases/latest`, which must stay the newest binary release.
+# The tags are `api-*`, so release.yml (`v*`) does not fire for them.
+
+on:
+    push:
+        branches: [main, master]
+        paths:
+            - bindgen.toml
+            - Cargo.toml
+            - Cargo.lock
+            - rust-toolchain.toml
+            - rust/**
+            - tools/**
+            - .github/actions/azalea/**
+            - .github/workflows/api-docs.yml
+        tags: ["v*"]
+    workflow_dispatch:
+        inputs:
+            tag:
+                description: "Release tag to publish (default api-latest)."
+                required: false
+                type: string
+
+permissions:
+    contents: read
+
+concurrency:
+    group: api-docs
+    cancel-in-progress: false
+
+defaults:
+    run:
+        shell: bash
+
+jobs:
+    publish:
+        runs-on: ubuntu-24.04
+        timeout-minutes: 60
+        permissions:
+            contents: write
+        env:
+            GH_TOKEN: ${{ github.token }}
+            # a nightly's rustdoc JSON format_version is newer than the 57 of stable (same setting as generator.yml `luau`)
+            AZL_RDJ_FORMAT_RANGE: "57-99"
+        steps:
+            - uses: actions/checkout@v4
+            - uses: ./.github/actions/azalea
+            - uses: actions/setup-python@v5
+              with:
+                  python-version: "3.12"    # tools/bindgen.py needs tomllib (3.11+)
+            - name: nightly toolchain of bind/azalea-src
+              run: |
+                  ch=$(python3 -c 'import sys, tomllib; print(tomllib.load(open(sys.argv[1], "rb"))["toolchain"]["channel"])' bind/azalea-src/rust-toolchain.toml 2>/dev/null || true)
+                  ch=${ch:-nightly}
+                  rustup toolchain install "$ch" --profile minimal --no-self-update
+            - name: generate the bindings and the API list
+              run: |
+                  python3 tools/bindgen.py --root . --out "$RUNNER_TEMP/gen" > "$RUNNER_TEMP/bindgen.log"
+                  grep '^cargo:warning=' "$RUNNER_TEMP/bindgen.log" || true
+                  mkdir -p dist
+                  cp types/API_list.md types/bindings.d.luau dist/
+            - name: the list is a real one
+              run: |
+                  head -n 1 dist/API_list.md | grep -qx '# Luaxite Luau API'
+                  grep -qx '## Bot' dist/API_list.md
+                  grep -qF 'declare bot: Bot' dist/API_list.md
+                  echo "$(grep -c '^- `declare function' dist/API_list.md) functions"
+            - name: publish
+              env:
+                  # the input goes through an environment variable, never straight into the script text (${{ }} is pasted in before the shell runs: script injection)
+                  INPUT_TAG: ${{ inputs.tag }}
+              run: |
+                  if [ -n "$INPUT_TAG" ]; then
+                      TAG="$INPUT_TAG"
+                  elif [ "$GITHUB_REF_TYPE" = tag ]; then
+                      TAG="api-$GITHUB_REF_NAME"
+                  else
+                      TAG=api-latest
+                  fi
+                  printf '%s' "$TAG" | grep -Eqx '[A-Za-z0-9._-]+' || { echo "tag '$TAG' has characters outside A-Za-z0-9._-"; exit 1; }
+                  case "$TAG" in api-*) ;; *) echo "tag '$TAG' must start with api- (v* is the binary release)"; exit 1;; esac
+                  notes="Luau API of ${GITHUB_SHA::10} (\`tools/api_list.py\`). \`API_list.md\` is the readable list; \`bindings.d.luau\` is the luau-lsp definitions file. Not a binary release: binaries are the \`v*\` releases."
+                  if [ "$TAG" = api-latest ]; then
+                      # rolling: the tag moves to this commit, so the old release goes first
+                      gh release delete "$TAG" --cleanup-tag --yes --repo "$GITHUB_REPOSITORY" 2>/dev/null || true
+                  fi
+                  if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+                      gh release upload "$TAG" dist/API_list.md dist/bindings.d.luau --clobber --repo "$GITHUB_REPOSITORY"
+                  else
+                      gh release create "$TAG" dist/API_list.md dist/bindings.d.luau --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+                          --title "Luau API ($TAG)" --notes "$notes" --prerelease --latest=false
+                  fi
+                  echo "https://github.com/$GITHUB_REPOSITORY/releases/tag/$TAG" >> "$GITHUB_STEP_SUMMARY"
+            - uses: actions/upload-artifact@v4
+              if: always()
+              with:
+                  name: api-docs
+                  path: dist/
+                  if-no-files-found: ignore

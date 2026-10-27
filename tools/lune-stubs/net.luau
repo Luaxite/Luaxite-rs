@@ -1,0 +1,13 @@
+-- luau-lsp stub (see .luaurc): the luaxite binary provides @lune/net
+--
+-- Behavior notes (not typed here; the binary is the source of truth):
+--   net.request(config)
+--     config.options.timeout: number?   seconds for the whole request, body included. Absent = 120 (default limit); 0 = no limit.
+--                                       Negative or NaN raises "net.request: options.timeout must be a positive number of seconds".
+--                                       On expiry: error "net.request: timed out". The connect phase always has a 30 s limit.
+--     response body larger than 64 MiB (counted after decompression) errors: "net.request: response body exceeds 64 MiB".
+--   net.serve(port, handler)
+--     a request body larger than 64 MiB gets a 413 reply (Connection: close); the server keeps running and the
+--     handler is not called for that request.
+--   net.tcp / net.socket reads: read(n) is clamped to a fixed maximum per call.
+return nil :: any

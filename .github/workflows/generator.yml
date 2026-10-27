@@ -1,0 +1,66 @@
+name: generator
+
+on:
+    push:
+    pull_request:
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+concurrency:
+    group: generator-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    check:
+        # tools/check.sh minus the harness build (rust.yml): generator on the fake, golden, rdj/mapper/coverage selftests, fuzz, API baseline, glue copies
+        runs-on: ubuntu-24.04
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-python@v5
+              with:
+                  python-version: "3.12"
+            # tools/fuzz/regress.py runs its rustdoc cases whenever `rustdoc` is on PATH, and tools/rdj.py accepts only the
+            # format_version of rustc 1.97.0 (FORMAT_ACCEPTED); the runner's preinstalled stable is newer and every case failed
+            - uses: dtolnay/rust-toolchain@master
+              with:
+                  toolchain: "1.97.0"
+            - run: sh tools/check.sh
+              env:
+                  RUSTUP_TOOLCHAIN: "1.97.0"
+                  SKIP_HARNESS: "1"
+                  GOLDEN_STRICT: "1"
+            - name: committed generated files are up to date
+              run: git diff --exit-code
+
+    luau:
+        # luau-analyze rejects `declare`; luau-lsp's one-shot analyze loads the definitions
+        runs-on: ubuntu-24.04
+        steps:
+            - uses: actions/checkout@v4
+            - uses: ./.github/actions/azalea
+            - uses: actions/setup-python@v5
+              with:
+                  python-version: "3.12"
+            - name: nightly toolchain of bind/azalea-src
+              run: |
+                  ch=$(python3 -c 'import sys, tomllib; print(tomllib.load(open(sys.argv[1], "rb"))["toolchain"]["channel"])' bind/azalea-src/rust-toolchain.toml 2>/dev/null || true)
+                  ch=${ch:-nightly}
+                  rustup toolchain install "$ch" --profile minimal --no-self-update
+            - name: generate types/bindings.d.luau
+              env:
+                  AZL_RDJ_FORMAT_RANGE: "57-99"
+              # bindgen.py's stdout is only `cargo:` lines, so `| grep -v '^cargo:'` selected nothing and exited 1 on every successful run (the pipeline
+              # takes grep's status, no pipefail). Write the log to a file so bindgen.py's own status decides, and show the warnings like api-docs.yml.
+              run: |
+                  python3 tools/bindgen.py --root . --out "$RUNNER_TEMP/gen" > "$RUNNER_TEMP/bindgen.log"
+                  grep '^cargo:warning=' "$RUNNER_TEMP/bindgen.log" || true
+            - run: |
+                  curl -fsSL -o luau-lsp.zip https://github.com/JohnnyMorganz/luau-lsp/releases/latest/download/luau-lsp-linux-x86_64.zip
+                  unzip -q luau-lsp.zip
+                  chmod +x luau-lsp
+            - name: scripts and e2e tests against types/bindings.d.luau
+              run: ./luau-lsp analyze --defs=types/bindings.d.luau $(ls src/*.luau | grep -v '\.d\.luau$') tests/e2e/*.luau
+            - name: harness/test.luau against the fake's definitions
+              run: ./luau-lsp analyze --defs=harness/luau/azalea.d.luau harness/test.luau

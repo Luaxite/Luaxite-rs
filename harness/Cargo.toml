@@ -1,0 +1,17 @@
+[package]
+name = "harness"
+version = "0.0.0"
+edition = "2024"
+
+[workspace]
+
+[dependencies]
+azalea = { path = "fake/azalea" }
+mlua = { version = "0.12", features = ["luau", "async", "send", "macros"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "time", "sync"] }
+anyhow = "1"
+
+# The shared mod.rs mentions features `real`, `packets` (real-azalea-only glue) and `lune` (Lune's built-in modules, needs the lune-std-* crates);
+# all are root Cargo.toml features, the harness never enables them.
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(feature, values("real", "packets", "lune"))'] }

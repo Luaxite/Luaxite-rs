@@ -1,0 +1,447 @@
+{
+ "crate_version": "0.1.0",
+ "external_crates": {
+  "1": {
+   "html_root_url": null,
+   "name": "b",
+   "path": "/synth/libb.rmeta"
+  },
+  "2": {
+   "html_root_url": null,
+   "name": "alloc",
+   "path": "/synth/liballoc.rmeta"
+  }
+ },
+ "format_version": 57,
+ "includes_private": true,
+ "index": {
+  "1": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": null,
+   "id": 1,
+   "inner": {
+    "module": {
+     "is_crate": true,
+     "is_stripped": false,
+     "items": [
+      8,
+      9,
+      10,
+      14,
+      15,
+      20
+     ]
+    }
+   },
+   "links": {},
+   "name": "a",
+   "span": null,
+   "visibility": "public"
+  },
+  "10": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": null,
+   "id": 10,
+   "inner": {
+    "use": {
+     "id": 3,
+     "is_glob": false,
+     "name": "Vec3",
+     "source": "b::geom::Vec3"
+    }
+   },
+   "links": {},
+   "name": null,
+   "span": null,
+   "visibility": "public"
+  },
+  "11": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": null,
+   "id": 11,
+   "inner": {
+    "struct_field": {
+     "resolved_path": {
+      "args": null,
+      "id": 3,
+      "path": "Vec3"
+     }
+    }
+   },
+   "links": {},
+   "name": "pos",
+   "span": null,
+   "visibility": "public"
+  },
+  "12": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": null,
+   "id": 12,
+   "inner": {
+    "struct_field": {
+     "resolved_path": {
+      "args": null,
+      "id": 4,
+      "path": "b::geom::Dir"
+     }
+    }
+   },
+   "links": {},
+   "name": "facing",
+   "span": null,
+   "visibility": "public"
+  },
+  "13": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": null,
+   "id": 13,
+   "inner": {
+    "struct_field": {
+     "resolved_path": {
+      "args": {
+       "angle_bracketed": {
+        "args": [
+         {
+          "type": {
+           "resolved_path": {
+            "args": null,
+            "id": 5,
+            "path": "b::Marker"
+           }
+          }
+         }
+        ],
+        "constraints": []
+       }
+      },
+      "id": 7,
+      "path": "Vec"
+     }
+    }
+   },
+   "links": {},
+   "name": "marks",
+   "span": null,
+   "visibility": "public"
+  },
+  "14": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": "Uses three types of `b`.",
+   "id": 14,
+   "inner": {
+    "struct": {
+     "generics": {
+      "params": [],
+      "where_predicates": []
+     },
+     "impls": [],
+     "kind": {
+      "plain": {
+       "fields": [
+        11,
+        12,
+        13
+       ],
+       "has_stripped_fields": false
+      }
+     }
+    }
+   },
+   "links": {},
+   "name": "Bot",
+   "span": null,
+   "visibility": "public"
+  },
+  "15": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": null,
+   "id": 15,
+   "inner": {
+    "enum": {
+     "generics": {
+      "params": [],
+      "where_predicates": []
+     },
+     "has_stripped_variants": false,
+     "impls": [],
+     "variants": [
+      17,
+      19
+     ]
+    }
+   },
+   "links": {},
+   "name": "Cmd",
+   "span": null,
+   "visibility": "public"
+  },
+  "16": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": null,
+   "id": 16,
+   "inner": {
+    "struct_field": {
+     "resolved_path": {
+      "args": null,
+      "id": 3,
+      "path": "Vec3"
+     }
+    }
+   },
+   "links": {},
+   "name": "0",
+   "span": null,
+   "visibility": "default"
+  },
+  "17": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": null,
+   "id": 17,
+   "inner": {
+    "variant": {
+     "discriminant": null,
+     "kind": {
+      "tuple": [
+       16
+      ]
+     }
+    }
+   },
+   "links": {},
+   "name": "Go",
+   "span": null,
+   "visibility": "default"
+  },
+  "18": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": null,
+   "id": 18,
+   "inner": {
+    "struct_field": {
+     "resolved_path": {
+      "args": null,
+      "id": 4,
+      "path": "b::geom::Dir"
+     }
+    }
+   },
+   "links": {},
+   "name": "0",
+   "span": null,
+   "visibility": "default"
+  },
+  "19": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": null,
+   "id": 19,
+   "inner": {
+    "variant": {
+     "discriminant": null,
+     "kind": {
+      "tuple": [
+       18
+      ]
+     }
+    }
+   },
+   "links": {},
+   "name": "Face",
+   "span": null,
+   "visibility": "default"
+  },
+  "20": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": null,
+   "id": 20,
+   "inner": {
+    "type_alias": {
+     "generics": {
+      "params": [],
+      "where_predicates": []
+     },
+     "type": {
+      "resolved_path": {
+       "args": null,
+       "id": 4,
+       "path": "b::geom::Dir"
+      }
+     }
+    }
+   },
+   "links": {},
+   "name": "Facing",
+   "span": null,
+   "visibility": "public"
+  },
+  "8": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": null,
+   "id": 8,
+   "inner": {
+    "use": {
+     "id": 2,
+     "is_glob": false,
+     "name": "base",
+     "source": "b"
+    }
+   },
+   "links": {},
+   "name": null,
+   "span": null,
+   "visibility": "public"
+  },
+  "9": {
+   "attrs": [],
+   "crate_id": 0,
+   "deprecation": null,
+   "docs": null,
+   "id": 9,
+   "inner": {
+    "use": {
+     "id": 6,
+     "is_glob": false,
+     "name": "North",
+     "source": "b::geom::Dir::North"
+    }
+   },
+   "links": {},
+   "name": null,
+   "span": null,
+   "visibility": "public"
+  }
+ },
+ "paths": {
+  "1": {
+   "crate_id": 0,
+   "kind": "module",
+   "path": [
+    "a"
+   ]
+  },
+  "14": {
+   "crate_id": 0,
+   "kind": "struct",
+   "path": [
+    "a",
+    "Bot"
+   ]
+  },
+  "15": {
+   "crate_id": 0,
+   "kind": "enum",
+   "path": [
+    "a",
+    "Cmd"
+   ]
+  },
+  "17": {
+   "crate_id": 0,
+   "kind": "variant",
+   "path": [
+    "a",
+    "Cmd",
+    "Go"
+   ]
+  },
+  "19": {
+   "crate_id": 0,
+   "kind": "variant",
+   "path": [
+    "a",
+    "Cmd",
+    "Face"
+   ]
+  },
+  "2": {
+   "crate_id": 1,
+   "kind": "module",
+   "path": [
+    "b"
+   ]
+  },
+  "20": {
+   "crate_id": 0,
+   "kind": "type_alias",
+   "path": [
+    "a",
+    "Facing"
+   ]
+  },
+  "3": {
+   "crate_id": 1,
+   "kind": "struct",
+   "path": [
+    "b",
+    "geom",
+    "Vec3"
+   ]
+  },
+  "4": {
+   "crate_id": 1,
+   "kind": "enum",
+   "path": [
+    "b",
+    "geom",
+    "Dir"
+   ]
+  },
+  "5": {
+   "crate_id": 1,
+   "kind": "struct",
+   "path": [
+    "b",
+    "Marker"
+   ]
+  },
+  "6": {
+   "crate_id": 1,
+   "kind": "variant",
+   "path": [
+    "b",
+    "geom",
+    "Dir",
+    "North"
+   ]
+  },
+  "7": {
+   "crate_id": 2,
+   "kind": "struct",
+   "path": [
+    "alloc",
+    "vec",
+    "Vec"
+   ]
+  }
+ },
+ "root": 1,
+ "target": {
+  "target_features": [],
+  "triple": "x86_64-unknown-linux-gnu"
+ }
+}

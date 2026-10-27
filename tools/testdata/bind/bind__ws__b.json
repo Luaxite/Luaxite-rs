@@ -1,0 +1,142 @@
+{
+ "packages": [
+  {
+   "name": "ws-a",
+   "version": "0.1.0",
+   "id": "path+file://@ROOT@/bind/ws/a#ws-a@0.1.0",
+   "source": null,
+   "manifest_path": "@ROOT@/bind/ws/a/Cargo.toml",
+   "edition": "2021",
+   "targets": [
+    {
+     "kind": [
+      "lib"
+     ],
+     "crate_types": [
+      "lib"
+     ],
+     "name": "ws_a",
+     "src_path": "@ROOT@/bind/ws/a/src/lib.rs"
+    }
+   ],
+   "dependencies": [
+    {
+     "name": "ws-b",
+     "source": null,
+     "req": "*",
+     "kind": null,
+     "optional": false,
+     "rename": null,
+     "path": "@ROOT@/bind/ws/b"
+    },
+    {
+     "name": "ws-c",
+     "source": null,
+     "req": "*",
+     "kind": null,
+     "optional": false,
+     "rename": null,
+     "path": "@ROOT@/bind/ws/c"
+    },
+    {
+     "name": "serde",
+     "source": "registry+https://github.com/rust-lang/crates.io-index",
+     "req": "^1",
+     "kind": null,
+     "optional": false,
+     "rename": null
+    }
+   ]
+  },
+  {
+   "name": "ws-b",
+   "version": "0.1.0",
+   "id": "path+file://@ROOT@/bind/ws/b#ws-b@0.1.0",
+   "source": null,
+   "manifest_path": "@ROOT@/bind/ws/b/Cargo.toml",
+   "edition": "2021",
+   "targets": [
+    {
+     "kind": [
+      "lib"
+     ],
+     "crate_types": [
+      "lib"
+     ],
+     "name": "ws_b",
+     "src_path": "@ROOT@/bind/ws/b/src/lib.rs"
+    }
+   ],
+   "dependencies": [
+    {
+     "name": "ws-c",
+     "source": null,
+     "req": "*",
+     "kind": null,
+     "optional": false,
+     "rename": null,
+     "path": "@ROOT@/bind/ws/c"
+    }
+   ]
+  },
+  {
+   "name": "ws-c",
+   "version": "0.1.0",
+   "id": "path+file://@ROOT@/bind/ws/c#ws-c@0.1.0",
+   "source": null,
+   "manifest_path": "@ROOT@/bind/ws/c/Cargo.toml",
+   "edition": "2021",
+   "targets": [
+    {
+     "kind": [
+      "lib"
+     ],
+     "crate_types": [
+      "lib"
+     ],
+     "name": "ws_c",
+     "src_path": "@ROOT@/bind/ws/c/src/lib.rs"
+    }
+   ],
+   "dependencies": []
+  },
+  {
+   "name": "ws-d",
+   "version": "0.1.0",
+   "id": "path+file://@ROOT@/bind/ws/d#ws-d@0.1.0",
+   "source": null,
+   "manifest_path": "@ROOT@/bind/ws/d/Cargo.toml",
+   "edition": "2021",
+   "targets": [
+    {
+     "kind": [
+      "lib"
+     ],
+     "crate_types": [
+      "lib"
+     ],
+     "name": "ws_d",
+     "src_path": "@ROOT@/bind/ws/d/src/lib.rs"
+    }
+   ],
+   "dependencies": []
+  }
+ ],
+ "workspace_members": [
+  "path+file://@ROOT@/bind/ws/a#ws-a@0.1.0",
+  "path+file://@ROOT@/bind/ws/b#ws-b@0.1.0",
+  "path+file://@ROOT@/bind/ws/c#ws-c@0.1.0",
+  "path+file://@ROOT@/bind/ws/d#ws-d@0.1.0"
+ ],
+ "workspace_default_members": [
+  "path+file://@ROOT@/bind/ws/a#ws-a@0.1.0",
+  "path+file://@ROOT@/bind/ws/b#ws-b@0.1.0",
+  "path+file://@ROOT@/bind/ws/c#ws-c@0.1.0",
+  "path+file://@ROOT@/bind/ws/d#ws-d@0.1.0"
+ ],
+ "resolve": null,
+ "target_directory": "@ROOT@/bind/ws/target",
+ "version": 1,
+ "workspace_root": "@ROOT@/bind/ws",
+ "metadata": null
+}

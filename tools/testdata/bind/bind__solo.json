@@ -1,0 +1,46 @@
+{
+ "packages": [
+  {
+   "name": "solo",
+   "version": "0.1.0",
+   "id": "path+file://@ROOT@/bind/solo#solo@0.1.0",
+   "source": null,
+   "manifest_path": "@ROOT@/bind/solo/Cargo.toml",
+   "edition": "2021",
+   "targets": [
+    {
+     "kind": [
+      "lib"
+     ],
+     "crate_types": [
+      "lib"
+     ],
+     "name": "solo",
+     "src_path": "@ROOT@/bind/solo/src/lib.rs"
+    }
+   ],
+   "dependencies": [
+    {
+     "name": "ws-b",
+     "source": null,
+     "req": "*",
+     "kind": null,
+     "optional": false,
+     "rename": null,
+     "path": "@ROOT@/bind/ws/b"
+    }
+   ]
+  }
+ ],
+ "workspace_members": [
+  "path+file://@ROOT@/bind/solo#solo@0.1.0"
+ ],
+ "workspace_default_members": [
+  "path+file://@ROOT@/bind/solo#solo@0.1.0"
+ ],
+ "resolve": null,
+ "target_directory": "@ROOT@/bind/solo/target",
+ "version": 1,
+ "workspace_root": "@ROOT@/bind/solo",
+ "metadata": null
+}
