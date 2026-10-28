@@ -26,7 +26,7 @@ def balanced(text: str, start: int) -> str:
                 i += 1
             elif c == quote:
                 quote = None
-        elif c in "\"'" and not (c == "'" and re.match(r"'\w+\b(?!')", text[i:i + 12])):   # `'a` lifetimes aren't strings
+        elif c in "\"'" and not (c == "'" and re.match(r"'\w+\b(?!')", text[i:i + 12])):
             quote = c
         elif c == "-" and text.startswith("->", i):
             i += 1

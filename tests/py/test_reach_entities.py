@@ -7,7 +7,7 @@ from _common import read
 
 class ReachEntities(unittest.TestCase):
     def test_goto_reach_defaults_to_4_5(self):
-        # s8: azalea's own default cannot be compared here, so the old fixed 4.5 is explicit again
+
         src = read("rust/luau/extra_misc.rs")
         self.assertIn("const DEFAULT_REACH: f64 = 4.5;", src)
         self.assertIn("distance.unwrap_or(DEFAULT_REACH)", src)
@@ -15,7 +15,7 @@ class ReachEntities(unittest.TestCase):
         self.assertNotIn("ReachBlockPosGoal::new(pos.0, chunks)", src)
         self.assertIn("(default 4.5)", src)
         self.assertNotIn("default azalea's reach", src)
-        # reach_goal is left alone
+
         self.assertIn("ReachBlockPosGoal::new(pos.0, chunks)", read("rust/luau/real_goal.rs"))
 
     def test_entity_queries_exclude_the_bot(self):
@@ -26,7 +26,7 @@ class ReachEntities(unittest.TestCase):
         self.assertRegex(read("rust/luau/extra_query.rs"), r"pub\(super\) fn others\(")
 
     def test_entity_query_change_is_marked_breaking(self):
-        # the break is announced where scripts see it: the `luau[Bot]` doc comment, which lands in bindings.d.luau and the API list
+
         search = read("rust/luau/real_search.rs")
         docs = [l for l in search.splitlines() if l.lstrip().startswith("// luau[Bot]: ---")]
         self.assertEqual(len(docs), 4)

@@ -1,4 +1,4 @@
-// Harness copy of generated.rs: the committed gen_*.rs (tools/luaxite_gen.py on harness/fake) and no embedded scripts.
+
 mod gen_client;
 mod gen_events;
 mod gen_types;
@@ -8,8 +8,8 @@ mod scripts {
     pub const SCRIPTS: &[(&str, &str)] = &[];
 }
 
-// Harness only (the real host runs scripts through `run_standalone` and has no `Runtime::handle`): feeds the fake azalea's events
-// to harness/test.luau. `Init` runs the script with the `bot` global set; every other event goes to the generated dispatcher.
+
+
 impl Runtime {
     pub async fn handle(
         &self,

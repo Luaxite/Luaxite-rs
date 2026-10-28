@@ -86,7 +86,7 @@ def main(argv):
     bad, extra_total, stale = 0, 0, []
     for name, committed, rdj, items in pairs:
         if not committed.exists():
-            continue                      # e.g. no gen_ecs.rs committed
+            continue
         if not rdj.exists():
             print(f"MISSING FILE  {name}: the rustdoc front end wrote nothing")
             bad += 1

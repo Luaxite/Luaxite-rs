@@ -23,9 +23,9 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-import bindgen_crates  # noqa: E402
-from bindgen_crates import CrateError  # noqa: E402
-from rdj import source_sha1  # noqa: E402
+import bindgen_crates
+from bindgen_crates import CrateError
+from rdj import source_sha1
 
 DEFAULT_CHANNEL = "nightly"
 

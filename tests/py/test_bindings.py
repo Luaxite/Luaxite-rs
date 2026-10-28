@@ -11,7 +11,7 @@ DLUAU = read("harness/luau/azalea.d.luau")
 BASELINE = [l.strip() for l in read("tools/baseline_api.txt").splitlines() if l.strip()]
 EXTRAS = sorted(glob.glob(str(ROOT / "rust/luau/extra_*.rs")))
 SCRIPTS = sorted(glob.glob(str(ROOT / "tests/e2e/*.luau")))
-NOT_BOT_METHODS = {"add", "read", "write", "close", "exit"}  # swarm:add, tcp stream, process child
+NOT_BOT_METHODS = {"add", "read", "write", "close", "exit"}
 
 
 def called(text, name):
@@ -94,7 +94,7 @@ class Config(unittest.TestCase):
 
     def test_coverage_ledger_is_consistent(self):
         p = run([sys.executable, TOOLS / "coverage.py", "--report", "harness/luau/GEN_REPORT.json", "--dluau", "harness/luau/azalea.d.luau", "--quiet"])
-        self.assertIn(p.returncode, (0, 1), p.stdout + p.stderr)  # the fixture is not the real azalea: only a crash fails here
+        self.assertIn(p.returncode, (0, 1), p.stdout + p.stderr)
         self.assertNotIn("Traceback", p.stderr)
 
     def test_coverage_selftest(self):

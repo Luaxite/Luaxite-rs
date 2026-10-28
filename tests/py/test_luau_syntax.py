@@ -83,7 +83,7 @@ def tokens(src: str):
 
 def check(src: str):
     """Returns a list of problems."""
-    problems, stack = [], []  # stack of (opener, line) for blocks and brackets
+    problems, stack = [], []
     prev = None
     pairs = {")": "(", "]": "[", "}": "{"}
     for kind, text, line in tokens(src):
@@ -148,12 +148,12 @@ class Scripts(unittest.TestCase):
             text = Path(f).read_text()
             name = Path(f).stem
             if name.endswith("_sigint"):
-                # killed by SIGINT on purpose (never ends by itself): run.sh checks the exit code + the child and prints the PASS line
+
                 self.assertIn(f"E2E PASS {name}", (ROOT / "tests/e2e/run.sh").read_text(), name)
                 continue
             self.assertIn(f"E2E PASS {name}", text, name)
             if name.endswith("_idle"):
-                continue  # ends by itself on purpose (checks that the program exits without process.exit)
+                continue
             self.assertTrue("process.exit(0)" in text or ":exit()" in text, f"{name} never ends the process / bot")
             self.assertGreater(text.index("process.exit(0)" if "process.exit(0)" in text else ":exit()"), text.index(f"E2E PASS {name}"), f"{name}: exit comes before the PASS line")
 

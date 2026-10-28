@@ -1,6 +1,4 @@
-/*!
-    Constants for working with Luau module paths.
-*/
+
 
 pub const FILE_CHUNK_PREFIX: char = '@';
 pub const FILE_NAME_INIT: &str = "init";

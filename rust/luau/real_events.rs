@@ -10,7 +10,7 @@ use super::{convert::lua_err, gen_packets_in};
 
 pub fn start_update_pump(client: &Client, lua: Lua, handlers: Arc<Handlers>) {
     let mut updates = client.get_update_broadcaster();
-    // spawn_local: `update` handlers call task.defer etc., which need main.rs's LocalSet.
+    
     tokio::task::spawn_local(async move {
         loop {
             match updates.recv().await {
@@ -29,16 +29,16 @@ pub fn start_update_pump(client: &Client, lua: Lua, handlers: Arc<Handlers>) {
 
 #[mlua::userdata_impl]
 impl LuaClient {
-    // luau[Bot]: --- Yields until the next game tick (20 per second).
-    // luau[Bot]: function wait_tick(self): ()
+    
+    
     #[lua(infallible)]
     async fn wait_tick(&self) {
         let mut ticks = self.client.get_tick_broadcaster();
         let _ = ticks.recv().await;
     }
 
-    // luau[Bot]: --- Yields until the next ECS update (at least once per tick, usually faster).
-    // luau[Bot]: function wait_update(self): ()
+    
+    
     #[lua(infallible)]
     async fn wait_update(&self) {
         let mut updates = self.client.get_update_broadcaster();

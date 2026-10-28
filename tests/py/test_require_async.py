@@ -22,7 +22,7 @@ class RequireAsync(unittest.TestCase):
         self.assertIn("create_async_function", self.body)
         self.assertIn("call_async(", self.body)
         self.assertIn(".into_function()", self.body)
-        # the old synchronous run of the module chunk is gone
+
         self.assertNotIn(".call(())?;", self.body.split("let load_embedded")[1].split("let glue")[0])
         self.assertNotRegex(self.body, r"lua\.load\(\*source\)[^;]*\.call\(\(\)\)")
 
@@ -32,24 +32,24 @@ class RequireAsync(unittest.TestCase):
         self.assertIn("lune_libs::require(lua, &loaded, &name)", resolve)
         self.assertNotIn("create_async_function", resolve)
         self.assertNotIn("call_async", resolve)
-        # non-embedded names still go to the fallback require
+
         self.assertIn("f.call(name)", resolve)
 
     def test_cycle_is_an_error_not_a_second_run(self):
         self.assertIn('"azalea_loading"', self.body)
         self.assertIn("module '{key}' is still loading (cyclic require?)", self.body)
         resolve = self.body.split("let resolve")[1].split("let load_embedded")[0]
-        self.assertLess(resolve.index("azalea_loaded"), resolve.index("is still loading"))  # cache hit wins
+        self.assertLess(resolve.index("azalea_loaded"), resolve.index("is still loading"))
 
-    # Slice 10 moved the marking / caching out of load_embedded into begin_embedded / finish_embedded, shared with load_embedded_sync;
-    # the two tests below encoded the old in-body shape and now pin the same rules on the helpers (nothing weaker).
+
+
     def test_loading_mark_is_removed_by_a_drop_guard(self):
         drop = fn_body(self.src, "impl Drop for Loading")
         self.assertIn("Value::Nil", drop)
         begin = fn_body(self.src, "fn begin_embedded")
         self.assertIn("let guard = Loading", begin)
         self.assertLess(begin.index("loading.set(key, true)"), begin.index("let guard"))
-        # both loaders keep the guard alive for the whole chunk run
+
         load = self.body.split("let load_embedded =")[1].split("let load_embedded_sync")[0]
         sync = self.body.split("let load_embedded_sync")[1].split("let glue")[0]
         for part in (load, sync):
@@ -64,7 +64,7 @@ class RequireAsync(unittest.TestCase):
         finish = fn_body(self.src, "fn finish_embedded")
         self.assertEqual(finish.count("loaded.set("), 1)
         self.assertEqual(self.src.count('loaded.set(key, value.clone())'), 1)
-        # a nil result is cached as `true`, like before
+
         self.assertIn("mlua::Value::Boolean(true)", finish)
 
     def test_glue_calls_resolve_then_the_async_loader(self):
@@ -82,7 +82,7 @@ class RequireAsync(unittest.TestCase):
         self.assertIn("return load_embedded(key)", yielding)
         self.assertNotIn("load_embedded_sync", yielding)
         self.assertIn("return load_embedded_sync(key)", other.split("end", 1)[0])
-        # the glue gets all three functions
+
         self.assertIn("glue.call((resolve, load_embedded, load_embedded_sync))", self.body)
 
     def test_sync_loader_runs_the_chunk_with_a_plain_call(self):
@@ -92,7 +92,7 @@ class RequireAsync(unittest.TestCase):
         self.assertNotIn("call_async", sync)
         self.assertNotIn(".await", sync)
         self.assertIn("chunk.call(())?", sync)
-        # the async loader still uses call_async and has no plain call
+
         load = self.body.split("let load_embedded =")[1].split("let load_embedded_sync")[0]
         self.assertIn("create_async_function", load)
         self.assertIn("chunk.call_async(()).await?", load)
@@ -100,23 +100,23 @@ class RequireAsync(unittest.TestCase):
 
     def test_sync_loader_shares_the_loaded_and_loading_tables(self):
         sync = self.body.split("let load_embedded_sync")[1].split("let glue")[0]
-        # same helpers as the async loader: one loading mark / guard and one cache write, so the two cannot drift apart
+
         self.assertIn("begin_embedded(lua, &key)", sync)
         self.assertIn("finish_embedded(lua, &key, value)", sync)
         begin = fn_body(self.src, "fn begin_embedded")
         finish = fn_body(self.src, "fn finish_embedded")
         self.assertIn('named_registry_value("azalea_loading")', begin)
         self.assertIn('named_registry_value("azalea_loaded")', finish)
-        # `resolve` (cycle check + cache hit) runs for both loaders, in the glue, before the branch
+
         glue = self.body.split("let glue")[1]
         self.assertLess(glue.index("resolve(name)"), glue.index("isyieldable"))
-        # only those helpers and `resolve` write/read these tables; the loaders do not touch them directly
+
         loaders = self.body.split("let load_embedded =")[1].split("let glue")[0]
         self.assertNotIn("azalea_loaded", loaders)
         self.assertNotIn("azalea_loading", loaders)
 
     def test_modules_are_not_preloaded_at_startup(self):
-        # their top levels must run when first required, not early: SCRIPTS is only consulted by `resolve` and `begin_embedded`
+
         self.assertEqual(self.src.count("scripts::SCRIPTS"), 2)
         self.assertIn("scripts::SCRIPTS", fn_body(self.src, "fn begin_embedded"))
         self.assertIn("scripts::SCRIPTS", self.body.split("let resolve")[1].split("let load_embedded =")[0])
@@ -129,17 +129,17 @@ class RequireAsync(unittest.TestCase):
         self.assertIn("coroutine.isyieldable()", main)
         self.assertIn('E2E PASS require_gsub"', main)
         self.assertIn("process.exit(0)", main)
-        # the module it requires is the project's own, and joins no server once `azalea.join` is stubbed
+
         self.assertIn("azalea.join = function", main)
         self.assertTrue((ROOT / "tests/projects/require_gsub/src/probe.luau").exists())
-        # it must not hard-code how many handlers the module registers (it once asserted 2 while the module had 3 bot:on calls, and failed in CI):
-        # it counts azalea.join calls instead, and the probe makes exactly one
+
+
         self.assertNotRegex(main, r"handlers\s*==\s*\d")
         self.assertIn("joins == 1", main)
-        probe = "\n".join(l for l in read("tests/projects/require_gsub/src/probe.luau").splitlines() if not l.lstrip().startswith("--"))   # code only
+        probe = "\n".join(l for l in read("tests/projects/require_gsub/src/probe.luau").splitlines() if not l.lstrip().startswith("--"))
         self.assertEqual(len(re.findall(r"azalea\.join\b", probe)), 1)
         self.assertIn("bot:on(", probe)
-        # it runs through tests/projects/run.sh, which a CI job calls (it is not one of the scripts of tests/e2e/run.sh)
+
         self.assertIn("tests/projects/run.sh", read(".github/workflows/rust.yml"))
         self.assertNotIn("lune_require_gsub", read("tests/e2e/run.sh"))
 
@@ -149,7 +149,7 @@ class TestsOwnTheirModules(unittest.TestCase):
     tests/projects with its own src/, built as its own binary by tests/projects/run.sh."""
 
     def test_e2e_scripts_use_no_modules_of_their_own(self):
-        # tests/e2e scripts run through a binary built from the repo's src/, so they may only require Lune's modules
+
         for path in sorted((ROOT / "tests/e2e").glob("*.luau")):
             for name in re.findall(r'require\(\s*"([^"@][^"]*)"\s*\)', path.read_text()):
                 self.fail(f"{path.name} requires {name!r}: a test that needs its own module is a project in tests/projects")
@@ -171,7 +171,7 @@ class TestsOwnTheirModules(unittest.TestCase):
         self.assertNotIn("tests/", build)
         self.assertNotRegex(build, r'var_os\("LUAXITE_[A-Z_]*"\)')
         run = read("tests/projects/run.sh")
-        # the project's src/ replaces the repo's in a scratch copy: the repo's own src/ is never an input
+
         self.assertIn('cp -R "$proj/src" "$scratch/src"', run)
         self.assertNotIn('"$root/src"', run)
 

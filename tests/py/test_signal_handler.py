@@ -32,20 +32,20 @@ class SignalHandler(unittest.TestCase):
         self.assertIn("exit(130)", win)
 
     def test_children_are_killed_before_every_exit(self):
-        self.assertEqual(self.handler.count("luau::Runtime::kill_children()"), 2)  # unix + windows branch
+        self.assertEqual(self.handler.count("luau::Runtime::kill_children()"), 2)
         self.assertEqual(len(re.findall(r"kill_children\(\);\s*std::process::exit\(", self.handler)), 2)
 
     def test_listeners_are_registered_before_the_task_is_spawned(self):
-        # signal() installs the OS handler: doing it inside the task would leave a window where Ctrl-C kills luaxite only
+
         unix = self.handler[self.handler.index("#[cfg(unix)]"):self.handler.index("#[cfg(not(unix))]")]
         self.assertLess(unix.index("signal(SignalKind::terminate())"), unix.index("tokio::spawn"))
-        self.assertNotIn("spawn_local", self.handler)  # a worker thread: must fire while the main thread is busy in a script
+        self.assertNotIn("spawn_local", self.handler)
 
     def test_main_installs_the_handler_before_running_scripts(self):
         body = fn_body(self.main, "async fn main")
         self.assertIn("install_signal_handler()?", body)
         self.assertLess(body.index("install_signal_handler()"), body.index("Runtime::new"))
-        self.assertLess(body.index("parse_args()"), body.index("install_signal_handler()"))  # `--help` / bad args need none
+        self.assertLess(body.index("parse_args()"), body.index("install_signal_handler()"))
 
     def test_kill_children_kills_the_tracked_processes(self):
         body = fn_body(read("rust/luau/mod.rs"), "pub fn kill_children")
@@ -58,18 +58,18 @@ class SigintE2e(unittest.TestCase):
         s = read("tests/e2e/lune_process_sigint.luau")
         self.assertIn('process.env.SIGINT_PID_FILE', s)
         self.assertIn("process.create(", s)
-        self.assertIn("exec sleep 100", s)  # the child is the pid written to the file
-        self.assertIn("while true do", s)  # never ends by itself: only the signal ends it
+        self.assertIn("exec sleep 100", s)
+        self.assertIn("while true do", s)
 
     def test_run_sh_sends_sigint_and_checks_exit_code_and_child(self):
         run = read("tests/e2e/run.sh")
         self.assertRegex(run, r"timeout --preserve-status -k \d+ -s INT \d+ ")
         self.assertIn("tests/e2e/$name.luau", run[run.index("sigint_test()"):])
         self.assertIn("name=lune_process_sigint", run)
-        self.assertIn('-eq 130', run)  # luaxite's own exit code
-        self.assertIn('alive "$cpid"', run)  # and the child is gone
+        self.assertIn('-eq 130', run)
+        self.assertIn('alive "$cpid"', run)
         self.assertIn('echo "E2E PASS lune_process_sigint"', run)
-        self.assertIn("MINGW*", run)  # unix only
+        self.assertIn("MINGW*", run)
 
 
 if __name__ == "__main__":

@@ -24,7 +24,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.dont_write_bytecode = True
-import rdj  # noqa: E402
+import rdj
 
 ROOT = Path(__file__).resolve().parent.parent
 WS2 = ROOT / "tools" / "testdata" / "ws2"
@@ -113,7 +113,7 @@ class Synth:
         """A const generic argument (`Grid<3>`): a GenericArg, not a Type."""
         return {"const": {"expr": expr, "value": expr, "is_literal": True}}
 
-    # ---- impls, fns, traits (slice 10)
+
     @staticmethod
     def span(line, col=5, end=None, file="azalea/src/lib.rs"):
         return {"filename": file, "begin": [line, col], "end": end or [line, col + 20]}
@@ -202,7 +202,7 @@ def synth_ws2() -> dict:
     a_dir = a.foreign("b", "geom", "Dir", kind="enum")
     a_marker = a.foreign("b", "Marker")
     a_north = a.foreign("b", "geom", "Dir", "North", kind="variant")
-    a_vec = a.foreign("alloc", "vec", "Vec")                               # std: no JSON loaded for it
+    a_vec = a.foreign("alloc", "vec", "Vec")
     a.use(a.root, "b", a_b, name="base")
     a.use(a.root, "b::geom::Dir::North", a_north, name="North")
     a.use(a.root, "b::geom::Vec3", a_vec3, name="Vec3")
@@ -232,7 +232,7 @@ def synth_weird() -> Synth:
     P, G, S = Synth.path_type, Synth.generics, Synth.span
     u8, u16, u32_, usize_ = ({"primitive": n} for n in ("u8", "u16", "u32", "usize"))
     a = Synth("azalea", "0.0.0")
-    # re-export chain + glob: inner::deep::Deep, inner::DeepAlias (renamed), chain::* (glob), root `pub use chain::Deep`
+
     inner = a.mod("inner", a.root)
     deep = a.mod("deep", inner)
     deep_s = a.struct("Deep", deep, fields=[("n", u32_, "public")], doc="Reached through a re-export chain and a glob.")
@@ -240,7 +240,7 @@ def synth_weird() -> Synth:
     chain = a.mod("chain", a.root)
     a.use(chain, "crate::inner::deep", deep, name="deep", glob=True)
     a.use(a.root, "chain::Deep", deep_s, name="Deep")
-    # const generics, raw identifiers
+
     grid = a.struct("Grid", a.root, fields=[("cells", {"array": {"type": u8, "len": "W"}}, "public")], doc="Const generics.")
     a.index[grid]["inner"]["struct"]["generics"] = G([Synth.const_param("W", usize_), Synth.const_param("H", usize_, "4")])
     a.struct("Raw", a.root, fields=[("r#type", u32_, "public")], doc="Raw identifier field and variant.")
@@ -254,7 +254,7 @@ def synth_weird() -> Synth:
     entity = a.struct("EntityRef", a.root)
     tick = a.trait_("Tick", a.root)
     a.fn("tick", tick, [("self", Synth.SELF_REF)], u32_, is_async=True, doc="async fn in trait", span=S(33))
-    # impl Client
+
     ic = a.impl_(P("Client", client), span=S(38, 1, [58, 2]))
     sr = Synth.SELF_REF
     a.fn("nested", ic, [("self", sr), ("m", nest)], P("Option", opt, [P("Vec", vec, [u32_])]), doc="nested generics", span=S(40))
@@ -268,9 +268,9 @@ def synth_weird() -> Synth:
          doc="mutable reference", span=S(46))
     a.fn("r#match", ic, [("self", sr)], u32_, doc="raw identifier method", span=S(48))
     a.fn("grid", ic, [("self", sr), ("g", P("Grid", grid, [Synth.const_arg("3"), Synth.const_arg("4")]))], u32_, doc="const generic argument", span=S(50))
-    a.fn("hidden", ic, [("self", sr)], u32_, doc="hidden", attrs=[{"other": "#[doc(hidden)]"}], span=S(55))   # `gated` (cfg feature off) is absent
+    a.fn("hidden", ic, [("self", sr)], u32_, doc="hidden", attrs=[{"other": "#[doc(hidden)]"}], span=S(55))
     a.fn("waits", ic, [("self", sr)], u32_, is_async=True, span=S(57))
-    # macro-made impl: every fn has the span of the impl (the macro call site)
+
     site = S(64, 1, [64, 28])
     ie = a.impl_(P("EntityRef", entity), span=site)
     for n in ("health", "hunger"):

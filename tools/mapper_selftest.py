@@ -10,8 +10,8 @@ from pathlib import Path
 sys.dont_write_bytecode = True
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-import luaxite_gen as g  # noqa: E402
-import rdj_index  # noqa: E402
+import luaxite_gen as g
+import rdj_index
 
 ix = rdj_index.RdjIndex(HERE.parent / "harness" / "fake", HERE.parent / "harness" / "fake" / "rustdoc")
 ix.load()
@@ -38,26 +38,26 @@ def skips(t, role, why):
 
 def main():
     n = 0
-    # return values: HashMap / IndexMap / BTreeMap -> `{ [K]: V }`, converted into a HashMap of Luau values
+
     for name in g.MAP_TYPES:
         i, to, frm = ok(P(name, P("String"), P("String")), "ret")
         assert i.luau == "{ [string]: string }" and i.rust == "std::collections::HashMap<String, String>", (name, i)
         assert to == "x.into_iter().map(|(k, v)| (k, v)).collect::<std::collections::HashMap<_, _>>()" and frm is None, (name, to, frm)
         n += 1
-    # a `Uuid` key is its string form (the scalar's `to`), a numeric key stays a number, a record value is converted
+
     i, to, _ = ok(P("HashMap", P("Uuid"), P("PlayerInfo")), "ret")
     assert i.luau == "{ [string]: PlayerInfo }" and i.rust == "std::collections::HashMap<String, LuaPlayerInfo>", i
     assert to == "x.into_iter().map(|(k, v)| (k.to_string(), LuaPlayerInfo(v))).collect::<std::collections::HashMap<_, _>>()", to
     i, to, _ = ok(P("BTreeMap", ("prim", "u32"), P("String")), "ret")
     assert i.luau == "{ [number]: string }", i
     n += 2
-    # parameters: HashMap / BTreeMap rebuilt from what Luau gave
+
     i, _, frm = ok(P("BTreeMap", ("prim", "u32"), P("String")), "param")
     assert frm == "x.into_iter().map(|(k, v)| (k, v)).collect::<std::collections::BTreeMap<_, _>>()", frm
     i, _, frm = ok(P("HashMap", P("String"), ("prim", "f64")), "param")
     assert frm.endswith("collect::<std::collections::HashMap<_, _>>()"), frm
     n += 2
-    # bool parameters are the strict `LBool` (mlua's `bool` takes `0` as true); results stay plain bool
+
     i, to, frm = ok(("prim", "bool"), "param")
     assert i.rust == "LBool" and i.luau == "boolean" and to is None and frm == "x.0", (i, to, frm)
     i, to, frm = ok(("prim", "bool"), "ret")
@@ -67,22 +67,22 @@ def main():
     i, _, frm = ok(P("Vec", ("prim", "bool")), "param")
     assert i.rust == "Vec<LBool>" and ".0" in frm, (i, frm)
     n += 4
-    # `Option<()>` has no IntoLua: it is a presence flag (`true` / nil), never a parameter
+
     i, to, frm = ok(P("Option", ("unit",)), "ret")
     assert i.luau == "boolean?" and i.rust == "Option<()>" and to == "x.map(|_| true)" and frm is None, (i, to, frm)
     skips(P("Option", ("unit",)), "param", "`Option<()>` parameter")
     n += 2
-    # refusals
+
     skips(P("HashMap", P("Vec3"), P("String")), "ret", "map key type")
     skips(P("IndexMap", P("String"), P("String")), "param", "`IndexMap` parameter")
     skips(P("HashMap", P("String"), P("PlayerInfo")), "param", "can't be read from Luau")
-    skips(P("HashMap", P("Uuid"), P("String")), "param", "nested fallible type in map")  # Uuid keys parse: fallible
+    skips(P("HashMap", P("Uuid"), P("String")), "param", "nested fallible type in map")
     n += 4
-    # lists still work (unchanged by the map branch)
+
     i, to, _ = ok(P("Vec", P("String")), "ret")
     assert i.luau == "{ string }", i
     n += 1
-    # accessor records ([accessors.X]): public fields mapped like record fields + getter rows, private fields never read directly
+
     i, to, _ = ok(P("LookDirection"), "ret")
     assert i.luau == "LookDirection" and i.rust == "LuaLookDirection" and to == "LuaLookDirection(x)", (i, to)
     assert M.records["LookDirection"]["fields"] == [("y_rot", "number", "v.y_rot()"), ("x_rot", "number", "v.x_rot()")]
@@ -97,7 +97,7 @@ def main():
     ok(P("GameProfile"), "ret")
     assert [a for a, _b, _c in M.records["GameProfile"]["fields"]] == ["uuid", "name"]
     n += 7
-    # a missing public field, or a duplicate Luau field, skips the type with a reason (never silently wrong)
+
     saved = dict(g.ACCESSORS)
     try:
         g.ACCESSORS["Physics"] = dict(fields=["nope"], getters=[])
@@ -113,7 +113,7 @@ def main():
             raise AssertionError("duplicate field not refused")
         except g.Skip as e:
             assert "listed twice" in str(e), e
-        g.ACCESSORS["Physics"] = dict(fields=["on_ground"], getters=[])     # private in the fake: not readable as a field
+        g.ACCESSORS["Physics"] = dict(fields=["on_ground"], getters=[])
         try:
             g.Mapper(ix).map_ty(P("Physics"), "ret")
             raise AssertionError("private field read")
@@ -123,7 +123,7 @@ def main():
         g.ACCESSORS.clear()
         g.ACCESSORS.update(saved)
     n += 3
-    # tagged enums (data-carrying): unit -> `kind`, one-field tuple -> record fields flattened or `value`, several -> `_1`.., struct-style refused
+
     def enum_def(name, variants):
         return g.Def("enum", name, "azalea", (), True, False, b"", variants=variants)
 
@@ -154,7 +154,7 @@ def main():
                 raise AssertionError(f"{bad} not refused")
             except g.Skip as e:
                 assert why in str(e), e
-        # an enum holding an ECS `Entity` (the fake's HitResult) carries the client and is only returned by `Client` methods
+
         M4 = g.Mapper(ix)
         M4.cur_class = "Client"
         i = M4.map_ty(P("HitResult"), "ret")
@@ -169,7 +169,7 @@ def main():
         except g.Skip as e:
             assert "only `Client` methods" in str(e), e
         M5 = g.Mapper(ix)
-        M5.cur_class = "EntityRef"                      # first use from an Entity method: refused, and not remembered as a failure
+        M5.cur_class = "EntityRef"
         try:
             M5.map_ty(P("HitResult"), "ret")
             raise AssertionError("HitResult built for an Entity method")
@@ -180,20 +180,20 @@ def main():
     finally:
         ix.unique_def, ix.resolve_path = real_unique, real_resolve
     n += 11
-    # packets in (Generator.build_packets_in): variants from the `declare_state_packets!` list, per-field tolerance, `kind` clash
+
     import tempfile
     with tempfile.TemporaryDirectory() as tmp:
         pk = Path(tmp) / "azalea-protocol" / "src" / "packets" / "game"
         pk.mkdir(parents=True)
         (pk / "mod.rs").write_text("declare_state_packets!(GamePacket,\n    Clientbound => [\n        foo, // a comment\n        bar_baz,\n        tup,\n    ],\n    Serverbound => [ zed ]\n);\n")
-        mk = lambda name, fields, tuple_style=False, mod="game": g.Def(  # noqa: E731
+        mk = lambda name, fields, tuple_style=False, mod="game": g.Def(
             kind="struct", name=name, crate="azalea_protocol", modpath=("packets", mod, "c"), is_pub=True, generics=False,
             src=b"", tuple_style=tuple_style, fields=fields)
         added = [
             mk("ClientboundFoo", [("id", P("MinecraftEntityId"), True), ("blob", P("NoSuchType"), True), ("kind", ("prim", "u8"), True),
                                   ("hidden", ("prim", "u8"), False), ("count", ("prim", "u32"), True)]),
             mk("ClientboundTup", [("0", ("prim", "u8"), True), ("1", P("String"), True)], tuple_style=True),
-            mk("ClientboundFoo", [("other", ("prim", "u8"), True)], mod="config"),   # same name in another state: ignored
+            mk("ClientboundFoo", [("other", ("prim", "u8"), True)], mod="config"),
         ]
         for d in added:
             ix.defs[d.name].append(d)
@@ -201,7 +201,7 @@ def main():
             gp = g.Generator(ix)
             gp.build_packets_in(Path(tmp))
             by = {p["name"]: p for p in gp.packets_in}
-            assert list(by) == ["foo", "bar_baz", "tup"], list(by)     # `zed` is serverbound, comments are stripped
+            assert list(by) == ["foo", "bar_baz", "tup"], list(by)
             foo = by["foo"]
             assert foo["variant"] == "Foo" and foo["luau"] == "PacketFoo" and not foo["nodef"], foo
             assert [f[0] for f in foo["fields"]] == ["id", "count"], foo["fields"]
@@ -212,18 +212,18 @@ def main():
             out = g.emit_packets_in(gp, "test")
             assert "ClientboundGamePacket::BarBaz(v) => {" in out and 't.set("count", v.count)?;' in out, out
             gp2 = g.Generator(ix)
-            gp2.build_packets_in(Path(tmp) / "nowhere")                # azalea without packet sources (the fake): nothing
+            gp2.build_packets_in(Path(tmp) / "nowhere")
             assert gp2.packets_in == []
         finally:
             for d in added:
                 ix.defs[d.name].remove(d)
     n += 8
-    # packets out (Generator.build_packets_out): one unconvertible field = no constructor (the struct needs every field)
+
     with tempfile.TemporaryDirectory() as tmp:
         pk = Path(tmp) / "azalea-protocol" / "src" / "packets" / "game"
         pk.mkdir(parents=True)
         (pk / "mod.rs").write_text("declare_state_packets!(GamePacket,\n    Clientbound => [ foo ],\n    Serverbound => [\n        ok_one, // c\n        bad_one,\n        tup_out,\n        empty,\n    ]\n);\n")
-        mk = lambda name, fields, tuple_style=False: g.Def(  # noqa: E731
+        mk = lambda name, fields, tuple_style=False: g.Def(
             kind="struct", name=name, crate="azalea_protocol", modpath=("packets", "game", "s"), is_pub=True, generics=False,
             src=b"", tuple_style=tuple_style, fields=fields)
         added = [
@@ -238,7 +238,7 @@ def main():
             gp = g.Generator(ix)
             gp.build_packets_out(Path(tmp))
             by = {p["name"]: p for p in gp.packets_out}
-            assert list(by) == ["ok_one", "bad_one", "tup_out", "empty"], list(by)     # clientbound `foo` is not listed
+            assert list(by) == ["ok_one", "bad_one", "tup_out", "empty"], list(by)
             assert by["ok_one"]["ok"] and by["ok_one"]["luau"] == "OutPacketOkOne" and [f[0] for f in by["ok_one"]["fields"]] == ["id", "n"]
             assert not by["bad_one"]["ok"] and not by["bad_one"]["fields"] and "`blob`" in by["bad_one"]["why"], by["bad_one"]
             assert by["tup_out"]["ok"] and by["tup_out"]["tuple_style"] and [f[0] for f in by["tup_out"]["fields"]] == ["_1", "_2"]
@@ -254,8 +254,8 @@ def main():
             for d in added:
                 ix.defs[d.name].remove(d)
     n += 9
-    # ECS table (Generator.build_ecs): Component/Resource derives -> entries; markers, newtypes, records, unreadable
-    mk = lambda name, derive, fields, tuple_style=False: g.Def(  # noqa: E731
+
+    mk = lambda name, derive, fields, tuple_style=False: g.Def(
         kind="struct", name=name, crate="azalea_entity", modpath=("x",), is_pub=True, generics=False,
         src=b"", tuple_style=tuple_style, fields=fields, attrs=[derive])
     added = [
@@ -265,12 +265,12 @@ def main():
         mk("EcsNoClone", "#[derive(Component)]", [("0", ("prim", "u32"), True)], tuple_style=True),
         mk("EcsRes", "#[derive(Resource, Clone)]", [("0", ("prim", "bool"), True)], tuple_style=True),
         mk("EcsPlain", "#[derive(Debug, Clone)]", [("0", ("prim", "bool"), True)], tuple_style=True),
-        # rustdoc front end: derive(Resource) also writes an `impl Component`, so def_attrs shows both
+
         mk("EcsResBoth", "#[derive(Clone, Component, Resource)]", [("0", ("prim", "bool"), True)], tuple_style=True),
     ]
     for d in added:
         ix.defs[d.name].append(d)
-    # a component whose NAME is also a pub struct elsewhere (rustdoc sees macro-made ones: azalea_block `Chest`, azalea_inventory `Player`)
+
     dup_c = mk("EcsDup", "#[derive(Component, Clone)]", [("0", ("prim", "bool"), True)], tuple_style=True)
     dup_o = g.Def(kind="struct", name="EcsDup", crate="azalea_block", modpath=("y",), is_pub=True, generics=False, src=b"", fields=[])
     added += [dup_c, dup_o]
@@ -307,9 +307,9 @@ def main():
         for d in added:
             ix.defs[d.name].remove(d)
     n += 9
-    # the ECS name-error template reads "is a resource, not a component" (it once had a stray space before the comma)
+
     assert "is a {}, not a {kind}" in out and " , not a" not in out, out
-    # goals(): the mapper keys it touches are credited to EVERY class that calls it, not only the first
+
     gg = g.Generator(ix)
     gg.m.touched = set()
     gl = gg.goals()
@@ -319,8 +319,8 @@ def main():
     assert gg.goals() is gl
     assert gg.m.touched == first | {("type", "Other")}, (gg.m.touched, first)
     n += 3
-    # extras_reserved(): only fns at the impl block's own brace depth are methods; a nested `fn` in a method body
-    # (or text inside a string/comment) is not
+
+
     with tempfile.TemporaryDirectory() as tmp:
         (Path(tmp) / "extra_entity.rs").write_text(
             "impl LuaEntityRef {\n"

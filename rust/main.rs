@@ -26,9 +26,9 @@ fn parse_args() -> anyhow::Result<Vec<PathBuf>> {
     Ok(scripts)
 }
 
-/// Ctrl-C / SIGTERM. Children run in their own process group (`process_group(0)`), so the terminal's SIGINT never reaches
-/// them; kill them here, then exit like a signal-killed process (128 + the signal number). Runs on a worker thread, so it
-/// also fires while the main thread is busy in a script.
+
+
+
 fn install_signal_handler() -> anyhow::Result<()> {
     #[cfg(unix)]
     {

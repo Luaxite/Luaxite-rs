@@ -10,7 +10,7 @@ use std::{
 use mlua::prelude::*;
 use os_str_bytes::{OsStrBytes, OsStringBytes};
 
-// Inner (shared) struct
+
 
 #[derive(Debug, Default)]
 struct ProcessEnvInner {
@@ -25,17 +25,7 @@ impl FromIterator<(OsString, OsString)> for ProcessEnvInner {
     }
 }
 
-/**
-    A struct that can be easily shared, stored in Lua app data,
-    and that also guarantees the pairs are valid OS strings
-    that can be used for process environment variables.
 
-    Usable directly from Lua, implementing both `FromLua` and `LuaUserData`.
-
-    Also provides convenience methods for working with the variables
-    as either `OsString` or `Vec<u8>`, where using the latter implicitly
-    converts to an `OsString` and fails if the conversion is not possible.
-*/
 #[derive(Debug, Clone)]
 pub struct ProcessEnv {
     inner: Arc<Mutex<ProcessEnvInner>>,
@@ -68,7 +58,7 @@ impl ProcessEnv {
         inner.values.is_empty()
     }
 
-    // OS strings
+    
 
     #[must_use]
     pub fn get_all(&self) -> Vec<(OsString, OsString)> {
@@ -109,7 +99,7 @@ impl ProcessEnv {
         inner.values.remove(key);
     }
 
-    // Bytes wrappers
+    
 
     #[must_use]
     pub fn get_all_bytes(&self) -> Vec<(Vec<u8>, Vec<u8>)> {
@@ -141,7 +131,7 @@ impl ProcessEnv {
         }
     }
 
-    // Plain lua table conversion
+    
 
     #[doc(hidden)]
     #[allow(clippy::missing_errors_doc)]
@@ -159,7 +149,7 @@ impl ProcessEnv {
     }
 }
 
-// Iterator implementations
+
 
 impl IntoIterator for ProcessEnv {
     type Item = (OsString, OsString);
@@ -195,7 +185,7 @@ impl<K: Into<OsString>, V: Into<OsString>> Extend<(K, V)> for ProcessEnv {
     }
 }
 
-// Lua implementations
+
 
 impl FromLua for ProcessEnv {
     fn from_lua(value: LuaValue, _: &Lua) -> LuaResult<Self> {

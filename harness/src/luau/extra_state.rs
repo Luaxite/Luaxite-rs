@@ -4,8 +4,8 @@ use super::{convert::lua_err, gen_client::LuaClient, gen_types::LuaPlayerInfo};
 
 #[mlua::userdata_impl]
 impl LuaClient {
-    // luau[Bot]: --- The account the bot logged in with.
-    // luau[Bot]: function account(self): { username: string, uuid: string }
+    
+    
     fn account(&self, lua: &Lua) -> mlua::Result<mlua::Table> {
         let a = self.client.account();
         let t = lua.create_table()?;
@@ -14,8 +14,8 @@ impl LuaClient {
         Ok(t)
     }
 
-    // luau[Bot]: --- Everyone in the tab list, sorted by name.
-    // luau[Bot]: function tab_list(self): { PlayerInfo }
+    
+    
     fn tab_list(&self) -> mlua::Result<Vec<LuaPlayerInfo>> {
         let mut v: Vec<_> = self
             .client

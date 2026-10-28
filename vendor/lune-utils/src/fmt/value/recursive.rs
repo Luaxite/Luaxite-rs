@@ -13,9 +13,7 @@ use super::{
 
 const INDENT: &str = "    ";
 
-/**
-    Representation of a pointer in memory to a Lua value.
-*/
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub(crate) struct LuaValueId(usize);
 
@@ -31,13 +29,7 @@ impl From<&LuaTable> for LuaValueId {
     }
 }
 
-/**
-    Formats the given value, recursively formatting tables
-    up to the maximum depth specified in the config.
 
-    NOTE: We return a result here but it's really just to make handling
-    of the `write!` calls easier. Writing into a string should never fail.
-*/
 pub(crate) fn format_value_recursive(
     value: &LuaValue,
     config: &ValueFormatConfig,
@@ -103,7 +95,7 @@ pub(crate) fn format_value_recursive(
 fn sort_for_formatting(values: &mut [(LuaValue, LuaValue)]) {
     values.sort_by(|(a, _), (b, _)| {
         if a.type_name() == b.type_name() {
-            // If we have the same type, sort either numerically or alphabetically
+            
             match (a, b) {
                 (LuaValue::Integer(a), LuaValue::Integer(b)) => a.cmp(b),
                 (LuaValue::Number(a), LuaValue::Number(b)) => a.partial_cmp(b).unwrap(),
@@ -111,7 +103,7 @@ fn sort_for_formatting(values: &mut [(LuaValue, LuaValue)]) {
                 _ => Ordering::Equal,
             }
         } else {
-            // If we have different types, sort numbers first, then strings, then others
+            
             a.is_number()
                 .cmp(&b.is_number())
                 .then_with(|| a.is_string().cmp(&b.is_string()))

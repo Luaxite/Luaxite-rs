@@ -16,9 +16,9 @@ use super::lune_libs::{
 
 const STDIO_KINDS: &str = "default, inherit, forward, none";
 
-// Children spawned by exec/create. `process.exit` and the end of the program use `std::process::exit`, which skips
-// destructors (so `kill_on_drop` never fires); they call `kill_all` instead. A `group` entry (unix, `shell = true`) stays
-// after its child exited (`exited`): a background grandchild can still run in the child's process group.
+
+
+
 struct Entry {
     pid: u32,
     exited: bool,
@@ -66,16 +66,16 @@ impl Drop for Tracked {
     }
 }
 
-/// Command line (for `sh -c`) that SIGKILLs the process group led by `pid`, then `pid` itself (`-pid`, not `-- -pid`:
-/// dash's builtin kill rejects `--`). On unix `build_command`
-/// makes a child the leader of its own group, so the group kill also takes its grandchildren (`shell = true`); the
-/// plain kill covers a child that was left in our group (inherited stdin, see `build_command`), where `-pid` names no group.
+
+
+
+
 #[cfg(unix)]
 fn kill_group_cmd(pid: u32) -> String {
     format!("kill -9 -{pid} 2>/dev/null; kill -9 {pid} 2>/dev/null")
 }
 
-/// Best-effort, synchronous kill of a child and (unix) its process group.
+
 fn kill_tree(pid: u32) {
     #[cfg(unix)]
     let _ = std::process::Command::new("sh")
@@ -91,8 +91,8 @@ fn kill_tree(pid: u32) {
         .status();
 }
 
-/// SIGKILLs the process group left behind by an exited `shell = true` child (a background grandchild can outlive the
-/// shell). Only `kill -9 -pid`, never the plain pid: the exited child's pid may have been reused by an unrelated process.
+
+
 #[cfg(unix)]
 fn kill_leftover_group(pid: u32) {
     let _ = std::process::Command::new("sh")
@@ -102,8 +102,8 @@ fn kill_leftover_group(pid: u32) {
         .status();
 }
 
-/// Best-effort, synchronous kill of every tracked child (and its group) that is still running, and of the groups of
-/// exited `shell = true` children (their grandchildren may still run).
+
+
 pub(super) fn kill_all() {
     let entries = match CHILDREN.lock() {
         Ok(mut c) => std::mem::take(&mut *c),
@@ -154,8 +154,8 @@ struct Opts {
     stdin: StdinKind,
     out: Kind,
     err: Kind,
-    /// `options.timeout` (exec only): the child is killed when it runs longer. Exec without the option gets `DEFAULT_EXEC_TIMEOUT_SECS`,
-    /// `timeout = 0` means `None` = no limit; `create` has no timeout (always `None`).
+    
+    
     timeout: Option<Duration>,
 }
 
@@ -174,7 +174,7 @@ fn parse_opts(func: &str, options: Option<Table>) -> mlua::Result<Opts> {
         None => None,
     };
     if func == "exec" {
-        // no `timeout` (or no options table at all) -> the default; 0 -> no limit
+        
         o.timeout = timeout_with_default("process.exec", raw_timeout, DEFAULT_EXEC_TIMEOUT_SECS)?;
     } else if raw_timeout.is_some() {
         return Err(mlua::Error::runtime(format!(
@@ -230,7 +230,7 @@ fn out_stdio(k: Kind) -> Stdio {
     }
 }
 
-/// Collect a child's output (and forward it when asked). Fails once more than `MAX_BYTES` has come in; the caller kills the child.
+
 async fn read_all<R: AsyncRead + Unpin>(
     reader: Option<R>,
     forward: bool,
@@ -305,9 +305,9 @@ fn build_command(program: &str, args: &[String], o: &Opts) -> Command {
     });
     cmd.stdout(out_stdio(o.out)).stderr(out_stdio(o.err));
     cmd.kill_on_drop(true);
-    // Own process group, so `kill_all` / the exec timeout can kill grandchildren too (`shell = true` runs the command
-    // under `sh -c`, which a plain pid kill leaves behind). Not with an inherited stdin: a child in a background group
-    // that reads the terminal is stopped by SIGTTIN, and the plain pid kill still applies to it.
+    
+    
+    
     #[cfg(unix)]
     if !matches!(o.stdin, StdinKind::Inherit) {
         cmd.process_group(0);
@@ -355,7 +355,7 @@ impl UserData for Writer {
     }
 }
 
-/// Largest buffer one `read(n)` allocates: a huge `n` (2^40) must not abort the process. A read returns what is available anyway.
+
 const MAX_READ: usize = 64 << 20;
 
 impl UserData for Reader {
@@ -441,10 +441,10 @@ pub fn module(lua: Lua) -> mlua::Result<Table> {
             };
             let (timeout, out_kind, err_kind) = (o.timeout, o.out, o.err);
             let (out_reader, err_reader) = (child.stdout.take(), child.stderr.take());
-            // One future for collecting the output AND waiting for the exit (a child that closes its pipes, or has
-            // none with stdio "none", can still run on), so `timeout` covers all of it.
-            // `try_join!`: the first stream over the cap ends the exec at once (the other futures are dropped, which
-            // closes their pipes); the child is killed so it cannot block on a pipe nobody reads.
+            
+            
+            
+            
             let run = async {
                 let (_, stdout, stderr) = tokio::try_join!(
                     async {
@@ -521,8 +521,8 @@ pub fn module(lua: Lua) -> mlua::Result<Table> {
             );
             let kill = Arc::new(Notify::new());
             let (tx, rx) = watch::channel(None);
-            // No LiveGuard: a created child does not keep the program alive once the script has
-            // finished; it is killed when the program ends (`kill_all`).
+            
+            
             let tracked = Tracked::new(child.id(), cfg!(unix) && o.shell.is_some());
             let kill_wait = kill.clone();
             tokio::task::spawn_local(async move {

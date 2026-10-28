@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-import _common  # noqa: F401  (puts tools/ on sys.path)
+import _common
 import rdj
 import rdj_index as ri
 from rdj_synth import synth_weird, synth_ws2

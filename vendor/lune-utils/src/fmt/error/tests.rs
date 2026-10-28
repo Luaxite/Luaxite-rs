@@ -34,7 +34,7 @@ fn new_lua_script_error() -> LuaResult<()> {
     .eval()
 }
 
-// Tests for error context stack
+
 mod context {
     use super::*;
 
@@ -51,8 +51,8 @@ mod context {
 
     #[test]
     fn preserves_levels() {
-        // NOTE: The behavior in mlua is to preserve a single level of context
-        // and not all levels (context gets replaced on each call to `context`)
+        
+        
         let lua_error = new_lua_runtime_error()
             .context("level 1")
             .context("level 2")
@@ -67,7 +67,7 @@ mod context {
     }
 }
 
-// Tests for error components struct: separated messages + stack trace
+
 mod error_components {
     use super::*;
 
@@ -103,7 +103,7 @@ mod error_components {
     }
 }
 
-// Tests for parsing individual stack trace lines
+
 mod stack_trace_lines {
     use crate::fmt::StackTraceLine;
 
@@ -116,8 +116,8 @@ mod stack_trace_lines {
 
     #[test]
     fn windows_drive_path_is_not_truncated() {
-        // Regression test for #355 - the drive-letter colon must not be
-        // treated as the separator between the path and the line number.
+        
+        
         let line: StackTraceLine = r"D:\Stuff\test:3: in function 'foo'".parse().unwrap();
         assert_eq!(line.path(), Some(r"D:\Stuff\test"));
         assert_eq!(line.line_number(), Some(3));
@@ -145,7 +145,7 @@ mod stack_trace_lines {
     }
 }
 
-// Tests for general formatting
+
 mod general {
     use super::*;
 
@@ -185,6 +185,6 @@ mod general {
             .filter(|line| line.source().is_c())
             .collect::<Vec<_>>();
 
-        assert_eq!(c_stack_lines.len(), 1); // Just the "error" call
+        assert_eq!(c_stack_lines.len(), 1); 
     }
 }

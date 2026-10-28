@@ -1,6 +1,4 @@
-/*!
-    Utilities for working with Rust standard library paths.
-*/
+
 
 use std::{
     env::{current_dir, current_exe},
@@ -39,54 +37,25 @@ fn create_exe() -> Arc<Path> {
         .into()
 }
 
-/**
-    Gets the current working directory as an absolute path.
 
-    This absolute path is canonicalized and does not contain any `.` or `..`
-    components, and it is also in a friendly (non-UNC) format.
-
-    This path is also guaranteed to:
-
-    - Be valid UTF-8.
-    - End with the platform's main path separator.
-*/
 #[must_use]
 pub fn get_current_dir() -> Arc<Path> {
     Arc::clone(&CWD)
 }
 
-/**
-    Gets the path to the current executable as an absolute path.
 
-    This absolute path is canonicalized and does not contain any `.` or `..`
-    components, and it is also in a friendly (non-UNC) format.
-
-    This path is also guaranteed to:
-
-    - Be valid UTF-8.
-*/
 #[must_use]
 pub fn get_current_exe() -> Arc<Path> {
     Arc::clone(&EXE)
 }
 
-/**
-    Cleans a path.
 
-    See the [`path_clean`] crate for more information on what cleaning a path does.
-*/
 #[must_use]
 pub fn clean_path(path: impl AsRef<Path>) -> PathBuf {
     path.as_ref().clean()
 }
 
-/**
-    Makes a path absolute, if it is relative, and then cleans it.
 
-    Relative paths are resolved against the current working directory.
-
-    See the [`path_clean`] crate for more information on what cleaning a path does.
-*/
 #[must_use]
 pub fn clean_path_and_make_absolute(path: impl AsRef<Path>) -> PathBuf {
     let path = path.as_ref();
@@ -97,11 +66,7 @@ pub fn clean_path_and_make_absolute(path: impl AsRef<Path>) -> PathBuf {
     }
 }
 
-/**
-    Appends the given extension to the path.
 
-    Does not replace or modify any existing extension(s).
-*/
 #[must_use]
 pub fn append_extension(path: impl AsRef<Path>, ext: impl AsRef<OsStr>) -> PathBuf {
     let path = path.as_ref();
@@ -116,12 +81,7 @@ pub fn append_extension(path: impl AsRef<Path>, ext: impl AsRef<OsStr>) -> PathB
     }
 }
 
-/**
-    Normalizes the given relative path.
 
-    This will clean the path, removing any redundant components,
-    and ensure that it has a leading "current dir" (`./`) component.
-*/
 #[must_use]
 pub fn relative_path_normalize(path: impl AsRef<Path>) -> PathBuf {
     let path = clean_path(path);
@@ -134,13 +94,7 @@ pub fn relative_path_normalize(path: impl AsRef<Path>) -> PathBuf {
     }
 }
 
-/**
-    Pops the relative path up to the parent directory, pushing "parent dir" (`..`)
-    components to the front of the path when it no longer has any normal components.
 
-    This means that unlike [`PathBuf::pop`], this function may be called an arbitrary
-    number of times, and represent parent folders without first canonicalizing paths.
-*/
 pub fn relative_path_parent(rel: &mut PathBuf) {
     if rel.as_os_str() == Component::CurDir.as_os_str() {
         *rel = PathBuf::from(Component::ParentDir.as_os_str());

@@ -30,36 +30,36 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, NamedTuple, Optional
 
-# =============================================================================
-# CONFIG - the only part you should need to edit
-# =============================================================================
+
+
+
 
 SKIP_DIRS = {"examples", "benches", "tests", "target", ".git"}
 
-# Types with hand-written conversions in rust/luau/convert.rs.
+
 BUILTIN = {
     "BlockPos": dict(rust="LBlockPos", luau_def="{ x: number, y: number, z: number }", param=True, ret=True),
     "Vec3": dict(rust="LVec3", luau_def="{ x: number, y: number, z: number }", param=True, ret=True),
     "MinecraftEntityId": dict(rust="LMinecraftEntityId", luau="number", luau_def=None, param=True, ret=True),
-    # An empty stack is `nil`, so every signature that returns one reads `Item?`. Inside arrays an empty slot
-    # is `false` (a Luau array can't hold nil without holes), see `LSlots` in convert.rs.
+
+
     "ItemStack": dict(
         rust="LItem", luau="Item?", alias="Item", luau_def="{ kind: string, count: number }", param=False, ret=True,
     ),
-    # The open menu (or the player's inventory): its kind in snake_case and every slot in protocol order.
+
     "Menu": dict(
         rust="LMenu", luau="Menu", luau_def="{ kind: string, slots: { Item | false } }", param=False, ret=True,
         needs="ItemStack",
     ),
-    # An open container: a hand-written userdata class (`Container`, methods in rust/luau/extra_container.rs).
-    # Wrapping it in `Some` lets `close()` drop the handle, which is what closes the container.
+
+
     "ContainerHandle": dict(
         rust="LuaContainer", luau="Container", luau_def=None, param=False, ret=True,
         to="LuaContainer { handle: Some(Held::Owned({x})) }", needs="ItemStack",
         class_doc="An open container (a chest, or the bot's own inventory). It closes on `close()` or when garbage collected.",
     ),
-    # `get_inventory`: azalea's non-owning reference (it sends no close packet when dropped). Same Luau class;
-    # `LuaContainer` tells the two apart through `Held` in convert.rs.
+
+
     "ContainerHandleRef": dict(
         rust="LuaContainer", luau="Container", luau_def=None, param=False, ret=True,
         to="LuaContainer { handle: Some(Held::Borrowed({x})) }", needs="ItemStack",
@@ -73,16 +73,16 @@ BUILTIN = {
     ),
 }
 
-# The pure-data tables (DENY_METHODS PATH_OVERRIDES RENAMES HANDWRITTEN_GOALS CLASSES EVENT_ARG_NAMES HIDDEN_EVENTS
-# GOAL_PARAM_NAMES SCALAR RECORDS) live in bindgen.toml; BUILTIN (it holds nulls) and the keyword sets stay here.
+
+
 
 class ConfigError(Exception):
     pass
 
 
-ROOT = Path(__file__).resolve().parent.parent       # the project root: tools/ lives directly under it
-BUILTIN_NAME = "builtin"                            # `--config builtin`: the built-in empty tables, whatever bindgen.toml is next to this script
-CONFIG_PATH = ROOT / "bindgen.toml"                  # default of --config; a missing default file = BUILTIN_CONFIG
+ROOT = Path(__file__).resolve().parent.parent
+BUILTIN_NAME = "builtin"
+CONFIG_PATH = ROOT / "bindgen.toml"
 BUILTIN_CONFIG = {"deny_methods": [], "classes": {}, "scalar": {}, "records": {}, "accessors": {},
                   **{k: {} for k in ("path_overrides", "renames", "handwritten_goals", "event_arg_names", "hidden_events",
                                      "goal_param_names", "extra_events", "hand_classes", "hand_globals")}}
@@ -128,7 +128,7 @@ def load_config(path=None) -> dict:
     except tomllib.TOMLDecodeError as e:
         raise ConfigError(f"{path.name} is not valid TOML: {e}") from None
     known = {"deny_methods", "classes", "scalar", "records", "accessors", *_STR_TABLES}
-    optional = {"extra_event_payloads"}     # may be absent
+    optional = {"extra_event_payloads"}
     for k in raw:
         if k not in known and k not in optional:
             raise ConfigError(f"unknown key `{k}` (expected one of: {', '.join(sorted(known | optional))})")
@@ -218,11 +218,11 @@ def load_config(path=None) -> dict:
 try:
     globals().update(load_config())
 except ConfigError as e:
-    sys.exit(f"error: {CONFIG_PATH.name}: {e}")      # --config reloads these in main()
+    sys.exit(f"error: {CONFIG_PATH.name}: {e}")
 
 INT_TYPES = {"i8", "i16", "i32", "i64", "isize", "u8", "u16", "u32", "u64", "usize"}
 FLOAT_TYPES = {"f32", "f64"}
-MAP_TYPES = ("HashMap", "BTreeMap", "IndexMap")  # mapped to a Luau table `{ [K]: V }` (path_ty)
+MAP_TYPES = ("HashMap", "BTreeMap", "IndexMap")
 RUST_KEYWORDS = {
     "as", "break", "const", "continue", "crate", "else", "enum", "extern", "false", "fn", "for", "if",
     "impl", "in", "let", "loop", "match", "mod", "move", "mut", "pub", "ref", "return", "self", "Self",
@@ -235,19 +235,19 @@ LUAU_KEYWORDS = {
     "nil", "not", "or", "repeat", "return", "then", "true", "until", "while", "continue", "export", "type",
 }
 
-# Keywords that can never be a bare property name in a Luau table type (`{ end: number }` is a parse error;
-# `{ ["end"]: number }` is fine). `type`/`continue`/`export` are contextual and stay bare.
+
+
 LUAU_HARD_KEYWORDS = LUAU_KEYWORDS - {"continue", "export", "type"}
-# Luau's own type names: a generated `type string = ..` would shadow them for every script.
+
 LUAU_TYPE_NAMES = {"string", "number", "boolean", "any", "nil", "table", "thread", "buffer", "vector", "never", "unknown", "function"}
 ASCII_IDENT = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
 
 HEADER = "// @generated by tools/luaxite_gen.py from {src} - DO NOT EDIT, re-run the generator."
 
 
-# =============================================================================
-# small helpers
-# =============================================================================
+
+
+
 
 class Skip(Exception):
     def __init__(self, reason: str):
@@ -271,10 +271,10 @@ def clean_doc(doc: str) -> str:
                    if ch == "\t" or not (unicodedata.category(ch) == "Cc" or ch in _BIDI))
 
 
-# =============================================================================
-# type AST (tiny): ("prim", n) ("unit",) ("path", name, [args]) ("ref", t) ("slice", t)
-#                  ("tuple", [t]) ("impl", text) ("other", text)
-# =============================================================================
+
+
+
+
 
 def type_text(t) -> str:
     k = t[0]
@@ -293,9 +293,9 @@ def type_text(t) -> str:
     return t[1]
 
 
-# =============================================================================
-# source index
-# =============================================================================
+
+
+
 
 @dataclass
 class Def:
@@ -307,10 +307,10 @@ class Def:
     generics: bool
     src: bytes
     tuple_style: bool = False
-    fields: list = field(default_factory=list)      # (name, type_ast, is_pub)
-    variants: list = field(default_factory=list)    # dict(name, kind, types, attrs, doc)
+    fields: list = field(default_factory=list)
+    variants: list = field(default_factory=list)
     attrs: list = field(default_factory=list)
-    dropped_variants: list = field(default_factory=list)    # variants the JSON index lacks ("variant #id")
+    dropped_variants: list = field(default_factory=list)
 
 
 @dataclass
@@ -321,7 +321,7 @@ class Method:
     is_async: bool
     generics: bool
     receiver: Optional[str]
-    params: list          # (name, type_ast)
+    params: list
     ret: Optional[tuple]
     owner: str
     file: str
@@ -329,9 +329,9 @@ class Method:
     target: str = "Client"
 
 
-# =============================================================================
-# type mapping
-# =============================================================================
+
+
+
 
 @dataclass
 class TypeInfo:
@@ -341,16 +341,16 @@ class TypeInfo:
     from_lua: Optional[Callable[[str], str]] = None
     fallible_from: bool = False
     is_result: bool = False
-    is_class: bool = False      # a generated userdata class (see CLASSES)
-    needs_client: bool = False  # to_lua needs the bot's `Client` (it turns an ECS `Entity` into an `Entity` class value): `Client` methods only
-    by_ref: bool = False        # to_lua only needs a borrow (a scalar's `{x}.to_string()`): an `Arc<T>` of it is not cloned first
+    is_class: bool = False
+    needs_client: bool = False
+    by_ref: bool = False
 
 
 def is_ident(f: Callable[[str], str]) -> bool:
     return f("v") == "v"
 
 
-ID = lambda x: x  # noqa: E731
+ID = lambda x: x
 
 
 class Mapper:
@@ -363,20 +363,20 @@ class Mapper:
         self.touched: set = set()
         self.enums: dict[str, dict] = {}
         self.records: dict[str, dict] = {}
-        self.tagged: dict[str, dict] = {}       # data-carrying enums -> tagged tables (build_tagged)
-        self.enum_notes: list[str] = []         # one line per emitted enum that lost variants in the front end (GEN_REPORT + stderr)
-        self.cexpr = "self.client"              # Rust expression of the `Client` while converting ("client" inside a generated conversion)
-        self.client_flags: list[bool] = []      # per type being built: does it contain an ECS `Entity`?
+        self.tagged: dict[str, dict] = {}
+        self.enum_notes: list[str] = []
+        self.cexpr = "self.client"
+        self.client_flags: list[bool] = []
         self.paths: dict[str, str] = {}
-        self.cur_class: Optional[str] = None    # class whose methods are being mapped
-        self.building: set[str] = set()         # named types whose conversion is being derived right now (recursion guard)
+        self.cur_class: Optional[str] = None
+        self.building: set[str] = set()
 
     def touch(self, key):
         self.touched.add(key)
         for s in self.dep_stack:
             s.add(key)
 
-    # ---- entry point
+
     def map_ty(self, t, role: str) -> TypeInfo:
         k = t[0]
         if k == "unit":
@@ -385,7 +385,7 @@ class Mapper:
             n = t[1]
             if n == "bool":
                 if role == "param":
-                    # mlua's own `bool` accepts anything but nil/false as true (`0`, `""`): parameters use the strict `LBool` (convert.rs)
+
                     return TypeInfo("LBool", "boolean", from_lua=lambda x: f"{x}.0")
                 return TypeInfo("bool", "boolean", ID, ID)
             if n in INT_TYPES or n in FLOAT_TYPES:
@@ -408,7 +408,7 @@ class Mapper:
             return TypeInfo("String", "string", ID, ID)
         if name == "Option" and len(args) == 1:
             if args[0] == ("unit",):
-                # `()` has no `IntoLua`, so `Option<()>` can't be set into a table as is: `Some(())` is a presence flag (`true`, else nil)
+
                 if role != "ret":
                     raise Skip("`Option<()>` parameter")
                 return TypeInfo("Option<()>", "boolean?", to_lua=lambda x: f"{x}.map(|_| true)")
@@ -440,7 +440,7 @@ class Mapper:
                 frm = (lambda x, i=i, c=coll: f"{x}.into_iter().map(|v| {i.from_lua('v')}).collect::<{c}>()")
             return TypeInfo(f"Vec<{i.rust}>", f"{{ {i.luau} }}", to, frm)
         if name in MAP_TYPES and len(args) == 2:
-            # A map becomes a Luau table `{ [K]: V }`; K must be a string or a number in Luau (a `Uuid` key is its string form).
+
             k, v = self.map_ty(args[0], role), self.map_ty(args[1], role)
             if any(x.is_result or (role == "param" and x.fallible_from) for x in (k, v)):
                 raise Skip("nested fallible type in map")
@@ -471,9 +471,9 @@ class Mapper:
         if name == "Arc" and len(args) == 1:
             i = self.map_ty(args[0], role)
             if role == "ret" and i.to_lua:
-                # `(*x).clone()` hands the converter an owned `T`, but needs `T: Clone` (azalea's `ConnectionError` is not).
-                # A scalar's `to` works on a borrow through the `Arc`'s auto-deref, so it gets the `Arc` as is;
-                # anything else is cloned out, which only compiles when `T` is `Clone`.
+
+
+
                 if i.by_ref:
                     to = i.to_lua
                 else:
@@ -495,7 +495,7 @@ class Mapper:
         if k == "path":
             name, args = t[1], t[2]
             if name in ("Arc", "Rc"):
-                return None                     # cloning the pointer is always fine
+                return None
             for a in args:
                 if (b := self.not_clone(a)):
                     return b
@@ -518,12 +518,12 @@ class Mapper:
         out |= set(HAND_CLASSES)
         return out
 
-    # ---- named types
+
     def named(self, name: str, role: str) -> TypeInfo:
         if name == "Entity":
-            # azalea's ECS `Entity` is an internal id: scripts see the `Entity` class (an `EntityRef`).
-            # Only `Client` methods can build one (`client.entity_ref_for`); inside a converted type the type carries the client
-            # (`needs_client`), and whoever uses that type must be a `Client` method (checked in `named`).
+
+
+
             cls = CLASSES["EntityRef"]
             nested = bool(self.building)
             if not cls["emit"] or (not nested and self.cur_class != "Client") or (nested and role == "param"):
@@ -538,7 +538,7 @@ class Mapper:
                             needs_client=nested)
         cfg = CLASSES.get(name)
         if cfg is not None and cfg["emit"] and name != "Client":
-            # a generated userdata class: params arrive as `UserDataRef<LuaX>`, returns are wrapped in `LuaX`
+
             self.touch(("class", name))
             r, f = cfg["rust"], cfg["field"]
             if role == "param":
@@ -577,7 +577,7 @@ class Mapper:
         self.dep_stack.append(set())
         self.client_flags.append(False)
         self.building.add(name)
-        saved_class, self.cur_class = self.cur_class, None   # type conversions live outside any class
+        saved_class, self.cur_class = self.cur_class, None
         saved_c, self.cexpr = self.cexpr, "client"
         try:
             info = self.build_named(name)
@@ -696,7 +696,7 @@ class Mapper:
                 if len(ts) == 1:
                     inner = ts[0][1] if ts[0][0] == "path" and not ts[0][2] else None
                     if infos[0].rust == "()":
-                        pat = "(_)"     # `Variant(())`: nothing to read, same as a unit variant
+                        pat = "(_)"
                     elif inner in self.records and infos[0].luau == inner:
                         pat, fields = "(v)", list(self.records[inner]["fields"])
                     else:
@@ -750,20 +750,20 @@ class Mapper:
         return TypeInfo(rust, name, to_lua=self.wrap_to_lua(rust, nc))
 
 
-# =============================================================================
-# wrappers (Luau -> azalea)
-# =============================================================================
+
+
+
 
 @dataclass
 class Wrapper:
     name: str
     doc: str
-    wparams: list           # (lua name, TypeInfo)
-    call_args: list         # rust expressions for the azalea call
+    wparams: list
+    call_args: list
     ret: Optional[TypeInfo]
     owner: str
     origin: str
-    origin_name: str = ""   # the real azalea method name (differs from `name` for goal expansions)
+    origin_name: str = ""
     is_async: bool = False
 
 
@@ -778,11 +778,11 @@ class Skipped(NamedTuple):
 @dataclass
 class ClassGen:
     """Everything collected for one target type (see CLASSES)."""
-    name: str                   # azalea type, e.g. "Client"
+    name: str
     cfg: dict
     wrappers: list = field(default_factory=list)
-    skipped: list = field(default_factory=list)     # Skipped
-    touched: set = field(default_factory=set)       # mapper keys this class's wrappers use
+    skipped: list = field(default_factory=list)
+    touched: set = field(default_factory=set)
 
     @property
     def rust(self) -> str:
@@ -807,7 +807,7 @@ def safe_name(n: str) -> str:
     return n + "_" if n in RUST_KEYWORDS or n in LUAU_KEYWORDS else n
 
 
-RAW_NEVER = {"self", "Self", "super", "crate"}      # keywords that cannot be written as raw identifiers
+RAW_NEVER = {"self", "Self", "super", "crate"}
 
 
 def rust_ident(n: str) -> str:
@@ -826,18 +826,18 @@ class Generator:
         self.m = Mapper(ix)
         self.classes: dict[str, ClassGen] = {n: ClassGen(n, c) for n, c in CLASSES.items()}
         self.goal_notes: list[str] = []
-        self.goal_rows: list[tuple] = []        # (goal name, why): the same notes as data, for GEN_REPORT.json
+        self.goal_rows: list[tuple] = []
         self._goals: Optional[list] = None
-        self._goals_touched: set = set()        # mapper keys goals() touched when it ran (re-credited on every later call)
+        self._goals_touched: set = set()
         self.packets_in: list = []
         self.packets_out: list = []
         self.ecs: list = []
-        self.has_events = any(c["events"] for c in CLASSES.values())     # azalea mode: an events class (`bot`) is configured
-        self.events: list = []          # filled by build_events (only when a class has `events = true`)
+        self.has_events = any(c["events"] for c in CLASSES.values())
+        self.events: list = []
         self.event_notes: list = []
-        self.event_rows: list[tuple] = []       # (variant, why): the same notes as data, for GEN_REPORT.json
+        self.event_rows: list[tuple] = []
 
-    # the `Client` class keeps the flat names the emitters grew up with
+
     @property
     def wrappers(self) -> list:
         return self.classes["Client"].wrappers if "Client" in self.classes else []
@@ -850,10 +850,10 @@ class Generator:
         self.event_notes.append(f"`{variant}`: {why}")
         self.event_rows.append((variant, why))
 
-    # ---- goals: `impl Goal + 'static` parameters expand to one method per concrete goal
+
     def goals(self) -> list:
         if self._goals is not None:
-            self.m.touched |= self._goals_touched      # credit the types goals() uses to every class that calls it, not just the first
+            self.m.touched |= self._goals_touched
             return self._goals
         before = self.m.touched
         self.m.touched = set()
@@ -914,7 +914,7 @@ class Generator:
         renames = cg.cfg["renames"]
         reserved = set(getattr(self, "reserved", {}).get(cg.name, ()))
         if cg.cfg["events"]:
-            reserved |= {"on", "wait_for"}          # generated by emit_class
+            reserved |= {"on", "wait_for"}
         for m in sorted((m for m in self.ix.methods if m.target == cg.name), key=lambda m: (m.file, m.name)):
             snap = set(self.m.touched)
             try:
@@ -946,7 +946,7 @@ class Generator:
             raise Skip("denied in config")
         if m.name in CLASSES[m.target]["deny"]:
             raise Skip(f"denied: {CLASSES[m.target]['deny'][m.name]}")
-        free = CLASSES[m.target].get("free", False)          # `@<crate>`: a free fn of a bound crate (generic mode), no receiver
+        free = CLASSES[m.target].get("free", False)
         if free and (m.receiver is not None or m.is_async):
             raise Skip("async free fn" if m.is_async else "free fn with a receiver")
         if not free and m.receiver != "&self":
@@ -967,7 +967,7 @@ class Generator:
             if not ret.to_lua:
                 raise Skip("return type not convertible")
 
-        base_params: list = []          # (lua name, TypeInfo) | ("GOAL",)
+        base_params: list = []
         for pname, ptype in m.params:
             if pname is None:
                 raise Skip("destructured parameter")
@@ -1007,7 +1007,7 @@ class Generator:
         if goal is None:
             args = [ti.from_lua(n) for n, ti in wparams]
         else:
-            # rebuild call args: params before the goal, the goal constructor, params after
+
             pos = 0
             gcount = len(goal["params"])
             before = wparams[:goal_at]
@@ -1022,7 +1022,7 @@ class Generator:
             args += [ti.from_lua(n) for n, ti in after]
         return Wrapper(name, doc, wparams, args, ret, m.owner, origin, m.name, m.is_async)
 
-    # ------------------------------------------------------------------ packets (azalea -> Luau)
+
     def build_packets_in(self, root: Path):
         """Every `ClientboundGamePacket` variant -> `{ kind = "<snake variant>", <fields> }` (gen_packets_in.rs, real azalea only).
         The variants come from the `declare_state_packets!` list in azalea-protocol/src/packets/game/mod.rs (a macro, so the front
@@ -1037,9 +1037,9 @@ class Generator:
         if not mt:
             return
         names = [n.strip() for n in mt.group(1).split(",") if n.strip()]
-        camel = lambda n: "".join(p[:1].upper() + p[1:] for p in n.split("_"))  # noqa: E731
+        camel = lambda n: "".join(p[:1].upper() + p[1:] for p in n.split("_"))
         taken = self.m.taken_luau_names()
-        saved_class, self.m.cur_class = self.m.cur_class, "EntityRef"     # a packet has no `Client`: types holding an ECS `Entity` are refused
+        saved_class, self.m.cur_class = self.m.cur_class, "EntityRef"
         for n in names:
             variant = camel(n)
             sname = "Clientbound" + variant
@@ -1081,7 +1081,7 @@ class Generator:
             self.packets_in.append(entry)
         self.m.cur_class = saved_class
 
-    # ------------------------------------------------------------------ ECS components / resources
+
     def build_ecs(self):
         """Every public, non-generic azalea type that derives `Component` or `Resource` -> one table entry (gen_ecs.rs, real azalea only).
         Entry = Luau-visible name (the Rust type name), kind, Rust path, Luau type and a `v -> Luau` conversion. A type whose value the
@@ -1097,7 +1097,7 @@ class Generator:
                     continue
                 kinds = {m.group(1) for a in d.attrs for m in [derive.search(a)] if m}
                 if "Resource" in kinds:
-                    kinds = {"Resource"}        # bevy's `derive(Resource)` also writes an `impl Component`: the rustdoc front end shows both
+                    kinds = {"Resource"}
                 if not kinds:
                     continue
                 seen.setdefault(name, []).append((d, kinds))
@@ -1114,15 +1114,15 @@ class Generator:
                 try:
                     entry["path"] = self.m.path_for(name)
                 except Skip:
-                    # The name is ambiguous across the workspace (rustdoc also sees what macros generate: azalea_block makes a
-                    # `Chest`/`Tnt` struct per block, azalea_inventory a `Player`), but this def is the only one deriving
-                    # Component/Resource: use its own public path.
+
+
+
                     p = self.ix.to_azalea(d.crate, d.modpath, d.name) if d.is_pub and self.ix.chain_public(d.crate, d.modpath) else None
                     if not p:
                         raise
                     entry["path"] = self.m.paths[name] = p
                 if d.kind == "struct" and not d.fields:
-                    entry.update(marker=True, luau="boolean", to_lua="true")    # presence only: no `Clone` needed
+                    entry.update(marker=True, luau="boolean", to_lua="true")
                     self.ecs.append(entry)
                     continue
                 if self.ix.is_clone(name) is not True:
@@ -1154,13 +1154,13 @@ class Generator:
                     if fi.is_result or not fi.to_lua or fi.needs_client or holds_entity:
                         raise Skip("not convertible without the client")
                     entry.update(luau=fi.luau, to_lua=fi.to_lua("v"))
-                    self.m.touch(("type", name))    # build_named bypasses the mapper's own touch: without this the `Lua<name>` wrapper is never emitted
+                    self.m.touch(("type", name))
             except Skip as e:
                 entry.update(reason=e.reason, luau=None, to_lua=None)
             self.ecs.append(entry)
         self.m.cur_class = saved_class
 
-    # ------------------------------------------------------------------ packets (Luau -> azalea)
+
     def build_packets_out(self, root: Path):
         """Every `ServerboundGamePacket` variant -> a constructor from a Luau table of its fields (gen_packets_out.rs, real azalea only).
         Same sources as `build_packets_in` (the `Serverbound => [..]` list; struct `Serverbound<Camel>` in `packets::game`). Unlike the
@@ -1175,7 +1175,7 @@ class Generator:
         if not mt:
             return
         names = [n.strip() for n in mt.group(1).split(",") if n.strip()]
-        camel = lambda n: "".join(p[:1].upper() + p[1:] for p in n.split("_"))  # noqa: E731
+        camel = lambda n: "".join(p[:1].upper() + p[1:] for p in n.split("_"))
         taken = self.m.taken_luau_names()
         saved_class, self.m.cur_class = self.m.cur_class, "EntityRef"
         for n in names:
@@ -1217,16 +1217,16 @@ class Generator:
                     entry["ok"] = True
             if not entry["ok"]:
                 entry["fields"] = []
-                self.m.touched = snap       # types only that packet's fields needed are not emitted
+                self.m.touched = snap
             self.packets_out.append(entry)
         self.m.cur_class = saved_class
 
-    # ------------------------------------------------------------------ events
+
     def build_events(self):
         cands = [x for x in self.ix.defs.get("Event", []) if x.is_pub and x.kind == "enum"]
-        if len(cands) > 1:          # prefer the one in the `azalea` crate itself
+        if len(cands) > 1:
             cands = [x for x in cands if x.crate == "azalea"] or cands
-        if len(cands) > 1:          # else the one `azalea::Event` points at: defined in the crate root or re-exported there
+        if len(cands) > 1:
             at_root = [x for x in cands if x.modpath == () or any(
                 c == "azalea" and mp == () and ex == "Event" and full.split("::")[:-1][-1:] == list(x.modpath[-1:])
                 for c, mp, ex, full in self.ix.reexports)]
@@ -1252,9 +1252,9 @@ class Generator:
                 continue
             lname = snake(bare(v["name"]))
             if lname in EXTRA_EVENT_PAYLOADS:
-                # `Event::Packet` is `#[cfg(feature = "packet-event")]`: rustdoc JSON drops the cfg (the front end re-reads it from the
-                # source, rdj_index.event_cfg_gates; unreadable source -> warning), so the variant can show up here: the
-                # hand-written extra event `packet` owns it.
+
+
+
                 self.event_note(v["name"], f"handled by the hand-written extra event `{lname}`, not exposed")
                 continue
             if lname in lnames:
@@ -1283,23 +1283,23 @@ class Generator:
                 sys.exit(f"error: {CONFIG_PATH.name}: extra_events.{n} clashes with `Event::{lnames[n]}`")
 
 
-# =============================================================================
-# hand-written seam: rust/luau/extra_*.rs
-# =============================================================================
-#
-# Extra `#[mlua::userdata_impl]` blocks for generated types live in `extra_*.rs` next to the generated
-# files (several blocks per type work: mlua registers every block through `inventory`). The generator
-# can't read Rust signatures it didn't generate, so each hand-written method declares its Luau side in a
-# comment, which is copied into the class in azalea.d.luau and listed in GEN_REPORT.md:
-#
-#     // luau[Entity]: --- Distance in blocks to another entity.
-#     // luau[Entity]: function distance_to(self, other: Entity): number
-#
-# `luau[<class>]` names the Luau class (`Bot`, `Entity`); `--- ` lines are doc comments.
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 EXTRA_RE = re.compile(r"^\s*//\s*luau\[(\w+)\]:\s?(.*)$")
-# the name a `// luau[Class]: ...` line declares: `function name(self, ..)`, or `name: (..) -> ..` for the self-less library tables
-# (`goal`, `azalea`: called with `.`, and an extern-type `function` must take `self`)
+
+
 EXTRA_FN_RE = re.compile(r"(?:function (\w+)|(\w+): \()")
 
 
@@ -1317,8 +1317,8 @@ def impl_top_fns(body: str) -> set:
     anything inside a string, char literal or comment, is not a method. Simple scan (no macro/raw-string edge cases
     beyond `r"..."` / `r#"..."#`)."""
     n, i, depth = len(body), 0, 0
-    masked = []                     # body with strings/comments blanked, braces kept
-    depths = []                     # brace depth at each index of `masked`
+    masked = []
+    depths = []
 
     def put(ch: str):
         masked.append(ch)
@@ -1353,7 +1353,7 @@ def impl_top_fns(body: str) -> set:
             for k in range(i, j):
                 put("\n" if body[k] == "\n" else " ")
             i = j
-        elif c == "'" and (m := re.match(r"'(?:\\.[^']*|[^\\'])'", body[i:i + 12])):   # char literal; `'a` lifetimes don't match
+        elif c == "'" and (m := re.match(r"'(?:\\.[^']*|[^\\'])'", body[i:i + 12])):
             for _ in range(m.end()):
                 put(" ")
             i += m.end()
@@ -1376,7 +1376,7 @@ def extras_reserved(rust_out: Path) -> dict:
     by_luau = {c["luau"]: n for n, c in CLASSES.items()}
     for f in sorted([*rust_out.glob("extra_*.rs"), *rust_out.glob("real_*.rs")]):
         src = f.read_text(errors="replace")
-        for im in IMPL_BLOCK_RE.finditer(src):         # plain `impl X {` blocks only (rustfmt'd text); `impl X for` never matches
+        for im in IMPL_BLOCK_RE.finditer(src):
             cls = by_rust.get(im.group(1))
             if cls:
                 out[cls] |= impl_top_fns(im.group(2))
@@ -1399,9 +1399,9 @@ def scan_extras(rust_out: Path) -> dict:
     return out
 
 
-# =============================================================================
-# emitters
-# =============================================================================
+
+
+
 
 def rust_sig_ret(w: Wrapper):
     """-> (attr, return clause, body-wrapping function)"""
@@ -1429,7 +1429,7 @@ def emit_client(gen: Generator, src_label: str) -> str:
             "use super::gen_types::*;",
             "use super::Handlers;",
         ]
-    else:       # generic mode: no events, no client
+    else:
         L += ["use mlua::UserData;", "", "use super::convert::*;", "use super::gen_types::*;"]
     for tr in sorted(gen.ix.client_traits):
         p = gen.ix.resolve_path(tr)
@@ -1540,10 +1540,10 @@ def emit_types(gen: Generator, src_label: str) -> str:
     m = gen.m
     used = {n for k, n in m.touched if k == "type"}
     L = [HEADER.format(src=src_label), "#![allow(dead_code, unused_imports, clippy::all)]", ""]
-    # `convert::*`: a derived struct's fields may be built-in types (BlockPos, MinecraftEntityId, ...).
+
     L += ["use mlua::{FromLua, IntoLua, Lua, Value};", "", "use super::convert::*;"]
     if any(x.get("needs_client") for x in [*m.records.values(), *m.tagged.values()]):
-        L.append("use super::gen_client::LuaEntityRef;")       # an `Entity` field is built from the client (see `Mapper.named`)
+        L.append("use super::gen_client::LuaEntityRef;")
     L.append("")
     for name in sorted(n for n in m.enums if n in used):
         e = m.enums[name]
@@ -1834,7 +1834,7 @@ def emit_events(gen: Generator, src_label: str) -> str:
         "pub const EVENT_NAMES: &[&str] = &[",
     ]
     L += [f'    "{e["lname"]}",' for e in gen.events]
-    L += [f'    "{n}",' for n in active_extra_events(gen)]       # fired by hand-written glue, not by `azalea::Event`
+    L += [f'    "{n}",' for n in active_extra_events(gen)]
     L += [
         "];",
         "",
@@ -1929,7 +1929,7 @@ def emit_dluau(gen: Generator, src_label: str, extras: dict) -> str:
         L += [f"-- {b['class_doc']}", f"declare extern type {b['luau']} with"]
         L += [f"    {ln}" for _f, ln in extras.get(b["luau"], [])]
         L += ["end", ""]
-    # hand-only classes (`[hand_classes]`): declared when some extra_*.rs / real_*.rs carries `// luau[Class]:` lines for them
+
     for cname, doc in HAND_CLASSES.items():
         if cname in declared or not extras.get(cname):
             continue
@@ -1937,7 +1937,7 @@ def emit_dluau(gen: Generator, src_label: str, extras: dict) -> str:
         L += [f"-- {doc}", f"declare extern type {cname} with"]
         L += [f"    {ln}" for _f, ln in extras[cname]]
         L += ["end", ""]
-    # non-Client classes first (Bot refers to them), then the `bot` class
+
     for cg in sorted((c for c in gen.classes.values() if c.emit and not c.cfg.get("free")), key=lambda c: c.name == "Client"):
         L.append(f"-- {cg.cfg['doc']}")
         L.append(f"declare extern type {cg.luau} with")
@@ -1958,7 +1958,7 @@ def emit_dluau(gen: Generator, src_label: str, extras: dict) -> str:
                 L.append(f'    function wait_for(self, event: "{e["lname"]}"): {ret}')
             for n, (_why, pay) in active.items():
                 L.append(f'    function wait_for(self, event: "{n}"): {pay or "()"}')
-            if "packet" in active:      # name filter: one overload per packet kind (rust/luau/real_events.rs `on_packet` / `wait_for_packet`)
+            if "packet" in active:
                 L.append("    --- Register a handler for one kind of clientbound packet only (`name` = the packet's `kind`).")
                 L += [f'    function on_packet(self, name: "{p["name"]}", handler: (packet: {p["luau"]}) -> ()): ()' for p in gen.packets_in]
                 L.append("    --- Yields until a packet of that kind arrives, then returns it.")
@@ -1976,7 +1976,7 @@ def emit_dluau(gen: Generator, src_label: str, extras: dict) -> str:
     for gname, cname in HAND_GLOBALS.items():
         if cname in declared:
             L.append(f"declare {gname}: {cname}")
-    for cg in gen.classes.values():          # generic mode: the free fns of a crate are the global table named after it
+    for cg in gen.classes.values():
         if cg.emit and cg.cfg.get("free") and cg.wrappers:
             L.append(f"-- {cg.cfg['doc']}")
             L.append(f"declare {cg.luau}: {{")
@@ -2065,7 +2065,7 @@ def report_model(gen: Generator, src_label: str, ix: Any, extras: dict) -> dict:
         goals_not_exposed=[dict(name=n, why=why) for n, why in gen.goal_rows],
         macros_not_expanded=[dict(macro=mac, file=f) for f, mac in sorted(set(ix.macro_notes))],
         enum_notes=sorted(set(m.enum_notes)),
-        front_end_skipped=ix.report_items() if hasattr(ix, "report_items") else [],     # rustdoc front end only
+        front_end_skipped=ix.report_items() if hasattr(ix, "report_items") else [],
     )
 
 
@@ -2152,7 +2152,7 @@ def render_report_md(r: dict) -> str:
             L.append("")
         if not by_reason:
             L += ["(none)", ""]
-    if r["enum_notes"]:                                                  # variants missing from the JSON index
+    if r["enum_notes"]:
         L += ["## Enums with variants not emitted", ""] + [f"- {n}" for n in r["enum_notes"]] + [""]
     notes = []
     for it in r["front_end_skipped"]:
@@ -2167,11 +2167,11 @@ def render_report_md(r: dict) -> str:
     return "\n".join(L)
 
 
-# =============================================================================
-# main
-# =============================================================================
 
-CliArgs = getattr(argparse, "Argument" + "Pars" + "er")    # argparse class, name split so the final case-insensitive grep for the retired front end stays clean
+
+
+
+CliArgs = getattr(argparse, "Argument" + "Pars" + "er")
 
 
 def main():
@@ -2198,20 +2198,20 @@ def main():
         sys.exit(f"error: {root} is not a directory (pass --azalea <path to your azalea checkout>)")
 
     sys.path.insert(0, str(Path(__file__).resolve().parent))
-    sys.modules.setdefault("luaxite_gen", sys.modules[__name__])      # rdj_index imports us: reuse this module
+    sys.modules.setdefault("luaxite_gen", sys.modules[__name__])
     import rdj_index
     ix = rdj_index.RdjIndex(root, args.rustdoc, hidden=args.rdj_hidden)
     try:
         ix.load()
     except rdj_index.RdjError as e:
         sys.exit(f"error: {e}")
-    except Exception as e:      # a JSON shape nobody foresaw: one line, no traceback (per-item problems never get here)
+    except Exception as e:
         sys.exit(f"error: rustdoc front end failed on {args.rustdoc}: {type(e).__name__}: {' '.join(str(e).split())[:200]}")
-    CLASSES.update(ix.discovered)           # classes found in the crates (config without `[classes]`); empty otherwise
+    CLASSES.update(ix.discovered)
     gen = Generator(ix)
     gen.reserved = extras_reserved(Path(args.rust_out))
     gen.build()
-    if gen.has_events:       # azalea-only builders run when the config asks for them (an events class)
+    if gen.has_events:
         gen.build_events()
     gen.build_packets_in(root)
     gen.build_packets_out(root)
@@ -2233,7 +2233,7 @@ def main():
     if gen.packets_in:
         packets_rs.write_text(emit_packets_in(gen, src_label))
     elif packets_rs.exists():
-        packets_rs.unlink()     # azalea without packet sources (the fake): no stale file
+        packets_rs.unlink()
     packets_out_rs = rust_out / "gen_packets_out.rs"
     if any(p["ok"] for p in gen.packets_out):
         packets_out_rs.write_text(emit_packets_out(gen, src_label))

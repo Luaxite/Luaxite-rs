@@ -27,26 +27,12 @@ static STYLED_STACK_END: LazyLock<String> = LazyLock::new(|| {
     )
 });
 
-// NOTE: We indent using 4 spaces instead of tabs since
-// these errors are most likely to be displayed in a terminal
-// or some kind of live output - and tabs don't work well there
+
+
+
 const STACK_TRACE_INDENT: &str = "    ";
 
-/**
-    Error components parsed from a [`LuaError`].
 
-    Can be used to display a human-friendly error message
-    and stack trace, in the following Roblox-inspired format:
-
-    ```plaintext
-    Error message
-    [Stack Begin]
-        Stack trace line
-        Stack trace line
-        Stack trace line
-    [Stack End]
-    ```
-*/
 #[derive(Debug, Default, Clone)]
 pub struct ErrorComponents {
     messages: Vec<String>,
@@ -54,27 +40,19 @@ pub struct ErrorComponents {
 }
 
 impl ErrorComponents {
-    /**
-        Returns the error messages.
-    */
+    
     #[must_use]
     pub fn messages(&self) -> &[String] {
         &self.messages
     }
 
-    /**
-        Returns the stack trace, if it exists.
-    */
+    
     #[must_use]
     pub fn trace(&self) -> Option<&StackTrace> {
         self.trace.as_ref()
     }
 
-    /**
-        Returns `true` if the error has a non-empty stack trace.
-
-        Note that a trace may still *exist*, but it may be empty.
-    */
+    
     #[must_use]
     pub fn has_trace(&self) -> bool {
         self.trace
@@ -111,13 +89,13 @@ impl From<LuaError> for ErrorComponents {
         }
 
         fn lua_stack_trace(source: &str) -> Option<StackTrace> {
-            // FUTURE: Preserve a parsing error here somehow?
-            // Maybe we can emit parsing errors using tracing?
+            
+            
             StackTrace::from_str(source).ok()
         }
 
-        // Extract any additional "context" messages before the actual error(s)
-        // The Arc is necessary here because mlua wraps all inner errors in an Arc
+        
+        
         #[allow(clippy::arc_with_non_send_sync)]
         let mut error = Arc::new(error);
         let mut messages = Vec::new();
@@ -130,7 +108,7 @@ impl From<LuaError> for ErrorComponents {
             error = cause.clone();
         }
 
-        // We will then try to extract any stack trace
+        
         let mut trace = if let LuaError::CallbackError {
             ref traceback,
             ref cause,
@@ -139,8 +117,8 @@ impl From<LuaError> for ErrorComponents {
             messages.push(lua_error_message(cause));
             lua_stack_trace(traceback)
         } else if let LuaError::RuntimeError(ref s) = *error {
-            // NOTE: Runtime errors may include tracebacks, but they're
-            // joined with error messages, so we need to split them out
+            
+            
             if let Some(pos) = s.find("stack traceback:") {
                 let (message, traceback) = s.split_at(pos);
                 messages.push(message.trim().to_string());
@@ -154,9 +132,9 @@ impl From<LuaError> for ErrorComponents {
             None
         };
 
-        // Sometimes, we can get duplicate stack trace lines that only
-        // mention "[C]", without a function name or path, and these can
-        // be safely ignored / removed if the following line has more info
+        
+        
+        
         if let Some(trace) = &mut trace {
             let lines = trace.lines_mut();
             loop {
@@ -174,8 +152,8 @@ impl From<LuaError> for ErrorComponents {
             }
         }
 
-        // Finally, we do some light postprocessing to remove duplicate
-        // information, such as the location prefix in the error message
+        
+        
         if let Some(message) = messages.last_mut()
             && let Some(line) = trace
                 .iter()

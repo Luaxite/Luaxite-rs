@@ -16,8 +16,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "tools"))
 sys.dont_write_bytecode = True
-import bindgen_crates  # noqa: E402
-import bindgen_rdj  # noqa: E402
+import bindgen_crates
+import bindgen_rdj
 
 TESTS = []
 _tmp: list[str] = []
@@ -60,7 +60,7 @@ def layout(deps: str = 'ws-a = { path = "bind/ws/a" }\nserde = "1"\n', crates=("
                 write(r / f"bind/ws/{m}/Cargo.toml", f'[package]\nname = "ws-{m}"\nversion = "0.1.0"\n')
         else:
             write(r / f"bind/{c}/Cargo.toml", f'[package]\nname = "{c}"\nversion = "0.1.0"\n')
-    (r / "bind/notes").mkdir(parents=True, exist_ok=True)       # a directory without Cargo.toml is ignored
+    (r / "bind/notes").mkdir(parents=True, exist_ok=True)
     return r
 
 
@@ -78,15 +78,15 @@ def resolve(r: Path) -> list[dict]:
 def test_roots_layout():
     r = layout()
     got = [os.path.relpath(d, r) for d in bindgen_crates.roots(r)]
-    assert got == ["bind/solo", "bind/tool", "bind/ws/a"], got      # (a) bind/* with [package] (ws has none), then (b) path deps; serde is not
+    assert got == ["bind/solo", "bind/tool", "bind/ws/a"], got
 
 
 @test
 def test_closure_order_and_filters():
     r = layout()
     got = resolve(r)
-    assert [c["name"] for c in got] == ["ws-c", "ws-b", "solo", "ws-a"], [c["name"] for c in got]    # deps first, ties alphabetical (solo < ws_a)
-    # `tool` is bin-only (no rustdoc lib), `ws-d` is a workspace member nobody depends on
+    assert [c["name"] for c in got] == ["ws-c", "ws-b", "solo", "ws-a"], [c["name"] for c in got]
+
     assert {c["lib"] for c in got} == {"ws_a", "ws_b", "ws_c", "solo"}
     a = got[3]
     assert a["dir"] == str(r / "bind/ws/a") and a["manifest"] == str(r / "bind/ws/a/Cargo.toml"), a
@@ -98,7 +98,7 @@ def test_metadata_calls_are_cached():
     r = layout()
     resolve(r)
     calls = (r.parent / "root-calls.log").read_text().split()
-    assert sorted(calls) == ["bind__solo", "bind__tool", "bind__ws__b"], calls    # solo needs b: one workspace answer also covers a and c
+    assert sorted(calls) == ["bind__solo", "bind__tool", "bind__ws__b"], calls
 
 
 @test
@@ -208,11 +208,11 @@ def test_rdj_toolchain_choice_and_flags():
     res = run_rdj(r)
     assert [(x["name"], x["status"]) for x in res] == [("ws-c", "built"), ("ws-b", "built"), ("solo", "built"), ("ws-a", "built")], res
     got = {l.split()[0]: l.split()[1:] for l in make_log(r)}
-    assert got["ws_a"] == ["nightly-2026-01-01", "0", "0"] and got["ws_c"][0] == "nightly-2026-01-01", got   # workspace file, AZL_RDJ_ENV=0 OFFLINE=0
-    assert got["solo"][0] == "nightly", got                                                                   # no workspace file, no root file
-    assert [l.split()[0] for l in make_log(r)] == ["ws_c", "ws_b", "solo", "ws_a"]                            # dependencies first
+    assert got["ws_a"] == ["nightly-2026-01-01", "0", "0"] and got["ws_c"][0] == "nightly-2026-01-01", got
+    assert got["solo"][0] == "nightly", got
+    assert [l.split()[0] for l in make_log(r)] == ["ws_c", "ws_b", "solo", "ws_a"]
     assert all((r.parent / "out/rdj" / f"{x['lib']}.json").is_file() and x["json"].endswith(f"{x['lib']}.json") for x in res)
-    write(r / "rust-toolchain.toml", '[toolchain]\nchannel = "beta"\n')                                       # root file: crates outside a workspace file
+    write(r / "rust-toolchain.toml", '[toolchain]\nchannel = "beta"\n')
     res = run_rdj(r, r.parent / "out2")
     assert {l.split()[0]: l.split()[1] for l in make_log(r)[4:]} == {"ws_c": "nightly-2026-01-01", "ws_b": "nightly-2026-01-01", "solo": "beta", "ws_a": "nightly-2026-01-01"}
 
@@ -223,15 +223,15 @@ def test_rdj_cache():
     write(r / "bind/ws/rust-toolchain.toml", '[toolchain]\nchannel = "nightly"\n')
     run_rdj(r)
     n = len(make_log(r))
-    assert [x["status"] for x in run_rdj(r)] == ["cached"] * 4 and len(make_log(r)) == n          # same sources + toolchain: nothing runs
-    write(r / "bind/ws/c/src/lib.rs", "pub fn changed() {}\n")                                     # one crate's source changes
+    assert [x["status"] for x in run_rdj(r)] == ["cached"] * 4 and len(make_log(r)) == n
+    write(r / "bind/ws/c/src/lib.rs", "pub fn changed() {}\n")
     res = run_rdj(r)
     assert {x["name"]: x["status"] for x in res} == {"ws-c": "built", "ws-b": "cached", "solo": "cached", "ws-a": "cached"}, res
-    write(r / "rust-toolchain.toml", '[toolchain]\nchannel = "beta"\n')                           # toolchain change: every crate whose rustc differs
+    write(r / "rust-toolchain.toml", '[toolchain]\nchannel = "beta"\n')
     res = run_rdj(r)
-    assert {x["name"]: x["status"] for x in res} == {"ws-c": "cached", "ws-b": "cached", "solo": "built", "ws-a": "cached"}, res   # ws crates stay nightly
+    assert {x["name"]: x["status"] for x in res} == {"ws-c": "cached", "ws-b": "cached", "solo": "built", "ws-a": "cached"}, res
     (r.parent / "out/rdj/solo.json").unlink()
-    assert {x["name"]: x["status"] for x in run_rdj(r)}["solo"] == "built"                        # JSON missing: rebuilt
+    assert {x["name"]: x["status"] for x in run_rdj(r)}["solo"] == "built"
 
 
 @test
@@ -281,7 +281,7 @@ def test_rdj_cli():
     assert subprocess.run(cmd[:2], capture_output=True, text=True, env=env).returncode == 2
 
 
-FAKE_RUSTC = "rustc 1.97.0 (2d8144b78 2026-07-07)"      # what harness/fake/rustdoc/azalea.meta records
+FAKE_RUSTC = "rustc 1.97.0 (2d8144b78 2026-07-07)"
 
 
 def fake_project() -> Path:
@@ -290,7 +290,7 @@ def fake_project() -> Path:
     r = tmpdir() / "root"
     write(r / "Cargo.toml", '[package]\nname = "host"\nversion = "0.1.0"\n')
     shutil.copytree(ROOT / "harness/fake/azalea", r / "bind/azalea", ignore=shutil.ignore_patterns("target"))
-    write(r / "bindgen.toml", (ROOT / "bindgen.toml").read_text())        # the azalea config: the fake is bound with it (no file = the built-in empty tables)
+    write(r / "bindgen.toml", (ROOT / "bindgen.toml").read_text())
     for f in (ROOT / "harness/src/luau").glob("extra_*.rs"):
         write(r / "rust/luau" / f.name, f.read_text())
     return r
@@ -317,33 +317,33 @@ def test_bindgen_on_fake_crate():
     p = run_bindgen(r, out)
     assert p.returncode == 0 and p.stderr == "", p.stderr
     lines = p.stdout.splitlines()
-    assert lines and all(l.startswith(("cargo:rerun-if-changed=", "cargo:warning=")) for l in lines), p.stdout           # nothing else on stdout
+    assert lines and all(l.startswith(("cargo:rerun-if-changed=", "cargo:warning=")) for l in lines), p.stdout
     rer = {l.split("=", 1)[1] for l in lines if l.startswith("cargo:rerun-if-changed=")}
     for want in (r / "src", r / "bind/azalea/src", r / "bind/azalea/Cargo.toml", r / "bindgen.toml"):
         assert str(want) in rer, (want, rer)
-    # same output as the committed harness bindings (the first line is the `<dir> @ <sha1>` label, which names the staging dir)
+
     for f in ("gen_client.rs", "gen_events.rs", "gen_types.rs"):
         a, b = (out / f).read_text().splitlines(), (ROOT / "harness/src/luau" / f).read_text().splitlines()
         assert a[1:] == b[1:] and a[0].startswith("// ") and a[0].split(" @ ")[1] == b[0].split(" @ ")[1], f
     assert (out / "bindings.d.luau").read_text().splitlines()[1:] == (ROOT / "harness/luau/azalea.d.luau").read_text().splitlines()[1:]
-    for f in ("gen_client.rs", "gen_events.rs", "gen_types.rs"):                                  # inc/: same file minus inner attributes
+    for f in ("gen_client.rs", "gen_events.rs", "gen_types.rs"):
         inc = (out / "inc" / f).read_text().splitlines()
         full = [l for l in (out / f).read_text().splitlines() if not l.startswith("#![")]
         assert inc == full and not any(l.startswith("#![") for l in inc) and len(full) < len((out / f).read_text().splitlines()), f
     assert not (out / "azalea.d.luau").exists() and (out / "GEN_REPORT.md").is_file()
-    report = json.loads((out / "GEN_REPORT.json").read_text())                  # the machine-readable report sits beside the text one
+    report = json.loads((out / "GEN_REPORT.json").read_text())
     assert report["schema"] == 1 and report["classes"][0]["luau"] == "Bot", report["classes"][0]
-    assert (r / "types/bindings.d.luau").read_text() == (out / "bindings.d.luau").read_text()      # copied into R/types
-    # the API list: made from that .d.luau (tools/api_list.py), in O and in R/types next to it
+    assert (r / "types/bindings.d.luau").read_text() == (out / "bindings.d.luau").read_text()
+
     import api_list
     want = api_list.build((out / "bindings.d.luau").read_text(), r / "bindgen.toml")
     assert (out / "API_list.md").read_text() == want and (r / "types/API_list.md").read_text() == want
     assert want.startswith("# Luaxite Luau API\n") and "- `declare function Bot:chat(content: string): ()`" in want and "declare bot: Bot" in want
-    api = api_list.build_dict((out / "bindings.d.luau").read_text(), r / "bindgen.toml")      # the same list as data: what CI and tools read
+    api = api_list.build_dict((out / "bindings.d.luau").read_text(), r / "bindgen.toml")
     assert (out / "API.json").read_text() == api_list.dumps(api) and (r / "types/API.json").read_text() == api_list.dumps(api)
     bot = next(c for c in api["classes"] if c["name"] == "Bot")
     assert any(m["decl"] == "declare function Bot:chat(content: string): ()" for m in bot["members"]) and {"name": "bot", "type": "Bot"} in api["globals"]
-    # second run: R/types/bindings.d.luau and API_list.md are not rewritten (a rewrite would re-trigger cargo's rerun-if-changed)
+
     st = (r / "types/bindings.d.luau").stat().st_mtime_ns
     st2 = (r / "types/API_list.md").stat().st_mtime_ns
     st3 = (r / "types/API.json").stat().st_mtime_ns
@@ -382,12 +382,12 @@ def test_bindgen_passes_config_or_builtin():
     (r / "bindgen.toml").unlink()
     assert run_bindgen(r, r.parent / "out", {"BINDGEN_GENERATOR": str(gen)}).returncode == 0
     a = argv()
-    assert a[a.index("--config") + 1] == "builtin", a                  # no root bindgen.toml: the built-in empty tables
+    assert a[a.index("--config") + 1] == "builtin", a
     write(r / "bindgen.toml", (ROOT / "bindgen.toml").read_text())
     assert run_bindgen(r, r.parent / "out", {"BINDGEN_GENERATOR": str(gen)}).returncode == 0
     a = argv()
     assert a[a.index("--config") + 1] == str(r / "bindgen.toml"), a
-    # the real generator with that file: same bindings as the default config (the fake is bound with the azalea tables)
+
     out = r.parent / "out2"
     assert run_bindgen(r, out).returncode == 0
     assert (out / "gen_client.rs").read_text().splitlines()[1:] == (ROOT / "harness/src/luau/gen_client.rs").read_text().splitlines()[1:]
@@ -442,7 +442,7 @@ def test_bindgen_on_toy_crate_without_config():
     assert "declare extern type Counter with" in (tmp / "types" / "bindings.d.luau").read_text()
 
 
-# ---- build.rs (s11). No rustc in some sandboxes (log A:): then only the static checks run; the compile+run test needs `rustc` on PATH.
+
 BUILD_RS = ROOT / "build.rs"
 
 
@@ -469,7 +469,7 @@ def test_build_rs_static_contract():
     for want in ("src/main.luau", "main.lua", "tools/bindgen.py", '"--root"', '"--out"', "scripts.rs", "pub const MAIN: &str", "pub const SCRIPTS: &[(&str, &str)]",
                  "include_str!", "cargo:rerun-if-changed", "OUT_DIR", "python3", ".d.luau"):
         assert want in s, want
-    assert "extern crate" not in s and "unsafe" not in s                    # std only; edition 2024 makes env::set_var unsafe
+    assert "extern crate" not in s and "unsafe" not in s
     assert not any(l.lstrip().startswith("use ") and not l.lstrip().startswith("use std::") for l in s.splitlines())
     toml = (ROOT / "Cargo.toml").read_text() if (ROOT / "Cargo.toml").is_file() else ""
     assert "[build-dependencies]" not in toml
@@ -480,7 +480,7 @@ def build_rs_project() -> Path:
     write(r / "src/main.luau", 'print("main")\n')
     write(r / "src/util/strings.luau", "return {}\n")
     write(r / "src/a/b/c.luau", "return 1\n")
-    os.symlink(ROOT / "tools", r / "tools")                                 # build.rs runs `python3 tools/bindgen.py` relative to the root
+    os.symlink(ROOT / "tools", r / "tools")
     return r
 
 
@@ -507,7 +507,7 @@ def test_build_rs_compiles_and_runs():
     out = r.parent / "bout"
     p = run_build_rs(exe, r, out)
     assert p.returncode == 0, p.stderr
-    assert (out / "gen_client.rs").is_file() and (r / "types/bindings.d.luau").is_file()          # the generator ran
+    assert (out / "gen_client.rs").is_file() and (r / "types/bindings.d.luau").is_file()
     lines = p.stdout.splitlines()
     assert all(l.startswith(("cargo:rerun-if-changed=", "cargo:warning=")) for l in lines), p.stdout
     rer = {l.split("=", 1)[1] for l in lines if l.startswith("cargo:rerun-if-changed=")}
@@ -515,8 +515,8 @@ def test_build_rs_compiles_and_runs():
         assert want in rer, (want, rer)
     main, mods = parse_scripts_rs((out / "scripts.rs").read_text())
     assert (main, mods) == expected_scripts(r), (main, mods)
-    assert set(mods) == {"main", "util.strings", "a.b.c"}                   # bindings.d.luau is not a script
-    # main.lua is the fallback entry; with neither, the build fails naming src/
+    assert set(mods) == {"main", "util.strings", "a.b.c"}
+
     os.rename(r / "src/main.luau", r / "src/main.lua")
     p = run_build_rs(exe, r, out)
     assert p.returncode == 0 and parse_scripts_rs((out / "scripts.rs").read_text())[0] == str(r / "src/main.lua"), p.stderr
@@ -531,7 +531,7 @@ def test_build_rs_fails_with_generator_stderr():
         return
     r = build_rs_project()
     exe = compile_build_rs(r.parent)
-    (r / "bindgen.toml").write_text("not = [valid\n")                     # invalid config: bindgen.py's own error text must come through
+    (r / "bindgen.toml").write_text("not = [valid\n")
     p = run_build_rs(exe, r, r.parent / "bout")
     assert p.returncode != 0 and p.stderr.strip(), p
 
@@ -544,7 +544,7 @@ def main() -> int:
         for t in TESTS:
             try:
                 t()
-            except Exception as e:                                      # noqa: BLE001 - report every failing test
+            except Exception as e:
                 failed += 1
                 tb = traceback.extract_tb(e.__traceback__)[-1]
                 print(f"FAIL {t.__name__}: {type(e).__name__}: {e} (line {tb.lineno})")

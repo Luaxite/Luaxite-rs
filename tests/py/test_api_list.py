@@ -26,7 +26,7 @@ def bullets(text, title):
 class Fixture(unittest.TestCase):
 
     def test_matches_the_committed_api_list_byte_for_byte(self):
-        # the fixture is the .d.luau shape tools/luaxite_gen.py writes (library tables, hand classes, docs, methods out of order)
+
         self.assertEqual(api_list.build(D_LUAU, CONFIG), GOLDEN)
 
     def test_is_deterministic(self):
@@ -57,7 +57,7 @@ class Fixture(unittest.TestCase):
         self.assertIn("declare function Bot:chat(content: string): ()", bullets(GOLDEN, "Bot"))
         self.assertIn("declare function goal.all(...Goal): Goal", bullets(GOLDEN, "`goal`"))
         self.assertIn("declare function azalea.wait(): ()", bullets(GOLDEN, "`azalea`"))
-        self.assertIsNone(re.search(r"\bself\b", GOLDEN))           # `query_self` is a name, not the receiver
+        self.assertIsNone(re.search(r"\bself\b", GOLDEN))
 
     def test_no_doc_comments_leak_in(self):
         self.assertNotIn("Doc for", GOLDEN)
@@ -136,7 +136,7 @@ class ApiJson(unittest.TestCase):
         self.assertIn({"name": "bot", "type": "Bot"}, api["globals"])
         goal = next(c for c in api["classes"] if c["prefix"] == "goal")
         self.assertTrue(goal["library"] and not any(m["method"] for m in goal["members"]))
-        # every bullet of the text list is one `decl` of the data, and the other way round
+
         decls = [m["decl"] for c in api["classes"] for m in c["members"]]
         self.assertEqual(sorted(decls), sorted(l[3:-1] for l in GOLDEN.splitlines() if l.startswith("- `declare function ")))
 

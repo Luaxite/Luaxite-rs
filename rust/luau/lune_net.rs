@@ -77,7 +77,7 @@ struct Tcp {
     write: Arc<Mutex<Option<OwnedWriteHalf>>>,
 }
 
-/// Largest buffer one `read(n)` allocates: a huge `n` (2^40) must not abort the process. A read returns what is available anyway.
+
 const MAX_READ: usize = 64 << 20;
 
 fn tcp_err(name: &str, e: &std::io::Error) -> mlua::Error {
@@ -164,11 +164,11 @@ async fn tcp_connect(_: Lua, (host, port, config): (String, u16, Value)) -> mlua
     })
 }
 
-/// How long `net.request` waits for the connection to open (TCP and TLS handshake). The whole request is limited by
-/// `options.timeout` (default `DEFAULT_REQUEST_TIMEOUT_SECS`; `timeout = 0` removes the limit).
+
+
 const CONNECT_TIMEOUT: Duration = Duration::from_secs(30);
 
-/// The `timeout` of a `net.request` from its `options.timeout`: absent -> `DEFAULT_REQUEST_TIMEOUT_SECS`, `0` -> `None` (no limit).
+
 fn request_timeout(secs: Option<f64>) -> mlua::Result<Option<Duration>> {
     timeout_with_default("net.request", secs, DEFAULT_REQUEST_TIMEOUT_SECS)
 }
@@ -192,11 +192,11 @@ struct ReqSpec {
     body: Option<Vec<u8>>,
     headers: Vec<(String, String)>,
     decompress: bool,
-    /// `options.timeout`: from connecting until the whole body has been read; the default when the script gives none. `None` = no limit (`timeout = 0`).
+    
     timeout: Option<Duration>,
 }
 
-/// A reqwest failure as a Lua error; a timeout (connect or `options.timeout`) reads `net.request: timed out`.
+
 fn req_err(e: reqwest::Error) -> mlua::Error {
     if e.is_timeout() {
         mlua::Error::runtime("net.request: timed out")
@@ -335,8 +335,8 @@ async fn send_request(spec: ReqSpec) -> mlua::Result<Response> {
             None => headers.push((name.as_str().to_owned(), vec![value.to_owned()])),
         }
     }
-    // The announced length is checked first; the chunks are counted as decoded (gzip/deflate/brotli), so a
-    // compressed bomb or a server that lies about its length is stopped too.
+    
+    
     let too_large = || too_big("net.request: response body");
     if resp.content_length().is_some_and(|n| n > MAX_BYTES as u64) {
         return Err(too_large());
@@ -479,7 +479,7 @@ impl UserData for Socket {
                                 tokio_tungstenite::tungstenite::error::ProtocolError::ResetWithoutClosingHandshake,
                             ),
                         )) => {
-                            // the peer vanished (killed, reset): the stream just ends, like a close with code 1006
+                            
                             this.set_code(1006);
                             return Ok(None);
                         }
@@ -572,8 +572,8 @@ fn build_response(reply: Option<Reply>) -> hyper::Response<Full<Bytes>> {
         .unwrap_or_else(|_| fail())
 }
 
-/// The reply to a request whose body is over `MAX_BYTES`. `Connection: close`: the unread rest of the body
-/// must not be parsed as the next request.
+
+
 fn payload_too_large() -> hyper::Response<Full<Bytes>> {
     let mut r = hyper::Response::new(Full::new(Bytes::from_static(b"Payload Too Large")));
     *r.status_mut() = hyper::StatusCode::PAYLOAD_TOO_LARGE;
@@ -619,7 +619,7 @@ impl UserData for ServeRequest {
 }
 
 fn parse_query(q: Option<&str>) -> Vec<(String, String)> {
-    // form decoding: `+` is a space (what the client's query encoder writes); `%2B` stays a plus
+    
     let dec = |s: &str| {
         let spaced: Vec<u8> = s
             .bytes()
@@ -724,7 +724,7 @@ async fn handle(
     };
     let wrapper = handlers.wrapper.clone();
     let (parts, body) = req.into_parts();
-    // Over the cap: 413, and the server keeps running. Not a script error, so the exit code stays as it was.
+    
     let announced = parts
         .headers
         .get(hyper::header::CONTENT_LENGTH)
@@ -831,7 +831,7 @@ async fn serve_fn(lua: Lua, (port, cfg): (u16, Value)) -> mlua::Result<ServeHand
     let listener = tokio::net::TcpListener::bind((address.as_str(), port))
         .await
         .map_err(|e| mlua::Error::runtime(format!("net.serve: {e}")))?;
-    let port = listener.local_addr().map_or(port, |a| a.port()); // port 0 asks the OS for a free one
+    let port = listener.local_addr().map_or(port, |a| a.port()); 
     let wrapper = lua
         .load(HANDLER_SRC)
         .set_name("=net.serve")

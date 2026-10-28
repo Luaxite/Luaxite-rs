@@ -17,15 +17,13 @@ use self::recursive::format_value_recursive;
 
 pub use self::config::ValueFormatConfig;
 
-// NOTE: Since the setting for colors being enabled is global,
-// and these functions may be called in parallel, we use this global
-// lock to make sure that we don't mess up the colors for other threads.
+
+
+
 static COLORS_LOCK: LazyLock<Arc<ReentrantMutex<()>>> =
     LazyLock::new(|| Arc::new(ReentrantMutex::new(())));
 
-/**
-    Formats a Lua value into a pretty string using the given config.
-*/
+
 #[must_use]
 #[allow(clippy::missing_panics_doc)]
 pub fn pretty_format_value(value: &LuaValue, config: &ValueFormatConfig) -> String {
@@ -41,11 +39,7 @@ pub fn pretty_format_value(value: &LuaValue, config: &ValueFormatConfig) -> Stri
     res.expect("using fmt for writing into strings should never fail")
 }
 
-/**
-    Formats a Lua multi-value into a pretty string using the given config.
 
-    Each value will be separated by a space.
-*/
 #[must_use]
 #[allow(clippy::missing_panics_doc)]
 pub fn pretty_format_multi_value(values: &LuaMultiValue, config: &ValueFormatConfig) -> String {

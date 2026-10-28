@@ -65,7 +65,7 @@ class CargoWarnings(unittest.TestCase):
         lines = [msg("warning", "unused variable: `x`"), msg("warning", "1 warning emitted")]
         p = self.go(lines)
         self.assertEqual(p.returncode, 0)
-        self.assertIn("1 warning(s)", p.stdout)  # the "N warning emitted" summary line is not counted
+        self.assertIn("1 warning(s)", p.stdout)
         self.assertEqual(self.go(lines, "--strict").returncode, 1)
 
     def test_error_in_the_judged_package_fails(self):
@@ -88,7 +88,7 @@ class CargoWarnings(unittest.TestCase):
         self.assertEqual(self.go(["not json", ""]).returncode, 2)
 
     def test_render_diagnostics_log_has_no_messages_and_says_why(self):
-        # what `--message-format=json-render-diagnostics` writes to stdout: artifacts only, the diagnostics went to stderr
+
         p = self.go(['{"reason":"compiler-artifact","package_id":"path+file:///w/luaxite#0.1.0","fresh":false}', '{"reason":"build-finished","success":true}'])
         self.assertEqual(p.returncode, 2)
         self.assertIn("json-render-diagnostics", p.stderr)

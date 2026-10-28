@@ -1,6 +1,4 @@
-/**
-    Configuration for formatting values.
-*/
+
 #[derive(Debug, Clone, Copy)]
 pub struct ValueFormatConfig {
     pub(super) max_depth: usize,
@@ -8,9 +6,7 @@ pub struct ValueFormatConfig {
 }
 
 impl ValueFormatConfig {
-    /**
-        Creates a new config with default values.
-    */
+    
     #[must_use]
     pub const fn new() -> Self {
         Self {
@@ -19,19 +15,13 @@ impl ValueFormatConfig {
         }
     }
 
-    /**
-        Sets the maximum depth to which tables will be formatted.
-    */
+    
     #[must_use]
     pub const fn with_max_depth(self, max_depth: usize) -> Self {
         Self { max_depth, ..self }
     }
 
-    /**
-        Sets whether colors should be enabled.
-
-        Colors are disabled by default.
-    */
+    
     #[must_use]
     pub const fn with_colors_enabled(self, colors_enabled: bool) -> Self {
         Self {

@@ -141,7 +141,7 @@ async fn wait(secs: Option<f64>) -> mlua::Result<f64> {
     } else {
         match Duration::try_from_secs_f64(secs) {
             Ok(dur) => tokio::time::sleep(dur.max(Duration::from_millis(1))).await,
-            // math.huge or a value too large for a Duration: wait forever (task.cancel still ends the thread)
+            
             Err(_) => std::future::pending::<()>().await,
         }
     }
@@ -154,8 +154,8 @@ const DELAY_SRC: &str =
 pub fn module(lua: Lua) -> mlua::Result<Table> {
     let close: Function = lua.globals().get::<Table>("coroutine")?.get("close")?;
     let close_key = lua.create_registry_value(close)?;
-    // task.delay returns the caller's thread, but the timer runs in a hidden wrapper thread: remember which wrapper belongs to which
-    // thread (weak keys) so task.cancel also stops the wrapper, otherwise the program would stay alive until the delay's deadline.
+    
+    
     let wrappers: Table = lua
         .load("return setmetatable({}, { __mode = 'k' })")
         .eval()?;
@@ -189,8 +189,8 @@ pub fn module(lua: Lua) -> mlua::Result<Table> {
         .into_function()?;
     let delay = lua.create_function(move |lua, args: MultiValue| {
         let tof = ThreadOrFunction::from_lua(args.get(1).cloned().unwrap_or(Value::Nil), lua)?;
-        // Resolve the function to its thread now, so task.delay can return the thread the caller passed (or the one made from their
-        // function); the internal wrapper thread stays hidden. Closing that thread with task.cancel before it fires stops it from running.
+        
+        
         let thread = tof.into_thread(lua)?;
         let args: MultiValue = args
             .into_iter()

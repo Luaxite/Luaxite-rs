@@ -7,15 +7,15 @@ fn has_windows_drive_prefix(s: &str) -> bool {
 }
 
 fn parse_path(s: &str) -> Option<(&str, &str)> {
-    // Chunk names loaded from strings usually look like `[string "PATH"]:line:`
+    
     if let Some(rest) = s.strip_prefix("[string \"")
         && let Some((path, after)) = rest.split_once("\"]:")
     {
         return Some((path, after));
     }
 
-    // Otherwise this is a bare path like `C:\dir\file:line:` so we will skip a
-    // leading Windows drive letter prefix before locating the separating colon.
+    
+    
     let search_start = usize::from(has_windows_drive_prefix(s)) * 2;
     let colon = search_start + s[search_start..].find(':')?;
     Some((&s[..colon], &s[colon + 1..]))
@@ -33,39 +33,31 @@ fn parse_line_number(s: &str) -> (Option<usize>, &str) {
     }
 }
 
-/**
-    Source of a stack trace line parsed from a [`LuaError`].
-*/
+
 #[derive(Debug, Default, Clone, Copy)]
 pub enum StackTraceSource {
-    /// Error originated from a C / Rust function.
+    
     C,
-    /// Error originated from a Lua (user) function.
+    
     #[default]
     Lua,
 }
 
 impl StackTraceSource {
-    /**
-        Returns `true` if the error originated from a C / Rust function, `false` otherwise.
-    */
+    
     #[must_use]
     pub const fn is_c(self) -> bool {
         matches!(self, Self::C)
     }
 
-    /**
-        Returns `true` if the error originated from a Lua (user) function, `false` otherwise.
-    */
+    
     #[must_use]
     pub const fn is_lua(self) -> bool {
         matches!(self, Self::Lua)
     }
 }
 
-/**
-    Stack trace line parsed from a [`LuaError`].
-*/
+
 #[derive(Debug, Default, Clone)]
 pub struct StackTraceLine {
     source: StackTraceSource,
@@ -75,47 +67,31 @@ pub struct StackTraceLine {
 }
 
 impl StackTraceLine {
-    /**
-        Returns the source of the stack trace line.
-    */
+    
     #[must_use]
     pub fn source(&self) -> StackTraceSource {
         self.source
     }
 
-    /**
-        Returns the path, if it exists.
-    */
+    
     #[must_use]
     pub fn path(&self) -> Option<&str> {
         self.path.as_deref()
     }
 
-    /**
-        Returns the line number, if it exists.
-    */
+    
     #[must_use]
     pub fn line_number(&self) -> Option<usize> {
         self.line_number
     }
 
-    /**
-        Returns the function name, if it exists.
-    */
+    
     #[must_use]
     pub fn function_name(&self) -> Option<&str> {
         self.function_name.as_deref()
     }
 
-    /**
-        Returns `true` if the stack trace line contains no "useful" information, `false` otherwise.
-
-        Useful information is determined as one of:
-
-        - A path
-        - A line number
-        - A function name
-    */
+    
     #[must_use]
     pub const fn is_empty(&self) -> bool {
         self.path.is_none() && self.line_number.is_none() && self.function_name.is_none()
@@ -167,26 +143,20 @@ impl fmt::Display for StackTraceLine {
     }
 }
 
-/**
-    Stack trace parsed from a [`LuaError`].
-*/
+
 #[derive(Debug, Default, Clone)]
 pub struct StackTrace {
     lines: Vec<StackTraceLine>,
 }
 
 impl StackTrace {
-    /**
-        Returns the individual stack trace lines.
-    */
+    
     #[must_use]
     pub fn lines(&self) -> &[StackTraceLine] {
         &self.lines
     }
 
-    /**
-        Returns the individual stack trace lines, mutably.
-    */
+    
     #[must_use]
     pub fn lines_mut(&mut self) -> &mut Vec<StackTraceLine> {
         &mut self.lines

@@ -56,8 +56,8 @@ use tokio::sync::oneshot;
 
 pub use gen_client::LuaClient;
 
-/// Set when a `bot:on` handler or a `task.spawn` / `defer` / `delay` thread raised an error (printed as `[luau] ...`): the process then
-/// exits 1 like a failing main script (`run_standalone`).
+
+
 static SCRIPT_ERRORS: AtomicBool = AtomicBool::new(false);
 
 pub fn note_error() {
@@ -73,7 +73,7 @@ pub fn had_error() -> bool {
 pub struct Handlers {
     map: RwLock<HashMap<String, Vec<Function>>>,
     waiters: Mutex<HashMap<String, Vec<oneshot::Sender<MultiValue>>>>,
-    // set (under the `waiters` lock) by `close_waiters`: a `wait` that starts afterwards can never be woken, so it fails at once
+    
     closed: AtomicBool,
 }
 
@@ -86,7 +86,7 @@ impl Handlers {
                     eprintln!("[luau] error in `init` handler: {e}");
                 }
             };
-            // `real`: the script runs inside main.rs's LocalSet, and task.defer / process.create / net.serve in the handler need it too.
+            
             #[cfg(feature = "real")]
             tokio::task::spawn_local(run);
             #[cfg(not(feature = "real"))]
@@ -170,11 +170,11 @@ impl Handlers {
     }
 }
 
-/// Async functions (`task.wait`, `bot:goto`, `net.*`, ...) suspend their thread with mlua's `poll_pending` marker, and only the Rust side
-/// that drives a thread (the main script, `task.spawn` / `defer` / `delay`) understands it. Resumed by a plain `coroutine.resume` /
-/// `coroutine.wrap`, the thread would just hand the marker back as an ordinary yield and nothing would ever poll it again. These replacements of
-/// `coroutine.resume` / `coroutine.wrap` pass the marker on: the resuming thread yields it to its own driver and, once woken, resumes the
-/// inner thread (with whatever the driver sent, so a cancel signal reaches the future too). Nested coroutines chain the same way.
+
+
+
+
+
 fn install_coroutine_shim(lua: &Lua) -> mlua::Result<()> {
     let co: mlua::Table = lua.globals().get("coroutine")?;
     let pending = mlua::Value::LightUserData(Lua::poll_pending());
@@ -213,8 +213,8 @@ fn install_coroutine_shim(lua: &Lua) -> mlua::Result<()> {
     patch.call::<()>((pending, co))
 }
 
-/// Marks an embedded module as being loaded (registry table `azalea_loading`); removed on drop, so a module whose chunk
-/// errors (or whose loading thread is cancelled) can be required again.
+
+
 struct Loading {
     table: mlua::Table,
     key: String,
@@ -226,9 +226,9 @@ impl Drop for Loading {
     }
 }
 
-/// Starts loading the embedded module `key`: marks it as loading (registry table `azalea_loading`; the returned guard clears the mark again)
-/// and compiles its chunk. Shared by `load_embedded` and `load_embedded_sync`, so both mark, cache and report cycles the same way (the cycle
-/// check itself is in `resolve`, which runs before either of them).
+
+
+
 fn begin_embedded(lua: &Lua, key: &str) -> mlua::Result<(Function, Loading)> {
     let Some((_, source)) = scripts::SCRIPTS.iter().find(|(n, _)| *n == key) else {
         return Err(mlua::Error::runtime(format!(
@@ -248,8 +248,8 @@ fn begin_embedded(lua: &Lua, key: &str) -> mlua::Result<(Function, Loading)> {
     Ok((chunk, guard))
 }
 
-/// Caches the value an embedded module's chunk returned (`nil` is cached as `true`). Only called after the chunk returned: a failed or cyclic
-/// load never leaves a half-built module behind.
+
+
 fn finish_embedded(lua: &Lua, key: &str, value: mlua::Value) -> mlua::Result<mlua::Value> {
     let value = if value.is_nil() {
         mlua::Value::Boolean(true)
@@ -261,17 +261,17 @@ fn finish_embedded(lua: &Lua, key: &str, value: mlua::Value) -> mlua::Result<mlu
     Ok(value)
 }
 
-/// `require`. The lookup (`@lune/*`, the cache, a non-embedded name) is a plain synchronous function, so it keeps
-/// working where a script cannot yield. The first load of an embedded `src/**.luau` module runs its chunk in one of two ways, picked by a
-/// small Lua function with `coroutine.isyieldable()`: `load_embedded` (`call_async`) where the caller can yield, so the module's top level
-/// may `task.wait` / use `net.*` / `process.*`; `load_embedded_sync` (`call`) where it cannot (a `string.gsub` callback, a metamethod, a
-/// `table.sort` comparator), where an async load would fail with a yield error. In that second case a top level that yields errors, as
-/// any yield there does. Modules are loaded when first required, never at startup (their top levels must not run early).
+
+
+
+
+
+
 fn install_require(lua: &Lua) -> mlua::Result<()> {
     let fallback: Option<Function> = lua.globals().get("require")?;
     lua.set_named_registry_value("azalea_loaded", lua.create_table()?)?;
     lua.set_named_registry_value("azalea_loading", lua.create_table()?)?;
-    // name -> (value, nil) when it is resolved, or (nil, key) when the embedded module `key` still has to be run
+    
     let resolve = lua.create_function(
         move |lua, name: String| -> mlua::Result<(mlua::Value, Option<String>)> {
             if name.starts_with("@lune/") {
@@ -382,7 +382,7 @@ impl Runtime {
         self.handlers.waiting(event)
     }
 
-    /// Kills child processes still running (`@lune/process`); called before the program exits, which skips destructors.
+    
     pub fn kill_children() {
         #[cfg(feature = "lune")]
         lune_process::kill_all();
@@ -397,8 +397,8 @@ impl Runtime {
             .load(self.source.as_str())
             .set_name(format!("@{}", self.name));
         let script_err = chunk.exec_async().await.err();
-        // Print it now: `wait_idle` below lasts as long as any bot the script started is connected, and a script that failed before its own
-        // `bot:exit()` leaves it connected, so the error would never show (a test harness's `timeout` kills the process first).
+        
+        
         if let Some(e) = &script_err {
             eprintln!("[luau] script error: {e}");
         }

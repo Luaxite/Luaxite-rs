@@ -15,11 +15,11 @@ from pathlib import Path
 from typing import Optional
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import rdj  # noqa: E402
-from rdj import RdjError, convert_type, doc_summary, attr_texts, inner_kind, payload, render_type, visibility  # noqa: E402
-import luaxite_gen as gen  # noqa: E402
+import rdj
+from rdj import RdjError, convert_type, doc_summary, attr_texts, inner_kind, payload, render_type, visibility
+import luaxite_gen as gen
 
-STRIPPED = ("<stripped>", ("other", "_"), False)     # stands in for fields rustdoc left out (has_stripped_fields)
+STRIPPED = ("<stripped>", ("other", "_"), False)
 
 
 def describe_item(c, id, it=None) -> str:
@@ -86,7 +86,7 @@ def _variants(c: rdj.Crate, p: dict, skips: Optional[list] = None, owner: str = 
     out = []
     for vid in p.get("variants") or []:
         v = c.item(vid)
-        if v is None:                               # rustdoc omits #[doc(hidden)] variants (unless --document-hidden-items) and stripped ones
+        if v is None:
             label = f"variant #{vid}"
             if dropped is not None:
                 dropped.append(label)
@@ -94,7 +94,7 @@ def _variants(c: rdj.Crate, p: dict, skips: Optional[list] = None, owner: str = 
                 skips.append((f"{owner or getattr(c, 'name', '?')}::{label}",
                               "variant dropped: not in the JSON index (#[doc(hidden)] without --document-hidden-items, or stripped)"))
             continue
-        if not v.get("name"):                       # a variant without a name cannot be bound: this one only is left out
+        if not v.get("name"):
             note_skip(skips, c, vid, v, ValueError("variant without a name"))
             if dropped is not None:
                 dropped.append(f"variant #{vid}")
@@ -103,7 +103,7 @@ def _variants(c: rdj.Crate, p: dict, skips: Optional[list] = None, owner: str = 
         kind = "unit" if k == "plain" or k is None else ("tuple" if isinstance(k, dict) and "tuple" in k else "struct")
         fields = _fields(c, _kind_ids(k))
         if isinstance(k, dict) and isinstance(k.get("struct"), dict) and k["struct"].get("has_stripped_fields"):
-            fields.append(STRIPPED)                 # like a struct's stripped fields (see _struct_fields)
+            fields.append(STRIPPED)
         out.append(dict(name=v.get("name"), kind=kind, types=[f[1] for f in fields], attrs=attr_texts(v),
                         doc=doc_summary(v.get("docs"))))
     return out
@@ -157,7 +157,7 @@ def build_defs(r: rdj.Rdj, crates=None, skips: Optional[list] = None) -> dict:
                 d = make_def(c, id, it, skips=skips)
                 if d is not None:
                     found.append(((c.name, d.modpath, ((it.get("span") or {}).get("begin") or [0])[0], d.name), d))
-            except Exception as e:      # an unknown/changed construct costs this one def, not the run
+            except Exception as e:
                 note_skip(skips, c, id, it, e)
     defs: dict = defaultdict(list)
     for _, d in sorted(found, key=lambda x: x[0]):
@@ -165,11 +165,11 @@ def build_defs(r: rdj.Rdj, crates=None, skips: Optional[list] = None) -> dict:
     return defs
 
 
-# =============================================================================
-# impls (slice 5): methods of the bound classes, client traits, Goal impls
-# =============================================================================
 
-MACRO_LABEL = "(via macro)"          # rustdoc does not record the macro's name
+
+
+
+MACRO_LABEL = "(via macro)"
 IDENT = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
 
 
@@ -180,11 +180,11 @@ class ImplData:
     methods: list = field(default_factory=list)
     client_traits: set = field(default_factory=set)
     goal_impls: set = field(default_factory=set)
-    clone_impls: set = field(default_factory=set)     # types with a hand-written (or macro-written) `impl Clone for T`
-    # Slice 7. `macro_notes` is always empty under rdj: rustdoc has expanded impl_entity_functions! & co, so there are no
-    # "macro invocations we could not expand".
+    clone_impls: set = field(default_factory=set)
+
+
     macro_notes: list = field(default_factory=list)
-    hidden: list = field(default_factory=list)        # (target, fn name, "kept"|"skipped"): #[doc(hidden)] fns met in the JSON
+    hidden: list = field(default_factory=list)
 
 
 def _bounds_text(bounds) -> str:
@@ -308,13 +308,13 @@ def _trait_name(p: dict) -> Optional[str]:
     return rdj._last_seg(tr["path"]) if isinstance(tr, dict) and tr.get("path") else None
 
 
-# How the three kinds of "odd" methods are treated (slice 7).
-#   macro-made  : rustdoc expanded it: an ordinary impl/fn (docs per fn, span = macro call site -> file label "(via macro)").
-#   cfg-gated   : rustdoc runs with the crate's own cfg: a fn whose feature is off is NOT in the JSON (nothing to skip, a
-#                 only shows for features that are off); one whose feature is on is a plain fn.
-#                 `#[cfg]` itself is not in the JSON attrs.
-#   doc(hidden) : absent from the JSON unless rustdoc ran with `--document-hidden-items` (AZL_RDJ_EXTRA); present ones carry the
-#                 attr. Default `hidden="keep"` binds them; `hidden="skip"` drops them.
+
+
+
+
+
+
+
 
 
 def is_hidden(it: dict) -> bool:
@@ -406,9 +406,9 @@ def build_impls(r: rdj.Rdj, crates=None, classes=None, strip_prefix: str = "", h
     return data
 
 
-# =============================================================================
-# public paths (slice 6): aliases / chain_public / to_azalea / unique_def / resolve_path from `use` items
-# =============================================================================
+
+
+
 
 class RdjPaths:
     """The path half of the generator's index, from rustdoc JSON: the module tree is walked the way rustc
@@ -429,21 +429,21 @@ class RdjPaths:
         if root not in r.crates:
             raise RdjError(f"no rustdoc JSON for the root crate `{root}` (have: {', '.join(sorted(r.crates)) or 'none'})")
         self.r, self.root = r, root
-        self.roots = tuple(roots) if roots else (root,)       # crates whose public paths count (generic mode: every bound crate)
+        self.roots = tuple(roots) if roots else (root,)
         self.skips = skips
         self.defs = defs if defs is not None else build_defs(r, skips=skips)
         self.crates: dict = {n: None for n in sorted(r.crates)}
-        self.mod_pub: dict = {}                 # (crate, modpath) -> is `pub`        (root modules excluded)
-        self.reexports: list = []               # (crate, modpath, exported, source)  public `use` items; exported `*` for globs
-        self.globs: list = []                   # (crate, modpath, source)
-        self.unresolved: list = []              # (crate, source) use items whose target is not in a loaded crate
-        self._def_ids: dict = {}                # (crate, modpath, name, kind) -> (crate, id)
+        self.mod_pub: dict = {}
+        self.reexports: list = []
+        self.globs: list = []
+        self.unresolved: list = []
+        self._def_ids: dict = {}
         self._ns: dict = {}
         self._cut = False
         self._paths = None
         self._scan()
 
-    # ---- tables
+
     def _scan(self):
         for cname in self.crates:
             c = self.r.crate(cname)
@@ -474,7 +474,7 @@ class RdjPaths:
                 if glob:
                     self.globs.append((c.name, modpath, p.get("source") or ""))
 
-    # ---- the index interface that only needs the tables
+
     def aliases(self) -> dict:
         """`pub use azalea_core as core;` at the root crate's root: {crate name: exported name}."""
         return {full: exported for crate, modpath, exported, full in self.reexports
@@ -487,7 +487,7 @@ class RdjPaths:
         pubs = [d for d in self.defs.get(name, []) if d.is_pub]
         return pubs[0] if len(pubs) == 1 else None
 
-    # ---- the name-resolution walk
+
     def _resolve(self, c: rdj.Crate, id):
         """(crate name, item id) of a `use` target: a local item, or an item of another crate found by its `paths` entry
         in that crate's own JSON (`Rdj.resolve`); misses go to `self.unresolved`."""
@@ -503,7 +503,7 @@ class RdjPaths:
             return []
         c = self.r.crate(cname)
         cut_before, self._cut = self._cut, False
-        out, from_glob = [], []                 # from_glob[i]: out[i] came in through a `pub use m::*`
+        out, from_glob = [], []
         for cid in c.children(mid):
             it = c.index.get(cid)
             try:
@@ -527,7 +527,7 @@ class RdjPaths:
                     from_glob.append(False)
             except Exception as e:
                 note_skip(self.skips, c, cid, it, e)
-        # an explicit item / `use` shadows a glob-imported name of the same namespace (rustc rule): the glob's item gets no path here
+
         explicit = {(n, self._ns_of(t)) for (n, t), g in zip(out, from_glob) if not g}
         out = [nt for nt, g in zip(out, from_glob) if not (g and (nt[0], self._ns_of(nt[1])) in explicit)]
         if not self._cut:
@@ -577,9 +577,9 @@ class RdjPaths:
         return self.to_azalea(d.crate, d.modpath, d.name)
 
 
-# =============================================================================
-# the RdjIndex interface (slice 8)
-# =============================================================================
+
+
+
 
 def source_crates(root: Path) -> dict:
     """The crates under `root` (`<dir>/src/lib.rs`): {crate name: <dir>/src}."""
@@ -651,7 +651,7 @@ def workspace_prefix(r: rdj.Rdj, root: str = "azalea") -> str:
     return "/".join(parts[:-3]) + "/" if len(parts) > 3 and parts[-2:] == ["src", "lib.rs"] else ""
 
 
-# ---- `#[cfg(..)]` on enum variants: the JSON drops it (rustc resolves cfg before rustdoc sees the item), the source keeps it
+
 
 def _skip_blank(t: str, i: int) -> int:
     """Index of the first char at/after `i` that is not whitespace or inside a `//` / (nested) `/* */` comment."""
@@ -726,13 +726,13 @@ def enum_variant_cfgs(text: str, name: str) -> Optional[dict]:
             j = k
             continue
         m = re.match(r"(?:r#)?[A-Za-z_][A-Za-z0-9_]*", body[j:])
-        if not m:                                   # a stray character: step over it, never loop
+        if not m:
             j += 1
             continue
         out[m.group(0)] = [a for a in attrs if a.startswith("#[cfg(")]
         attrs = []
         j += m.end()
-        while j < n:                                # the payload / discriminant, up to the comma that ends the variant
+        while j < n:
             j = _skip_blank(body, j)
             if j >= n:
                 break
@@ -800,10 +800,10 @@ class RdjIndex:
         self.digest = None
         self.rdj = None
         self.clone_impls: set = set()
-        self.skipped_items: list = []           # (item path, reason): GEN_REPORT "rustdoc front end: skipped items"
-        self.discovered: dict = {}              # generic mode (config without `[classes]`): {type name: class cfg}
-        self.discover_skipped: list = []        # (type name, why it is not a class)
-        self.hidden_fns: list = []              # ImplData.hidden: (target, fn name, "kept"|"skipped") of #[doc(hidden)] fns met in the JSON
+        self.skipped_items: list = []
+        self.discovered: dict = {}
+        self.discover_skipped: list = []
+        self.hidden_fns: list = []
 
     def is_clone(self, name: str):
         """True/False from the derived impls (`def_attrs` rebuilds `#[derive(..)]`) and
@@ -821,12 +821,12 @@ class RdjIndex:
         if why:
             raise RdjError(f"rustdoc front end: {why}")
         self.digest, self.files = source_digest(self.root)
-        self.rdj = rdj.load_dir(self.rdj_dir)           # format_version / not-JSON errors stop here: one RdjError line
-        for w in self.rdj.warnings + stale_json(self.rdj, need):    # same `warning:` line as `rdj.py` prints; never fatal
+        self.rdj = rdj.load_dir(self.rdj_dir)
+        for w in self.rdj.warnings + stale_json(self.rdj, need):
             self.warn(w)
         sk = self.skipped_items
         self.defs = build_defs(self.rdj, skips=sk)
-        top = "azalea" if "azalea" in need else sorted(need)[0]       # no azalea crate: every bound crate is a root of public paths
+        top = "azalea" if "azalea" in need else sorted(need)[0]
         self.paths = RdjPaths(self.rdj, self.defs, root=top, roots=None if top == "azalea" else tuple(sorted(need)), skips=sk)
         self.crates = need
         try:
@@ -835,7 +835,7 @@ class RdjIndex:
             prefix = ""
         for w in event_cfg_gates(self.rdj, self.defs, self.root, prefix):
             self.warn(w)
-        cands = self._class_candidates() if not gen.CLASSES else None      # no `[classes]` configured: discover them
+        cands = self._class_candidates() if not gen.CLASSES else None
         impls = build_impls(self.rdj, classes=cands, strip_prefix=prefix, hidden=self.hidden, skips=sk)
         if cands is not None:
             impls.methods = self._keep_discovered(impls.methods) + self._free_fns()
@@ -926,11 +926,11 @@ class RdjIndex:
         """The items of GEN_REPORT's "rustdoc front end: skipped items" section as data (empty = no section): items the JSON reader could
         not handle (never fatal) and `use` targets it could not follow. Deduplicated, sorted. Each is a dict with a `kind`
         (item | hidden_fn | type | reexport), the `subject` it is about and the `why`."""
-        self.paths.public_paths()                      # the walk fills `unresolved`; run it so the section is complete
+        self.paths.public_paths()
         out = [dict(kind="item", subject=p, why=why) for p, why in sorted(set(self.skipped_items))]
-        out += [dict(kind="hidden_fn", subject=f"{t}::{n}", why="#[doc(hidden)] fn skipped (--rdj-hidden skip)")      # kept ones are bound as usual: nothing lost
+        out += [dict(kind="hidden_fn", subject=f"{t}::{n}", why="#[doc(hidden)] fn skipped (--rdj-hidden skip)")
                 for t, n, how in sorted({(t, str(n), h) for t, n, h in self.hidden_fns}) if how == "skipped"]
-        out += [dict(kind="type", subject=n, why=f"not bound as a class ({why})") for n, why in sorted(set(self.discover_skipped))]     # generic mode only
+        out += [dict(kind="type", subject=n, why=f"not bound as a class ({why})") for n, why in sorted(set(self.discover_skipped))]
         nf = self.rdj.not_found if self.rdj else set()
         out += [dict(kind="reexport", subject=f"{crate}::{path}", crate=crate, path=path,
                      why=("not found in its loaded JSON" if (crate, path) in nf else "its crate has no loaded JSON")

@@ -31,7 +31,7 @@ pub struct LBlockPos(pub BlockPos);
 impl FromLua for LBlockPos {
     fn from_lua(value: Value, _: &Lua) -> mlua::Result<Self> {
         let t = table(value, "a BlockPos table `{ x, y, z }`")?;
-        // NaN and out-of-range values used to become 0 / i32::MIN / i32::MAX silently: an error is clearer.
+        
         let c = |k: &str| {
             let n = num(&t, k, "BlockPos")?;
             let f = n.floor();
@@ -79,7 +79,7 @@ impl IntoLua for LVec3 {
     }
 }
 
-/// A Luau boolean, strictly: mlua's own `bool` accepts anything (`0`, `""` are true), so use this for parameters where a stray number must error.
+
 pub struct LBool(pub bool);
 
 impl FromLua for LBool {
@@ -122,7 +122,7 @@ impl FromLua for LPathfinderOpts {
         match value {
             Value::Nil => {}
             Value::Table(t) => {
-                // like set_client_information: a misspelled option is an error, not silently ignored
+                
                 for pair in t.pairs::<Value, Value>() {
                     let (key, _) = pair?;
                     match &key {
@@ -243,8 +243,8 @@ impl std::ops::Deref for Held {
 }
 
 impl Held {
-    /// Give the container up. Owned: dropping the handle closes it. Borrowed (the bot's own inventory): an explicit close.
-    /// The `real` build replaces this with a version that first checks the bot's ECS still exists (real_inventory.rs).
+    
+    
     #[cfg(not(feature = "real"))]
     pub fn release(self) {
         match self {

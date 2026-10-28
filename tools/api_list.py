@@ -53,8 +53,8 @@ class Class:
 class Model:
     def __init__(self):
         self.types: list[str] = []
-        self.classes: dict[str, Class] = {}          # .d.luau order
-        self.globals: dict[str, str] = {}            # name -> class (or table) name
+        self.classes: dict[str, Class] = {}
+        self.globals: dict[str, str] = {}
 
 
 def matching_paren(s: str, start: int) -> int:
@@ -127,7 +127,7 @@ def parse(text: str) -> Model:
         if not line or line.lstrip().startswith("--"):
             continue
         if line.startswith("type "):
-            # `type X =` followed by `    | A` lines: join the alternatives onto the one line
+
             if line.endswith("="):
                 alts = []
                 while i < len(lines) and re.match(r"\s+\|", lines[i]):
@@ -149,7 +149,7 @@ def parse(text: str) -> Model:
                     cls.members.append(mem)
             i += 1
             continue
-        m = re.match(r"declare (\w+): \{$", line)           # generic mode: a global table of free functions
+        m = re.match(r"declare (\w+): \{$", line)
         if m:
             cls = model.classes.setdefault(m.group(1), Class(m.group(1)))
             model.globals[m.group(1)] = m.group(1)
@@ -199,7 +199,7 @@ API_SCHEMA = 1
 def to_dict(model: Model, priority: list[str] | None = None) -> dict:
     """The API as plain data (the API.json that tools and CI read; API_list.md is rendered from it). Classes come in list order: library
     tables first (by global name), then the `priority` classes, then the rest in .d.luau order. Members are sorted by name (stable)."""
-    lib_global = {}                                         # library class -> the global that holds it
+    lib_global = {}
     for g, c in sorted(model.globals.items()):
         cls = model.classes.get(c)
         if cls is not None and cls.is_library:
@@ -207,7 +207,7 @@ def to_dict(model: Model, priority: list[str] | None = None) -> dict:
 
     def entry(cls: Class, prefix: str, library: bool) -> dict:
         members = []
-        for mem in sorted(cls.members, key=lambda m: m.name):      # stable: overloads keep their order
+        for mem in sorted(cls.members, key=lambda m: m.name):
             sep = ":" if mem.method else "."
             members.append(dict(name=mem.name, method=mem.method, params=mem.params, ret=mem.ret,
                                 decl=f"declare function {prefix}{sep}{mem.name}({mem.params}): {mem.ret}"))

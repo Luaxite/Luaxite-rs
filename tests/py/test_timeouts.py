@@ -15,13 +15,13 @@ class Timeouts(unittest.TestCase):
         self.process = read("rust/luau/lune_process.rs")
         self.net = read("rust/luau/lune_net.rs")
 
-    # --- shared option parsing -------------------------------------------------------------------------------------
+
 
     def test_timeout_helper(self):
         body = fn_body(self.libs, "pub fn timeout_from_secs")
         self.assertIn("secs.is_nan() || secs <= 0.0", body)
         self.assertIn("options.timeout must be a positive number of seconds", body)
-        # math.huge / huge values are clamped, and from_secs_f64 (which panics) is not used
+
         self.assertIn("secs.min(MAX_TIMEOUT_SECS)", body)
         self.assertIn("Duration::try_from_secs_f64", body)
         self.assertNotIn("Duration::from_secs_f64", self.libs)
@@ -33,13 +33,13 @@ class Timeouts(unittest.TestCase):
         for name, src in (("net", self.net), ("process", self.process)):
             m = re.search(r"use super::lune_libs::\{([^}]*)\};", src)
             self.assertIsNotNone(m, name)
-            # slice 13: both use timeout_with_default (timeout_from_secs is only called inside lune_libs.rs now)
+
             self.assertIn("timeout_with_default", m.group(1), name)
             self.assertNotIn("timeout_from_secs", src, name)
         self.assertIn("DEFAULT_REQUEST_TIMEOUT_SECS", re.search(r"use super::lune_libs::\{([^}]*)\};", self.net).group(1))
         self.assertIn("DEFAULT_EXEC_TIMEOUT_SECS", re.search(r"use super::lune_libs::\{([^}]*)\};", self.process).group(1))
 
-    # --- net.serve request body ------------------------------------------------------------------------------------
+
 
     def test_serve_body_is_capped(self):
         body = fn_body(self.net, "async fn handle(")
@@ -47,7 +47,7 @@ class Timeouts(unittest.TestCase):
         self.assertNotIn("body.collect().await", body)
         self.assertIn("LengthLimitError", body)
         self.assertIn("payload_too_large()", body)
-        # the announced Content-Length is checked before any byte is read
+
         self.assertIn("CONTENT_LENGTH", body)
         self.assertIn("n > MAX_BYTES as u64", body)
         m = re.search(r"use http_body_util::\{([^}]*)\};", self.net)
@@ -58,15 +58,15 @@ class Timeouts(unittest.TestCase):
     def test_serve_over_cap_is_a_413_not_a_script_error(self):
         reply = fn_body(self.net, "fn payload_too_large")
         self.assertIn("PAYLOAD_TOO_LARGE", reply)
-        self.assertIn("CONNECTION", reply)  # Connection: close, the rest of the body is never read
+        self.assertIn("CONNECTION", reply)
         body = fn_body(self.net, "async fn handle(")
-        # the over-cap branch returns the reply: no error print ("[luau]" lines fail e2e), no script-error flag
+
         branch = body[body.index("Limited::new"):body.index("let data = ServeRequest")]
         self.assertNotIn("eprintln!", branch)
         self.assertNotIn("note_error", branch)
         self.assertNotIn("note_error", self.net)
 
-    # --- net.request -----------------------------------------------------------------------------------------------
+
 
     def test_connect_timeout(self):
         self.assertRegex(self.net, r"const CONNECT_TIMEOUT: Duration = Duration::from_secs\(30\);")
@@ -74,11 +74,11 @@ class Timeouts(unittest.TestCase):
         self.assertIn(".connect_timeout(CONNECT_TIMEOUT)", body)
 
     def test_request_timeout_option(self):
-        # slice 13: the option, a plain url string and a config without options all go through request_timeout (default 120 s, 0 = none)
+
         helper = fn_body(self.net, "fn request_timeout")
         self.assertIn('timeout_with_default("net.request", secs, DEFAULT_REQUEST_TIMEOUT_SECS)', helper)
         body = fn_body(self.net, "fn parse_request")
-        # next to `decompress`, inside the `options` table
+
         self.assertIn('request_timeout(o.get::<Option<f64>>("timeout")?)', body)
         self.assertIn("None => (true, request_timeout(None)?),", body)
         self.assertRegex(body, r"decompress: true,\s*timeout: request_timeout\(None\)\?,")
@@ -88,7 +88,7 @@ class Timeouts(unittest.TestCase):
     def test_request_timeout_applied_and_reported(self):
         body = fn_body(self.net, "async fn send_request")
         self.assertIn("req.timeout(timeout)", body)
-        # both send() and the body loop report a timeout the same way
+
         self.assertEqual(body.count(".map_err(req_err)"), 2)
         err = fn_body(self.net, "fn req_err")
         self.assertIn("e.is_timeout()", err)
@@ -99,12 +99,12 @@ class Timeouts(unittest.TestCase):
         self.assertEqual(body.count(".timeout("), 1)
         self.assertIn("if let Some(timeout) = spec.timeout", body)
 
-    # --- process.exec ----------------------------------------------------------------------------------------------
+
 
     def test_exec_timeout_parsed_only_for_exec(self):
         body = fn_body(self.process, "fn parse_opts")
-        # slice 13: exec gets the default (also with no options table: the lookup is before the early return), 0 = no limit,
-        # create still rejects any `timeout`
+
+
         self.assertIn('timeout_with_default("process.exec", raw_timeout, DEFAULT_EXEC_TIMEOUT_SECS)', body)
         self.assertRegex(body, r'if func == "exec" \{[^}]*timeout_with_default[^}]*\} else if raw_timeout\.is_some\(\) \{\s*return Err')
         self.assertIn("options.timeout is only supported by process.exec", body)
@@ -115,7 +115,7 @@ class Timeouts(unittest.TestCase):
     def test_exec_timeout_covers_output_and_exit(self):
         body = fn_body(self.process, "let exec = ")
         run = body[body.index("let run = async"):body.index("let outcome")]
-        # collecting the output and waiting for the exit are one future, so a silent child cannot outlive the limit
+
         self.assertIn("try_join!(", run)
         self.assertRegex(run, r"child\s*\.wait\(\)")
         self.assertIn("tokio::time::timeout(limit, run)", body)
@@ -124,17 +124,17 @@ class Timeouts(unittest.TestCase):
     def test_exec_kills_the_child_on_timeout(self):
         body = fn_body(self.process, "let exec = ")
         self.assertRegex(body, r"Err\(e\) => \{\s*(?:if let Some\(pid\) = child\.id\(\) \{\s*kill_tree\(pid\);\s*\}\s*)?let _ = child\.kill\(\)\.await;\s*return Err\(e\);")
-        # the timeout error goes through the same path as the cap error
+
         outcome = body[body.index("let outcome"):body.index("let (status, stdout, stderr)")]
         self.assertIn("Err(mlua::Error::runtime(", outcome)
         self.assertNotIn("return", outcome)
 
     def test_exec_with_timeout_zero_waits_forever(self):
-        # renamed in slice 14: since slice 13 `None` only comes from `timeout = 0` (an absent timeout gets the default); same assertion
+
         body = fn_body(self.process, "let exec = ")
         self.assertIn("None => run.await,", body)
 
-    # --- default timeouts (slices 12-14) ---------------------------------------------------------------------------
+
 
     def test_default_constants_and_helper_shape(self):
         self.assertRegex(self.libs, r"pub const DEFAULT_EXEC_TIMEOUT_SECS: f64 = 600\.0;")
@@ -158,7 +158,7 @@ class Timeouts(unittest.TestCase):
             self.assertIn("Negative or NaN raises", stub, name)
             self.assertNotIn("Absent = no limit", stub, name)
         self.assertIn("rejects options.timeout (0 included)", read("tools/lune-stubs/process.luau"))
-        # the Rust doc comments say the same
+
         self.assertIn("`timeout = 0` turns the limit off", self.libs)
         self.assertIn("`timeout = 0` removes the limit", self.net)
         self.assertIn("`timeout = 0` means `None` = no limit", self.process)
@@ -168,14 +168,14 @@ class Timeouts(unittest.TestCase):
         proc = read("tests/e2e/lune_process.luau")
         self.assertIn('{ timeout = 0 })', proc)
         self.assertIn("only supported by process.exec", proc)
-        self.assertIn("{ 0, 5 }", proc)  # create rejects 0 as well as a positive value
-        self.assertIn("process.exec: timed out", proc)  # a short timeout still fires
+        self.assertIn("{ 0, 5 }", proc)
+        self.assertIn("process.exec: timed out", proc)
         self.assertIn("options.timeout must be a positive number of seconds", proc)
         net = read("tests/e2e/lune_net.luau")
         self.assertIn("options = { timeout = 0 }", net)
         self.assertIn("net.request: timed out", net)
         self.assertIn("options.timeout must be a positive number of seconds", net)
-        # both still end with their own PASS line (the scripts are server-less: net uses its own local net.serve)
+
         self.assertLess(proc.index("timeout = 0"), proc.index('print("E2E PASS lune_process")'))
         self.assertLess(net.index("timeout = 0"), net.index('print("E2E PASS lune_net")'))
 

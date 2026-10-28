@@ -9,17 +9,17 @@ use azalea::container::ContainerHandleRef;
 use super::convert::{Held, LSlots, LuaContainer, lua_err};
 
 impl Held {
-    /// Give the container up (close it) without ever panicking.
-    ///
-    /// azalea's `ContainerHandle::drop` / `ContainerHandleRef::close` trigger a `CloseContainerEvent` on the bot's ECS. Once the bot is gone (the
-    /// client loop exits and calls `World::clear_all()`, which despawns every entity, observers included) that trigger hits bevy's stale observer
-    /// cache and panics (`observer/runner.rs: entered unreachable code`). When it happens from Lua's final GC (`Lua::drop` -> `LuaContainer`
-    /// finalizer) the panic cannot unwind and the whole process aborts.
-    ///
-    /// So: only send the close while the bot's entity still has its inventory (`menu()` errors once it is gone; nothing is left to close then),
-    /// and catch a panic anyway (the entity can vanish between the check and the trigger).
-    /// A handle of a dead bot is leaked (`forget`) instead of dropped: its Drop is exactly the close we must not send. That keeps one emptied
-    /// `World` alive until exit.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub(super) fn release(self) {
         let outcome = catch_unwind(AssertUnwindSafe(move || {
             let alive = {
@@ -44,8 +44,8 @@ impl Held {
     }
 }
 
-// Runs from Lua's GC, also when the Lua state is dropped at the end of the script: a container still held by a script is closed here, through the
-// guarded `release`. The bot's own inventory (`Held::Borrowed`) is not closed on drop, as before.
+
+
 impl Drop for LuaContainer {
     fn drop(&mut self) {
         if let Some(held @ Held::Owned(_)) = self.handle.take() {
@@ -56,8 +56,8 @@ impl Drop for LuaContainer {
 
 #[mlua::userdata_impl]
 impl LuaContainer {
-    // luau[Container]: --- Drag-click: hold a mouse button and sweep over `slots` (0-based slot numbers, like the other clicks) to spread the item on the cursor over them. `kind` is the button: "left" splits the stack evenly, "right" puts one item in each slot, "middle" is creative-mode only. A closed container, an unknown `kind`, an empty `slots` list or a missing slot is an error.
-    // luau[Container]: function quick_craft(self, kind: "left" | "right" | "middle", slots: { number }): ()
+    
+    
     fn quick_craft(&self, kind: String, slots: Vec<usize>) -> mlua::Result<()> {
         let kind = match kind.as_str() {
             "left" => QuickCraftKind::Left,
@@ -93,22 +93,22 @@ impl LuaContainer {
         Ok(())
     }
 
-    // luau[Container]: --- The window id of the container (0 is the bot's own inventory). nil once closed.
-    // luau[Container]: function id(self): number?
+    
+    
     #[lua(infallible)]
     fn id(&self) -> Option<i32> {
         self.handle.as_ref().map(|handle| handle.id())
     }
 
-    // luau[Container]: --- The container's title as plain text (like "Chest"), or nil when it has none or is closed.
-    // luau[Container]: function title(self): string?
+    
+    
     #[lua(infallible)]
     fn title(&self) -> Option<String> {
         self.handle.as_ref()?.title().map(|title| title.to_string())
     }
 
-    // luau[Container]: --- Only the container's own slots, without the bot's inventory that `slots()` appends (an empty slot is `false`). nil once closed.
-    // luau[Container]: function contents(self): { Item | false }?
+    
+    
     #[lua(infallible)]
     fn contents(&self) -> Option<LSlots> {
         self.handle.as_ref()?.contents().map(LSlots)

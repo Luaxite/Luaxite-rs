@@ -25,10 +25,10 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-import api_list  # noqa: E402
-import bindgen_crates  # noqa: E402
-import bindgen_rdj  # noqa: E402
-from bindgen_crates import CrateError  # noqa: E402
+import api_list
+import bindgen_crates
+import bindgen_rdj
+from bindgen_crates import CrateError
 
 D_LUAU = "bindings.d.luau"
 API_LIST = "API_list.md"
@@ -90,14 +90,14 @@ def run(root, out) -> list[str]:
     copy_glue(root, out)
     gen = os.environ.get("BINDGEN_GENERATOR") or str(HERE / "luaxite_gen.py")
     cmd = [sys.executable, gen, "--azalea", str(stage), "--rustdoc", str(out / "rdj"), "--rust-out", str(out), "--luau-out", str(out)]
-    # optional config: absent = the built-in empty tables (not whatever bindgen.toml sits next to the generator)
+
     cmd += ["--config", str(root / "bindgen.toml") if (root / "bindgen.toml").is_file() else "builtin"]
     p = subprocess.run(cmd, capture_output=True, text=True)
     if p.returncode != 0:
         msg = p.stderr.strip() or p.stdout.strip() or f"exit {p.returncode}"
         raise CrateError(msg if msg.startswith("error:") else f"generator failed: {msg}")
     lines = [f"cargo:warning={l.strip()}" for l in p.stderr.splitlines() if l.strip()]
-    produced = out / "azalea.d.luau"                       # the generator's file name (golden); published as bindings.d.luau
+    produced = out / "azalea.d.luau"
     if produced.is_file():
         os.replace(produced, out / D_LUAU)
     if not (out / D_LUAU).is_file():

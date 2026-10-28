@@ -25,30 +25,30 @@ class FindBlockScan(unittest.TestCase):
 
     def test_filter_before_cap_and_push(self):
         s = self.search
-        # s15: the loaded-chunk answer comes from the map built by loaded_chunk_map (no partial lock inside the scan loop)
+
         loaded, push, cap = s.index("loaded_chunks.get("), s.index("nearest.push("), s.index("examined >= MAX_CANDIDATES")
         self.assertLess(loaded, push)
         self.assertLess(push, cap)
-        self.assertIn("if !loaded {\n                    continue;", s)            # skipped hits never reach the counter
-        self.assertIn(".unwrap_or(false)", s)                                      # a chunk missing from the map is not loaded
+        self.assertIn("if !loaded {\n                    continue;", s)
+        self.assertIn(".unwrap_or(false)", s)
 
     def test_search_never_nests_the_world_and_partial_locks(self):
         s = self.search
-        self.assertNotIn("chunk_is_loaded", s)                    # that one takes the partial lock: not while a world guard is held
+        self.assertNotIn("chunk_is_loaded", s)
         self.assertNotIn("partial_world", s)
         self.assertIn("loaded_chunk_map(", s)
-        self.assertEqual(s.count("world.read()"), 2)              # pass 1 and pass 2, each its own guard
-        # pass 1's guard lives in a block that is closed again before loaded_chunk_map is called
+        self.assertEqual(s.count("world.read()"), 2)
+
         pass1 = s[s.index("world.read()"):s.index("loaded_chunk_map(")]
         self.assertIn("HashSet", s)
         self.assertIn("keys.insert(", pass1)
         self.assertGreater(pass1.count("}"), pass1.count("{"))
-        # the map is built under ONE partial guard, which never meets the world lock
+
         m = fn_body(self.src, "loaded_chunk_map", method=True)
         self.assertEqual(m.count("partial.read()"), 1)
         self.assertNotIn("world", m.replace("partial_world", ""))
         self.assertIn("drop(guard)", m)
-        # the only other partial-lock site is the single-chunk read
+
         self.assertEqual(self.src.count("partial.read()"), 2)
 
     def test_lock_order_comments(self):
@@ -69,7 +69,7 @@ class FindBlockScan(unittest.TestCase):
         self.assertIn("select_nth_unstable_by(self.limit - 1", body)
         self.assertIn("truncate(self.limit)", body)
         self.assertIn("saturating_mul(2)", body)
-        self.assertIn("total_cmp", self.src)                                       # no partial_cmp().unwrap_or(Equal)
+        self.assertIn("total_cmp", self.src)
         self.assertNotIn("partial_cmp", self.src)
 
     def test_limit_is_clamped_and_zero_short_circuits(self):
@@ -91,7 +91,7 @@ class RegistryLookups(unittest.TestCase):
             body = fn_body(self.src, name, method=True)
             self.assertNotIn("entries_of(", body, name)
             self.assertNotRegex(body, r"\.collect\(\)", name)
-        self.assertIn("entries_of(&self.client", fn_body(self.src, "registry_entries", method=True))   # the only caller that needs the list
+        self.assertIn("entries_of(&self.client", fn_body(self.src, "registry_entries", method=True))
 
     def test_names_come_from_the_holder_too(self):
         self.assertIn("fn holder_extra_names", self.src)

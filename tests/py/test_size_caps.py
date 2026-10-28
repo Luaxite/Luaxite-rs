@@ -29,7 +29,7 @@ class SizeCaps(unittest.TestCase):
     def test_shared_constant(self):
         self.assertRegex(self.libs, r"pub const MAX_BYTES: usize = 64 \* 1024 \* 1024;")
         self.assertIn("pub fn too_big(what: &str) -> mlua::Error", self.libs)
-        self.assertIn("exceeds {} MiB", self.libs)  # "<what> exceeds 64 MiB"
+        self.assertIn("exceeds {} MiB", self.libs)
         self.assertIn("pub async fn read_capped<", self.libs)
 
     def test_read_capped_reads_one_byte_past_the_cap(self):
@@ -54,7 +54,7 @@ class SizeCaps(unittest.TestCase):
         self.assertIn('"process.exec: stdout"', body)
         self.assertIn('"process.exec: stderr"', body)
         self.assertIn("mlua::Result<Vec<u8>>", self.process)
-        # the first stream over the cap ends the exec, and the child is killed (it could block on a pipe nobody reads)
+
         self.assertIn("tokio::try_join!(", self.process)
         self.assertNotIn("tokio::join!(", self.process)
         self.assertRegex(self.process, r"Err\(e\) => \{\s*(?:if let Some\(pid\) = child\.id\(\) \{\s*kill_tree\(pid\);\s*\}\s*)?let _ = child\.kill\(\)\.await;\s*return Err\(e\);")
@@ -84,7 +84,7 @@ class SizeCaps(unittest.TestCase):
             self.assertIsNotNone(m, name)
             for n in names:
                 self.assertIn(n, m.group(1), f"{name}: {n}")
-        # stdio no longer reads to end by hand: AsyncReadExt would be an unused import
+
         self.assertNotIn("AsyncReadExt", self.stdio)
 
 

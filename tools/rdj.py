@@ -28,8 +28,8 @@ import sys
 from pathlib import Path
 from typing import Iterable, Optional
 
-FORMAT_TESTED = 57                  # format_version of the fixtures this front end is tested against
-FORMAT_ACCEPTED = (57, 61)          # inclusive range load_dir accepts by default (57 tested; 61 = newest, `Stability` reshaped: not read here)
+FORMAT_TESTED = 57
+FORMAT_ACCEPTED = (57, 61)
 TESTED_RUSTC = "rustc 1.97.0 (2d8144b78 2026-07-07)"
 TOP_KEYS = ("root", "index", "paths", "external_crates", "format_version")
 
@@ -38,9 +38,9 @@ class RdjError(Exception):
     """Anything wrong with the JSON input; the message is meant to be shown to the user as is."""
 
 
-# ---------------------------------------------------------------------------------------------------------------------
-# format check
-# ---------------------------------------------------------------------------------------------------------------------
+
+
+
 
 def accepted_range(accept: Optional[tuple] = None) -> tuple:
     if accept is not None:
@@ -87,9 +87,9 @@ def format_error(path: Path, fv, rng: tuple, meta: dict) -> RdjError:
     )
 
 
-# ---------------------------------------------------------------------------------------------------------------------
-# one crate's JSON
-# ---------------------------------------------------------------------------------------------------------------------
+
+
+
 
 def inner_kind(item: dict) -> str:
     """`struct`, `enum`, `function`, `impl`, `module`, `use`, `struct_field`, `variant`, ... ('' if the item has none)."""
@@ -116,7 +116,7 @@ def visibility(item: dict) -> str:
 
 
 def _ids(v) -> list:
-    return [i for i in (v or []) if isinstance(i, int)]       # tuple fields stripped by rustdoc are null
+    return [i for i in (v or []) if isinstance(i, int)]
 
 
 def _kind_fields(kind) -> list:
@@ -198,9 +198,9 @@ class Crate:
             if "automatically_derived" in (it.get("attrs") or []):
                 out.append(_last_seg(tr))
             elif _last_seg(tr) in _BEVY_DERIVES and not (p.get("is_synthetic") or p.get("blanket_impl")):
-                # bevy's `#[derive(Component)]` / `#[derive(Resource)]` are proc macros that do NOT emit `#[automatically_derived]`,
-                # so rustdoc JSON shows a plain `impl Component for X`. Without this, build_ecs (which looks for the derive) found
-                # nothing and gen_ecs.rs was never written.
+
+
+
                 out.append(_last_seg(tr))
         return out
 
@@ -278,15 +278,15 @@ class Crate:
         return base + (name,) if base else None
 
 
-# ---------------------------------------------------------------------------------------------------------------------
-# a directory of crate JSONs
-# ---------------------------------------------------------------------------------------------------------------------
+
+
+
 
 class Rdj:
     def __init__(self):
-        self.crates: dict = {}              # crate name -> Crate
+        self.crates: dict = {}
         self.warnings: list = []
-        self.not_found: set = set()         # misses of `resolve` whose target crate IS loaded: the path is just not in its JSON
+        self.not_found: set = set()
 
     def crate(self, name) -> Crate:
         if isinstance(name, Crate):
@@ -318,7 +318,7 @@ class Rdj:
     def external_crates(self, crate) -> dict:
         return self.crate(crate).external_crates
 
-    # ---- cross-crate resolution (slice 9)
+
     def summary(self, crate, id) -> Optional[dict]:
         """The `paths` entry of an id of `crate` (what rustdoc keeps of an item defined elsewhere), or None."""
         s = self.crate(crate).paths.get(id) if isinstance(id, int) else None
@@ -355,7 +355,7 @@ class Rdj:
             tid = sib.local_path(path, s.get("kind"))
             if tid is not None:
                 return (n, tid)
-        for n in names[:1]:                                     # alias quirk: the crate_id's crate, last segment, same kind
+        for n in names[:1]:
             sib = self.crates.get(n)
             if sib is None or len(path) < 2:
                 continue
@@ -416,22 +416,22 @@ def load_dir(directory, accept: Optional[tuple] = None) -> Rdj:
             rdj.warnings.append(f"{f.name}: file name differs from the crate name `{c.name}`")
         if c.name == "azalea_entity" and not any(c.kind(i) == "module" and (c.item(i) or {}).get("name") == "metadata"
                                                  for i in c.children(c.root)):
-            # `pub mod metadata` is `#[cfg(feature = "bevy_ecs")]`: documented without it, ~470 ECS components vanish from gen_ecs.rs
+
             rdj.warnings.append(f"{f.name}: no `metadata` module (azalea-entity documented without its `bevy_ecs` feature): "
                                 "gen_ecs.rs will lose the entity-metadata components; re-make the JSON with AZL_RDJ_FEATURES=--all-features")
         rdj.crates[c.name] = c
     fvs = {n: c.format_version for n, c in rdj.crates.items()}
-    if len(set(fvs.values())) > 1:      # `Rdj.format_version` raises for this; loading stays possible, but say so
+    if len(set(fvs.values())) > 1:
         rdj.warnings.append(f"the crate JSONs mix format_versions ({', '.join(f'{n} {v}' for n, v in sorted(fvs.items()))}); "
                             "re-make them all with one toolchain")
     return rdj
 
 
-# ---------------------------------------------------------------------------------------------------------------------
-# types: rustdoc `Type` -> the generator's type AST
-#   ("prim", n) ("unit",) ("path", name, [args]) ("ref", t) ("slice", t) ("tuple", [t]) ("impl", text) ("other", text)
-# (same tuples as tools/luaxite_gen.py type_text; this module does not import the generator)
-# ---------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
 
 _BEVY_DERIVES = ("Component", "Resource")
 
@@ -456,7 +456,7 @@ def _generic_args(args) -> tuple:
             elif "const" in a:
                 c = a["const"]
                 out.append({"__text__": (c.get("expr") or c.get("value") or "_") if isinstance(c, dict) else str(c)})
-            # {"lifetime": ..} and `infer` (the bare string "infer" since it is a unit variant; skipped above) are dropped
+
         for c in ab.get("constraints") or []:
             if not isinstance(c, dict):
                 continue
@@ -507,7 +507,7 @@ def _render_args(args) -> str:
     if isinstance(ab, dict):
         parts = []
         for a in ab.get("args") or []:
-            if a == "infer":                    # GenericArg::Infer is a unit variant: the bare string, not {"infer": ..}
+            if a == "infer":
                 parts.append("_")
                 continue
             if not isinstance(a, dict):
@@ -564,8 +564,8 @@ def _render_bounds(bounds) -> str:
     return " + ".join(parts)
 
 
-# `Abi` has NO serde rename_all: `"Rust"`, `{"C": {"unwind": bool}}`, `{"SysV64": {..}}`, `{"Other": "ptx-kernel"}`; the string in
-# `extern "<string>"` is lowercase except `C`.
+
+
 _ABI_NAMES = {"C": "C", "Cdecl": "cdecl", "Stdcall": "stdcall", "Fastcall": "fastcall", "Aapcs": "aapcs", "Win64": "win64",
               "SysV64": "sysv64", "System": "system"}
 
@@ -641,9 +641,9 @@ def render_type(t) -> str:
     return f"<{k}>"
 
 
-# ---------------------------------------------------------------------------------------------------------------------
-# docs and attributes (what the `///` lines and attribute text of the source say)
-# ---------------------------------------------------------------------------------------------------------------------
+
+
+
 
 def doc_summary(docs) -> str:
     """First paragraph of an item's `docs` on one line, intra-doc links flattened: what the
@@ -683,7 +683,7 @@ def _repr_text(r) -> str:
 
 def _attr_text(a) -> Optional[str]:
     """One Attribute as `#[...]` text, None when it has no source form here (see attr_texts)."""
-    if isinstance(a, str):                          # unit variants: non_exhaustive, macro_export, no_mangle, automatically_derived
+    if isinstance(a, str):
         return None if a == "automatically_derived" else f"#[{a}]"
     if not isinstance(a, dict) or len(a) != 1:
         return None

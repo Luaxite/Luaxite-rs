@@ -22,12 +22,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "tools"))
 sys.dont_write_bytecode = True
-import rdj  # noqa: E402
+import rdj
 
-# The tests assert the DEFAULT accepted range (57-61); an AZL_RDJ_FORMAT_RANGE inherited from the caller (the rustdoc workflow sets
-# one for real azalea's nightly) must not change them. test_format_range_override sets and restores it itself.
+
+
 os.environ.pop("AZL_RDJ_FORMAT_RANGE", None)
-from rdj_synth import Synth  # noqa: E402  (hand-built crate JSONs: synth_workspace, ws2)
+from rdj_synth import Synth
 
 FIXTURE = ROOT / "harness" / "fake" / "rustdoc"
 FAKE_CRATE = ROOT / "harness" / "fake" / "azalea"
@@ -67,7 +67,7 @@ def raises(fn, *needles):
     raise AssertionError("expected RdjError, nothing raised")
 
 
-# ---- the committed fixture ---------------------------------------------------------------------------------------
+
 
 @test
 def test_fixture_fresh():
@@ -109,8 +109,8 @@ def test_index_integrity():
     assert {"core", "alloc", "std", "tokio"} <= {e["name"] for e in ext.values()}
     for i, s in c.paths.items():
         assert s["crate_id"] == 0 or s["crate_id"] in ext, (i, s)
-        # quirk: a variant reached through a type alias (`AzaleaResult::Ok`) is listed with the enum's crate_id (core)
-        # but the alias's path (azalea::AzaleaResult::Ok), so crate_id and path[0] disagree for variants only
+
+
         assert s["kind"] == "variant" or c.crate_name(s["crate_id"]) == s["path"][0], (i, s, c.crate_name(s["crate_id"]))
     assert c.crate_name(0) == "azalea" and c.crate_name(99999) is None
 
@@ -134,29 +134,29 @@ def test_root_items_match_source():
 @test
 def test_children_and_impls():
     c = fixture().crate("azalea")
-    # enum variants in declaration order
+
     ev = by_name(c, "Event", "enum")
     body = FAKE_SRC.split("pub enum Event {", 1)[1].split("\n}", 1)[0]
     want = re.findall(r"^    ([A-Z]\w*)", body, re.M)
     assert [c.item(i)["name"] for i in c.children(ev)] == want, want
     assert all(c.kind(i) == "variant" for i in c.children(ev))
-    # plain struct: named fields; tuple struct: fields "0", "1", ...
+
     cl = by_name(c, "Client", "struct")
     assert [c.item(i)["name"] for i in c.children(cl)] == ["entity"]
     mid = by_name(c, "MinecraftEntityId", "struct")
     assert [c.item(i)["name"] for i in c.children(mid)] == ["0"]
     assert c.children(by_name(c, "Uuid", "struct")) is not None
-    # variant fields (tuple variant Death(..)) and an unknown id
+
     death = [i for i in c.children(ev) if c.item(i)["name"] == "Death"][0]
     assert len(c.children(death)) == 1 and c.kind(c.children(death)[0]) == "struct_field"
     assert c.children(-1) == [] and c.impls(-1) == []
-    # impls: inherent + trait impls recorded on the struct, all resolvable, items are functions
+
     imps = c.impls(cl)
     assert len(imps) > 5 and all(c.kind(i) == "impl" for i in imps)
     fns = [n for i in imps for n in c.children(i) if c.kind(n) == "function"]
     names = {c.item(n)["name"] for n in fns}
-    assert {"chat", "position", "health"} <= names, sorted(names)[:20]      # health/position come from impl_entity_functions!
-    # trait impls list on traits
+    assert {"chat", "position", "health"} <= names, sorted(names)[:20]
+
     tr = by_name(c, "PathfinderClientExt", "trait")
     assert c.kind(tr) == "trait" and len(c.children(tr)) > 0 and isinstance(c.impls(tr), list)
 
@@ -168,11 +168,11 @@ def test_item_path():
     ev = by_name(c, "Event", "enum")
     assert r.item_path("azalea", by_name(c, "Client", "struct")) == ("azalea", "Client")
     assert r.item_path(c, ev) == ("azalea", "Event")
-    # `pub use position::{BlockPos, Vec3}` at the root: the path is the definition's, not the re-export's
+
     assert c.item_path(by_name(c, "BlockPos", "struct")) == ("azalea", "position", "BlockPos")
     assert c.item_path(by_name(c, "ClientboundPlayerCombatKill", "struct")) == (
         "azalea", "protocol", "packets", "game", "ClientboundPlayerCombatKill")
-    # derived paths: variant, field, trait item, inherent/trait-impl method
+
     death = [i for i in c.children(ev) if c.item(i)["name"] == "Death"][0]
     assert c.item_path(death) == ("azalea", "Event", "Death")
     assert c.item_path(c.children(by_name(c, "Client", "struct"))[0]) == ("azalea", "Client", "entity")
@@ -180,12 +180,12 @@ def test_item_path():
     assert c.item_path(c.children(tr)[0]) == ("azalea", "pathfinder", "PathfinderClientExt", c.item(c.children(tr)[0])["name"])
     chat = [n for i in c.impls(by_name(c, "Client", "struct")) for n in c.children(i) if c.item(n).get("name") == "chat"]
     assert len(chat) == 1 and c.item_path(chat[0]) == ("azalea", "Client", "chat")
-    # impl blocks have no path; `use` items hang off their module; unknown ids -> None
+
     imp = c.impls(by_name(c, "Client", "struct"))[0]
     assert c.item_path(imp) is None and c.item_path(-1) is None
     use = [i for i in c.children(c.root) if c.kind(i) == "use"][0]
     assert c.item_path(use)[:1] == ("azalea",) and len(c.item_path(use)) == 2, c.item_path(use)
-    # an item from another crate, through `paths`
+
     arc = next(i for i, s in c.paths.items() if s["path"] == ["alloc", "sync", "Arc"])
     assert c.paths[arc]["crate_id"] != 0 and c.crate_name(c.paths[arc]["crate_id"]) == "alloc"
     assert c.item_path(arc) == ("alloc", "sync", "Arc")
@@ -201,7 +201,7 @@ def test_visibility_helpers():
     assert rdj.inner_kind({}) == "" and rdj.inner_kind({"inner": "x"}) == "x" and rdj.payload({"inner": "x"}) == {}
 
 
-# ---- errors: one clear message, never a traceback ------------------------------------------------------------------
+
 
 def tmpdir():
     d = Path(tempfile.mkdtemp(prefix="rdj_selftest_"))
@@ -229,7 +229,7 @@ def test_format_range_error():
     raises(lambda: rdj.load_dir(with_format(56)), "format_version 56")
     raises(lambda: rdj.load_dir(with_format(62)), "format_version 62")
     raises(lambda: rdj.load_dir(with_format(99, meta=False)), "unknown rustc", "azalea.meta")
-    assert rdj.load_dir(with_format(99), accept=(50, 100)).format_version == 99     # an explicit range wins
+    assert rdj.load_dir(with_format(99), accept=(50, 100)).format_version == 99
 
 
 @test
@@ -264,14 +264,14 @@ def test_bad_input_errors():
     raises(lambda: rdj.load_dir(d), "not a rustdoc JSON file", "list")
     (d / "a.json").write_text('{"format_version": 57, "root": 0}')
     raises(lambda: rdj.load_dir(d), "missing keys", "index", "paths", "external_crates")
-    # a wrong format_version is reported before anything else, even when the rest is unusable (huge file fast-fail)
+
     (d / "a.json").write_text('{"junk": [1, 2, 3], "format_version":99}')
     raises(lambda: rdj.load_dir(d), "format_version 99")
     (d / "a.json").write_text('{"root": 7, "index": {}, "paths": {}, "external_crates": {}, "format_version": 57}')
     raises(lambda: rdj.load_dir(d), "root item id 7")
     (d / "a.json").write_text('{"root": 7, "index": [], "paths": {}, "external_crates": {}, "format_version": 57}')
     raises(lambda: rdj.load_dir(d), "`index` should be an object")
-    # two files claiming the same crate
+
     d2 = tmpdir()
     shutil.copy(FIXTURE / "azalea.json", d2 / "azalea.json")
     shutil.copy(FIXTURE / "azalea.json", d2 / "azalea2.json")
@@ -291,7 +291,7 @@ def test_main_cli():
     assert "error: " in err.getvalue()
 
 
-# ---- types (slice 3): rdj.convert_type ----------------------------------------------
+
 
 def generator():
     """tools/luaxite_gen.py as a module (stdlib only)."""
@@ -317,7 +317,7 @@ def test_convert_type_unit_cases():
         ("path", "HashMap", [("path", "String", []), ("path", "Vec3", [])])
     ref = lambda t, m=False, lt=None: {"borrowed_ref": {"lifetime": lt, "is_mutable": m, "type": t}}
     assert rdj.convert_type(ref(P)) == ("ref", ("prim", "u32"))
-    assert rdj.convert_type(ref(P, lt="'a")) == ("ref", ("prim", "u32"))               # lifetimes are dropped
+    assert rdj.convert_type(ref(P, lt="'a")) == ("ref", ("prim", "u32"))
     assert rdj.convert_type(ref(path("Vec", P), True)) == ("other", "&mut Vec<u32>")
     assert rdj.convert_type(ref(P, True, "'a")) == ("other", "&'a mut u32")
     into = {"impl_trait": [{"trait_bound": {"trait": {"path": "Into", "id": 2, "args": {"angle_bracketed": {"args": [{"type": path("Pos")}], "constraints": []}}},
@@ -334,16 +334,16 @@ def test_convert_type_unit_cases():
                     ({"qualified_path": {"name": "Item", "args": None, "self_type": {"generic": "Self"}, "trait": {"path": "", "id": 5, "args": None}}}, "Self::Item"),
                     ({"brand_new_variant": 1}, "<brand_new_variant>")):
         assert rdj.convert_type(t) == ("other", text), (t, rdj.convert_type(t))
-    # never raises on garbage
+
     for bad in (None, 3, "x", [], {}, {"resolved_path": 5}, {"borrowed_ref": None}, {"a": 1, "b": 2}):
         assert rdj.convert_type(bad)[0] in ("other", "path", "ref", "slice", "tuple", "unit", "prim", "impl"), bad
-    # constraints (`Iterator<Item = u32>`) and const args are kept as ('other', text)
+
     it = {"resolved_path": {"path": "Iterator", "id": 6, "args": {"angle_bracketed": {"args": [], "constraints": [
         {"name": "Item", "args": None, "binding": {"equality": {"type": P}}}]}}}}
     assert rdj.convert_type(it) == ("path", "Iterator", [("other", "Item = u32")])
 
 
-# ---- defs (slice 4): rdj_index.build_defs ------------------------------------------
+
 
 def rdj_defs():
     if "defs" not in _cache:
@@ -360,7 +360,7 @@ def split_attrs(attrs):
         m = re.fullmatch(r"#\[derive\((.*)\)\]", a)
         if m:
             derive += [x.strip() for x in m.group(1).split(",") if x.strip()]
-        elif not a.startswith(("#[cfg(", "#[doc")) and a != "#[default]":      # `#[default]` = derive(Default) helper, not in the JSON
+        elif not a.startswith(("#[cfg(", "#[doc")) and a != "#[default]":
             other.append(a)
     return derive, sorted(other)
 
@@ -374,33 +374,33 @@ def test_defs_shapes_and_edge_cases():
     assert one("Entity").tuple_style and one("Entity").fields[0][0] == "0"
     kinds = {d.kind for defs in js.values() for d in defs}
     assert {"struct", "enum", "trait"} <= kinds, kinds
-    # all-unit enum / non_exhaustive attribute / derive order without StructuralPartialEq
+
     assert "StructuralPartialEq" not in " ".join(a for defs in js.values() for d in defs for a in d.attrs)
     assert any("#[non_exhaustive]" in d.attrs for defs in js.values() for d in defs if d.kind == "enum")
-    # synthetic JSON: stripped fields keep a non-pub marker so `all fields pub` checks stay honest; stripped tuple fields keep position
+
     c = fixture().crate("azalea")
     p = {"kind": {"plain": {"fields": [], "has_stripped_fields": True}}}
     assert rdj_index._struct_fields(c, p) == ([rdj_index.STRIPPED], False)
     f, ts = rdj_index._struct_fields(c, {"kind": {"tuple": [None, None]}})
     assert ts and f == [("0", ("other", "_"), False), ("1", ("other", "_"), False)], f
     assert rdj_index._struct_fields(c, {"kind": "unit"}) == ([], False)
-    # docs / attrs helpers
+
     assert rdj.doc_summary("First line\nsecond [`Foo`](x) line\n\nSecond paragraph") == "First line second `Foo` line"
     assert rdj.doc_summary(None) == "" and rdj.doc_summary("") == ""
     assert rdj.attr_texts({"attrs": ["non_exhaustive", "automatically_derived", {"other": "#[allow(dead_code)]"}, {"other": "#[attr = Inline(Hint)]"}, 7]}) \
         == ["#[non_exhaustive]", "#[allow(dead_code)]"]
-    # unions and garbage never raise
+
     assert rdj_index._fields(c, [None, 10 ** 9]) == [("0", ("other", "_"), False), ("1", ("other", "_"), False)]
     assert rdj_index._variants(c, {"variants": [10 ** 9]}) == []
 
 
 
-# ---- methods (slice 5): rdj_index.build_impls (methods, client_traits, goal_impls) ----
+
 
 def rdj_impls():
     if "impls" not in _cache:
         import rdj_index
-        _cache["impls"] = rdj_index.build_impls(fixture(), strip_prefix="fake/")     # JSON paths are relative to harness/, Method.file to harness/fake
+        _cache["impls"] = rdj_index.build_impls(fixture(), strip_prefix="fake/")
     return _cache["impls"]
 
 
@@ -417,9 +417,9 @@ def test_impls_filters():
     only_client = rdj_index.build_impls(r, classes={"Client"}, strip_prefix="fake/")
     assert {m.target for m in only_client.methods} == {"Client"} and len(only_client.methods) < len(d.methods)
     assert not rdj_index.build_impls(r, classes=set()).methods
-    # without strip_prefix the file is the JSON's workspace-relative one; backslashes are normalised
+
     assert {m.file.split(" ")[0] for m in rdj_index.build_impls(r).methods} == {"fake/azalea/src/lib.rs"}
-    # source order: (file, line, column) within one file; the macro group is last because of its suffix
+
     plain = [m for m in d.methods if m.target == "Client" and not m.file.endswith("(via macro)")]
     c = r.crate("azalea")
     lines = {}
@@ -428,7 +428,7 @@ def test_impls_filters():
             lines.setdefault(it["name"], []).append(it["span"]["begin"][0])
     first = [min(lines[m.name]) for m in plain]
     assert first == sorted(first), "methods must come in source order"
-    # macro-made recognition: same span as the impl block (needs both spans)
+
     mk = lambda b, e, f="a.rs": {"span": {"filename": f, "begin": b, "end": e}}
     assert rdj_index.method_file(mk([5, 1], [9, 2]), mk([5, 1], [9, 2])) == "a.rs (via macro)"
     assert rdj_index.method_file(mk([5, 1], [9, 2]), mk([6, 5], [8, 6])) == "a.rs"
@@ -442,17 +442,17 @@ def test_impls_helpers():
     P = {"primitive": "u32"}
     S = {"generic": "Self"}
     ref = lambda t, m=False, lt=None: {"borrowed_ref": {"lifetime": lt, "is_mutable": m, "type": t}}
-    # receivers
+
     assert ri.split_receiver([["self", ref(S)], ["a", P]]) == ("&self", [["a", P]])
     assert ri.split_receiver([["self", ref(S, True)]]) == ("&mut self", [])
     assert ri.split_receiver([["self", ref(S, False, "'a")]]) == ("&'a self", [])
     assert ri.split_receiver([["self", S]]) == ("self", [])
     assert ri.split_receiver([["self", {"resolved_path": {"path": "Arc", "id": 1, "args": {"angle_bracketed": {"args": [{"type": S}], "constraints": []}}}}]])[0] == "self: Arc<Self>"
     assert ri.split_receiver([["a", P]]) == (None, [["a", P]]) and ri.split_receiver([]) == (None, []) and ri.split_receiver(None) == (None, [])
-    assert ri.split_receiver([["self"]])[0] is None                                    # malformed entry: not a receiver, no crash
-    # parameter names: plain identifiers only
+    assert ri.split_receiver([["self"]])[0] is None
+
     assert [ri.param_name(n) for n in ("x", "_", "_x", "(a, b)", "&x", "", None, "r#type", "x2")] == ["x", None, "_x", None, None, None, None, None, "x2"]
-    # generics and where clauses
+
     tb = lambda n: {"trait_bound": {"trait": {"path": n, "id": 1, "args": None}, "generic_params": [], "modifier": "none"}}
     gp = [{"name": "'a", "kind": {"lifetime": {"outlives": ["'b"]}}},
           {"name": "T", "kind": {"type": {"bounds": [tb("A"), tb("B")], "default": None, "is_synthetic": False}}},
@@ -465,7 +465,7 @@ def test_impls_helpers():
     assert ri.render_where([{"bound_predicate": {"type": {"generic": "T"}, "bounds": [tb("Send")], "generic_params": []}},
                             {"lifetime_predicate": {"lifetime": "'a", "outlives": ["'b"]}}]) == " where T: Send, 'a: 'b"
     assert ri.render_where([]) == "" and ri.render_where(None) == ""
-    # a whole signature: qualifiers, visibility, ret, where
+
     fn = {"name": "f", "visibility": "public", "inner": {"function": {
         "sig": {"inputs": [["self", ref(S)], ["x", P], ["_", P]], "output": P, "is_c_variadic": False},
         "generics": {"params": gp[1:2], "where_predicates": [{"bound_predicate": {"type": {"generic": "T"}, "bounds": [tb("Send")], "generic_params": []}}]},
@@ -481,7 +481,7 @@ def test_impls_helpers():
 
 
 
-# ---- paths (slice 6): rdj_index.RdjPaths, and synthetic workspaces for what the fake lacks --------
+
 
 def rdj_paths():
     if "paths" not in _cache:
@@ -504,11 +504,11 @@ def synth_workspace(drop=()):
     azalea_client: private `inner` re-exported by name / rename / a glob module, a glob cycle (`pub mod a { pub use super::*; }`)
     azalea_protocol: the `declare_state_packets!` shape: a packet in a private module, `pub use`d by `packets::game`."""
     az, cl, co, pr = Synth("azalea"), Synth("azalea_client"), Synth("azalea_core"), Synth("azalea_protocol")
-    # azalea_core
+
     pos = co.mod("position", co.root)
     co.struct("Vec3", pos)
     co.struct("BlockPos", pos)
-    # azalea_client
+
     inner = cl.mod("inner", cl.root, vis="default")
     c_client = cl.struct("Client", inner)
     c_only = cl.struct("OnlyRenamed", inner)
@@ -519,22 +519,22 @@ def synth_workspace(drop=()):
     ent = cl.mod("entity", cl.root)
     cl.struct("EntityRef", ent)
     cl.struct("Crate_Private", ent, vis="crate")
-    cl.use(cl.root, "plugins", plugins, glob=True)               # `pub use plugins::*;` lifts Plugin to the crate root
+    cl.use(cl.root, "plugins", plugins, glob=True)
     cyc = cl.mod("a", cl.root)
-    cl.use(cyc, "super", cl.root, glob=True)                     # glob cycle: a re-exports the root, which contains `a`
-    cl.use(ent, "crate::inner::Client", c_client, name="Client")  # a second, longer public path of Client
-    # azalea_protocol
+    cl.use(cyc, "super", cl.root, glob=True)
+    cl.use(ent, "crate::inner::Client", c_client, name="Client")
+
     packets = pr.mod("packets", pr.root)
     game = pr.mod("game", packets)
     kill_mod = pr.mod("c_player_combat_kill", game, vis="default")
     kill = pr.struct("ClientboundPlayerCombatKill", kill_mod)
     pr.use(game, "c_player_combat_kill::ClientboundPlayerCombatKill", kill)
-    # azalea (root)
+
     az.use(az.root, "azalea_client", az.foreign("azalea_client", kind="module"), glob=True)
     az.use(az.root, "azalea_core", az.foreign("azalea_core", kind="module"), name="core")
     az.use(az.root, "azalea_protocol", az.foreign("azalea_protocol", kind="module"), name="protocol")
     hidden = az.mod("hidden", az.root, vis="default")
-    az.struct("Hidden", hidden)                                  # `pub` struct, private module, never re-exported
+    az.struct("Hidden", hidden)
     az.struct("Direct", az.root)
     prel = az.mod("prelude", az.root)
     az.use(prel, "crate::Direct", next(i for i, it in az.index.items() if it["name"] == "Direct"), name="Direct")
@@ -552,26 +552,26 @@ def test_paths_synthetic_workspace():
     r = synth_workspace()
     pa = rdj_index.RdjPaths(r)
     rp = pa.resolve_path
-    assert rp("Direct") == "azalea::Direct"                                   # shortest of azalea::Direct / azalea::prelude::Direct
+    assert rp("Direct") == "azalea::Direct"
     assert pa.paths_of("azalea", (), "Direct") == ["azalea::Direct", "azalea::prelude::Direct"]
-    assert rp("Client") == "azalea::Client"                                   # `pub use azalea_client::*` + `pub use inner::Client`
+    assert rp("Client") == "azalea::Client"
     assert pa.paths_of("azalea_client", ("inner",), "Client")[0] == "azalea::Client"
-    assert "azalea::entity::Client" in pa.paths_of("azalea_client", ("inner",), "Client")      # a longer path exists too
-    assert rp("Plugin") == "azalea::Plugin"                                   # glob inside a crate (`pub use plugins::*`), then the crate glob
+    assert "azalea::entity::Client" in pa.paths_of("azalea_client", ("inner",), "Client")
+    assert rp("Plugin") == "azalea::Plugin"
     assert rp("EntityRef") == "azalea::entity::EntityRef"
-    assert rp("Vec3") == "azalea::core::position::Vec3" and rp("BlockPos") == "azalea::core::position::BlockPos"   # crate alias
-    assert rp("Hidden") is None                                               # pub item in a private module: no public path
-    assert rp("OnlyRenamed") is None                                          # only reachable under another name: not used
-    only = pa.paths_of("azalea_client", ("inner",), "OnlyRenamed")          # also azalea::a::Renamed: the cycle module re-exports the root
+    assert rp("Vec3") == "azalea::core::position::Vec3" and rp("BlockPos") == "azalea::core::position::BlockPos"
+    assert rp("Hidden") is None
+    assert rp("OnlyRenamed") is None
+    only = pa.paths_of("azalea_client", ("inner",), "OnlyRenamed")
     assert only[0] == "azalea::Renamed" and all(p.endswith("::Renamed") for p in only), only
-    assert rp("Crate_Private") is None                                        # pub(crate)
-    # the macro-style re-export (declare_state_packets!): the path equals the PATH_OVERRIDES entry, no override needed
+    assert rp("Crate_Private") is None
+
     assert rp("ClientboundPlayerCombatKill") == "azalea::protocol::packets::game::ClientboundPlayerCombatKill" \
         == g.PATH_OVERRIDES["ClientboundPlayerCombatKill"]
-    # glob cycle: finishes, the cycle is cut
+
     assert pa.paths_of("azalea_client", ("inner",), "Client")[0] == "azalea::Client"
     assert not any(len(p) > rdj_index.RdjPaths.MAX_DEPTH for ps in pa.public_paths().values() for p in ps)
-    # tables
+
     assert pa.aliases() == {"azalea_core": "core", "azalea_protocol": "protocol"}, pa.aliases()
     assert ("azalea", (), "*", "azalea_client") in pa.reexports and ("azalea", (), "azalea_client") in pa.globs
     assert pa.chain_public("azalea_protocol", ("packets", "game")) and not pa.chain_public("azalea", ("hidden",))
@@ -583,17 +583,17 @@ def test_paths_synthetic_workspace():
 @test
 def test_paths_missing_crates_and_errors():
     import rdj_index
-    # a crate that is not loaded: its re-exports are skipped and listed, nothing crashes, other paths still resolve
+
     pa = rdj_index.RdjPaths(synth_workspace(drop=("azalea_core", "azalea_protocol")))
     assert pa.resolve_path("Direct") == "azalea::Direct" and pa.resolve_path("Client") == "azalea::Client"
     assert pa.resolve_path("Vec3") is None and pa.resolve_path("ClientboundPlayerCombatKill") is None
     pa.public_paths()
     assert ("azalea", "azalea_core") in pa.unresolved and ("azalea", "azalea_protocol") in pa.unresolved, pa.unresolved
     raises(lambda: rdj_index.RdjPaths(synth_workspace(drop=("azalea",))), "no rustdoc JSON for the root crate `azalea`")
-    # another root crate
+
     pa2 = rdj_index.RdjPaths(synth_workspace(), root="azalea_client")
     assert pa2.resolve_path("Client") == "azalea_client::Client" and pa2.resolve_path("Vec3") is None
-    # use items with garbage payloads are skipped
+
     r = synth_workspace()
     c = r.crate("azalea")
     c.index[c.root]["inner"]["module"]["items"] += [10 ** 6]
@@ -606,11 +606,11 @@ def test_paths_missing_crates_and_errors():
 @test
 def test_unresolved_reason_names_the_real_cause():
     import rdj_index
-    # B5: a `use` target in a crate that is not loaded vs one whose crate is loaded but whose JSON lacks the path
+
     r = synth_workspace(drop=("azalea_core",))
     az = r.crate("azalea")
     pid = next(i for i, s in az.paths.items() if s.get("path") == ["azalea_protocol"])
-    az.paths[pid]["path"] = ["azalea_protocol", "vanished"]                         # azalea_protocol is loaded, this path is not in it
+    az.paths[pid]["path"] = ["azalea_protocol", "vanished"]
     ix = rdj_index.RdjIndex(ROOT, ROOT)
     ix.rdj = r
     ix.paths = rdj_index.RdjPaths(r)
@@ -627,13 +627,13 @@ def test_loader_warnings_printed_on_generator_path():
     import contextlib
     import io
     import rdj_index
-    # B2: Rdj.warnings (format_version accepted-but-untested, ...) reach stderr when RdjIndex.load runs, as `warning: ...`
+
     def load(rdir):
         err = io.StringIO()
         with contextlib.redirect_stderr(err):
             rdj_index.RdjIndex(FAKE_CRATE.parent, rdir).load()
         return err.getvalue()
-    assert load(FIXTURE) == ""                                                      # nothing to warn about: silent
+    assert load(FIXTURE) == ""
     old = os.environ.get("AZL_RDJ_FORMAT_RANGE")
     try:
         os.environ["AZL_RDJ_FORMAT_RANGE"] = "57-100"
@@ -660,16 +660,16 @@ def load_index_stderr(root, rdir):
 
 @test
 def test_stale_json_warns():
-    # B1: JSON made from older sources than the checkout (the .meta pins source_sha1): one warning, still loads (exit 0)
+
     root = tmpdir()
     shutil.copytree(FAKE_CRATE, root / "azalea")
-    assert load_index_stderr(root, FIXTURE) == ""                                   # sources == what the JSON was made from
+    assert load_index_stderr(root, FIXTURE) == ""
     with open(root / "azalea" / "src" / "lib.rs", "a") as f:
         f.write("\npub struct AddedAfterTheJson;\n")
     lines = load_index_stderr(root, FIXTURE).splitlines()
     assert len(lines) == 1 and lines[0].startswith("warning: azalea.json is stale"), lines
     assert "`azalea`" in lines[0] and "make_rustdoc_json.sh" in lines[0], lines
-    # a JSON whose .meta has no source_sha1 cannot be checked: said once, not silently accepted
+
     d = tmpdir()
     shutil.copy(FIXTURE / "azalea.json", d / "azalea.json")
     lines = load_index_stderr(root, d).splitlines()
@@ -679,7 +679,7 @@ def test_stale_json_warns():
 @test
 def test_mixed_format_versions_warn():
     import rdj_index
-    # B7: crate JSONs of different format_versions load, with one warning; the report label names every version
+
     d = tmpdir()
     for f in WS2.joinpath("rustdoc").iterdir():
         if f.is_file():
@@ -691,12 +691,12 @@ def test_mixed_format_versions_warn():
     r = rdj.load_dir(d)
     mixed = [w for w in r.warnings if "mix format_versions" in w]
     assert len(mixed) == 1 and "a 57" in mixed[0] and "b 61" in mixed[0], r.warnings
-    raises(lambda: r.format_version, "mix format_versions")                         # the strict property still refuses
+    raises(lambda: r.format_version, "mix format_versions")
     ix = rdj_index.RdjIndex(ROOT, d)
     ix.rdj = r
     assert "format_version 57/61" in ix.frontend_label, ix.frontend_label
     ix.rdj = rdj.load_dir(FIXTURE)
-    assert ix.frontend_label.endswith("format_version 57)"), ix.frontend_label       # uniform: label unchanged
+    assert ix.frontend_label.endswith("format_version 57)"), ix.frontend_label
 
 
 @test
@@ -719,7 +719,7 @@ enum Other { A }
 '''
     got = rdj_index.enum_variant_cfgs(text, "Event")
     assert got == {"Init": [], "Packet": ['#[cfg(feature = "packet-event")]'], "Gated": ['#[cfg(all(feature = "a", not(test)))]'],
-                   "Tick": [], "Last": []}, got                                     # whitespace-normalised, cfg_attr is not a gate
+                   "Tick": [], "Last": []}, got
     assert rdj_index.enum_variant_cfgs(text, "Other") == {"A": []}
     assert rdj_index.enum_variant_cfgs(text, "Missing") is None and rdj_index.enum_variant_cfgs("enum Event", "Event") is None
 
@@ -727,7 +727,7 @@ enum Other { A }
 @test
 def test_cfg_gated_event_variant_is_not_exposed():
     import rdj_index
-    # B3: rustdoc JSON (--all-features) lists a variant that the source gates with #[cfg]: build_events must skip it
+
     g = generator()
 
     def events(src_edit):
@@ -751,26 +751,26 @@ def test_cfg_gated_event_variant_is_not_exposed():
     gated, err = events(lambda t: t.replace("    Tick,\n", '    #[cfg(feature = "ticks")]\n    Tick,\n', 1))
     assert "tick" not in [e["lname"] for e in gated.events], [e["lname"] for e in gated.events]
     assert any("`Tick`: cfg-gated (#[cfg(feature = \"ticks\")]), not exposed" in n for n in gated.event_notes), gated.event_notes
-    assert "login" in [e["lname"] for e in gated.events]                               # the other variants are untouched
+    assert "login" in [e["lname"] for e in gated.events]
 
 
 @test
 def test_cfg_gates_unreadable_source_warns():
     import rdj_index
-    # B3: when the source cannot be read the gates are unknown: one warning naming the variants that are exposed as if ungated
+
     r = rdj.load_dir(FIXTURE)
     defs = rdj_index.build_defs(r)
     w = rdj_index.event_cfg_gates(r, defs, tmpdir(), "fake/")
     assert len(w) == 1 and w[0].startswith("enum Event (azalea): cannot read its `#[cfg]` gates") and "FileNotFoundError" in w[0], w
     assert all(name in w[0] for name in ("Tick", "Login", "Chat")), w[0]
     assert not any("#[cfg(" in a for d in defs["Event"] for v in d.variants for a in v["attrs"])
-    assert rdj_index.event_cfg_gates(r, defs, ROOT / "harness" / "fake", "fake/") == []   # readable source, no gates: silent
+    assert rdj_index.event_cfg_gates(r, defs, ROOT / "harness" / "fake", "fake/") == []
 
 
-# ---- multi-crate (slice 9): tools/testdata/ws2 = crate a (path dep on crate b) -------------------------------------------
-# The sandbox that made this slice had no rustc/cargo (log A): the JSON in tools/testdata/ws2/rustdoc is hand-built by
-# tools/rdj_synth.py (its .meta says so). Where rustc exists, `sh tools/make_rustdoc_json.sh tools/testdata/ws2/a OUT` and the
-# same for b replace it; the tests below then only check the semantic facts.
+
+
+
+
 WS2 = ROOT / "tools" / "testdata" / "ws2"
 
 
@@ -802,25 +802,25 @@ def test_ws2_loader_resolves_siblings():
     bot = by_name(a, "Bot", "struct")
     pos, facing, marks = (a.item(i) for i in a.children(bot))
     vec3_b, dir_b, marker_b = by_name(b, "Vec3", "struct"), by_name(b, "Dir", "enum"), by_name(b, "Marker", "struct")
-    # field types of `a` name items that only exist as `paths` summaries there
+
     tpos = rdj_index_field_type(pos)
     assert a.index.get(tpos["resolved_path"]["id"]) is None and a.paths[tpos["resolved_path"]["id"]]["crate_id"] != 0
     assert r.resolve("a", tpos["resolved_path"]["id"]) == ("b", vec3_b)
     assert r.resolve("a", rdj_index_field_type(facing)["resolved_path"]["id"]) == ("b", dir_b)
     arg = rdj_index_field_type(marks)["resolved_path"]["args"]["angle_bracketed"]["args"][0]["type"]
     assert r.resolve("a", arg["resolved_path"]["id"]) == ("b", marker_b)
-    # `pub use` targets: item, variant, whole crate
+
     uses = {rdj.payload(a.item(i)).get("name"): rdj.payload(a.item(i)) for i in a.children(a.root) if a.kind(i) == "use"}
     assert sorted(uses) == ["North", "Vec3", "base"], sorted(uses)
     assert r.resolve("a", uses["Vec3"]["id"]) == ("b", vec3_b)
     nid = r.resolve("a", uses["North"]["id"])
     assert nid[0] == "b" and b.item(nid[1])["name"] == "North" and b.kind(nid[1]) == "variant" and b.parent(nid[1]) == dir_b
     assert r.resolve("a", uses["base"]["id"]) == ("b", b.root)
-    # a local id is itself; things that cannot resolve give None and never raise
+
     assert r.resolve("a", bot) == ("a", bot) and r.resolve("b", vec3_b) == ("b", vec3_b)
     miss = []
     vec_id = rdj_index_field_type(marks)["resolved_path"]["id"]
-    assert r.resolve("a", vec_id, miss) is None and miss == [("a", "alloc::vec::Vec")], miss          # std is not loaded
+    assert r.resolve("a", vec_id, miss) is None and miss == [("a", "alloc::vec::Vec")], miss
     for bad in (None, "x", 10 ** 9, -1, 1.5):
         assert r.resolve("a", bad) is None
     assert a.local_paths()[("a",)] == a.root and b.local_paths()[("b", "geom", "Dir", "North")] == nid[1]
@@ -839,7 +839,7 @@ def test_ws2_cross_crate_fields_and_variants():
     defs = rdj_index.build_defs(r)
     assert sorted(defs) == ["Bot", "Cmd", "Dir", "Marker", "Vec3"], sorted(defs)
     bot = by_name(a, "Bot", "struct")
-    # the Def of the other crate's type, as build_defs made it from b's own JSON
+
     v3 = defs["Vec3"][0]
     assert v3.crate == "b" and v3.modpath == ("geom",) and v3.is_pub
     assert [(n, t, p) for n, t, p in v3.fields] == [("x", ("prim", "f64"), True), ("y", ("prim", "f64"), True), ("z", ("prim", "f64"), True)]
@@ -847,12 +847,12 @@ def test_ws2_cross_crate_fields_and_variants():
     assert dr.kind == "enum" and dr.crate == "b"
     assert [(v["name"], v["kind"], v["types"], v["doc"]) for v in dr.variants] == [
         ("North", "unit", [], ""), ("Offset", "tuple", [("prim", "i32")], ""), ("Pos", "struct", [("path", "Vec3", [])], "")], dr.variants
-    # the generator's view of `a`: its own Defs name the types (path Vec3 / b::geom::Dir last segment), the Defs of `b` have the fields
+
     assert [(n, t) for n, t, _ in defs["Bot"][0].fields] == [("pos", ("path", "Vec3", [])), ("facing", ("path", "Dir", [])),
                                                               ("marks", ("path", "Vec", [("path", "Marker", [])]))]
-    # paths over the pair: everything b defines is public through `pub use b as base` / `pub use b::geom::Vec3`
+
     pa = rdj_index.RdjPaths(r, root="a")
-    assert pa.resolve_path("Vec3") == "a::Vec3"                                       # shortest of a::Vec3 / a::base::geom::Vec3
+    assert pa.resolve_path("Vec3") == "a::Vec3"
     assert pa.paths_of("b", ("geom",), "Vec3") == ["a::Vec3", "a::base::geom::Vec3"]
     assert pa.resolve_path("Dir") == "a::base::geom::Dir" and pa.resolve_path("Marker") == "a::base::Marker"
     assert pa.resolve_path("Bot") == "a::Bot" and not pa.unresolved, pa.unresolved
@@ -868,8 +868,8 @@ def test_resolve_alias_quirk_and_name_fallbacks():
     quirk = max(a.paths) + 1
     a.paths[quirk] = {"crate_id": next(k for k, v in a.external_crates.items() if v["name"] == "b"), "path": ["a", "Facing", "North"], "kind": "variant"}
     try:
-        assert r.resolve("a", quirk) == ("b", north_b)                                # by crate_id + last segment + kind
-        # ambiguous: a second variant called North in another enum of b -> None, reported
+        assert r.resolve("a", quirk) == ("b", north_b)
+
         c = r.crate("b")
         dup = max(c.index) + 1
         c.index[dup] = dict(c.index[north_b], id=dup)
@@ -880,7 +880,7 @@ def test_resolve_alias_quirk_and_name_fallbacks():
         del c.index[dup], c.paths[dup]
         c._local_paths = None
         assert r.resolve("a", quirk) == ("b", north_b)
-        # the crate named by crate_id is unknown but path[0] names a loaded crate
+
         vec3 = next(i for i, s in a.paths.items() if s["path"] == ["b", "geom", "Vec3"])
         saved = a.external_crates.pop(a.paths[vec3]["crate_id"])
         try:
@@ -926,14 +926,14 @@ def test_make_rustdoc_json_ws_order_and_failures():
         return p, [Path(l.split()[0]).name for l in rec.read_text().splitlines()], rec.read_text()
     p, order, log = run()
     assert p.returncode == 0, p.stderr
-    assert order == ["azalea_core", "azalea_protocol", "azalea_client", "azalea"], order    # deps first; the bin crate is not documented
-    assert all(f"{d / 'out'} env=0 offline=0" in l for l in log.splitlines()), log        # own toolchain, no vendored registry
+    assert order == ["azalea_core", "azalea_protocol", "azalea_client", "azalea"], order
+    assert all(f"{d / 'out'} env=0 offline=0" in l for l in log.splitlines()), log
     assert "4 crates" in p.stdout and "AZALEA_RDJ=" in p.stdout
-    p, order, _ = run("azalea", "azalea-client")                                          # filter by package name (- or _), still ordered
+    p, order, _ = run("azalea", "azalea-client")
     assert p.returncode == 0 and order == ["azalea_client", "azalea"], (order, p.stderr)
     p, order, _ = run("nope")
     assert p.returncode == 2 and "no library package named: nope" in p.stderr and order == []
-    p, order, _ = run(failon="azalea_protocol")                                           # a failing crate does not stop the others
+    p, order, _ = run(failon="azalea_protocol")
     assert p.returncode == 1 and order == ["azalea_core", "azalea_protocol", "azalea_client", "azalea"] and "failed: azalea_protocol" in p.stderr
     cyc = {"packages": [pkg("x", ["y"]), pkg("y", ["x"])]}
     (d / "cyc.json").write_text(json.dumps(cyc))
@@ -945,8 +945,8 @@ def test_make_rustdoc_json_ws_order_and_failures():
     assert q.returncode == 2 and "no such workspace dir" in q.stderr
 
 
-# ---- macros (slice 7): macro-made / cfg-gated / doc(hidden) methods, on a hand-built crate (the sandbox has no rustc to
-# ---- rebuild the fake fixture with them: log A; rebuild with tools/make_rustdoc_json.sh where rustc exists) -------------
+
+
 
 def synth_macro_crate():
     """`impl Client` x3 as rustdoc gives them: one hand-written impl with a plain fn, a `#[doc(hidden)]` fn and a fn whose
@@ -982,7 +982,7 @@ def synth_macro_crate():
     u32 = {"primitive": "u32"}
     impl("Client", cl, [fn("chat", "Sends chat.", span(10, 12)), fn("raw", "Raw access.", span(14, 16), attrs=[{"other": "#[doc(hidden)]"}]),
                         fn("gated", "Only with the feature.", span(18, 20), ret=u32)], span(8, 22))
-    call = span(30, 40)                                              # the macro call site: impl span == fn span
+    call = span(30, 40)
     for tgt, tid in (("Client", cl), ("EntityRef", er)):
         for n in ("position", "health"):
             impl(tgt, tid, [fn(n, f"{tgt} {n}.", call, ret=u32)], call)
@@ -997,22 +997,22 @@ def test_macros_expanded_impls():
     import rdj_index as ri
     d = ri.build_impls(synth_macro_crate(), classes={"Client", "EntityRef"})
     by = {(m.target, m.name): m for m in d.methods}
-    # macro-made methods are ordinary methods with their own docs, labelled by the call-site span; no regex, no notes
+
     assert {("Client", "position"), ("Client", "health"), ("EntityRef", "position"), ("EntityRef", "health")} <= set(by)
     assert by[("Client", "position")].doc == "Client position." and by[("EntityRef", "position")].doc == "EntityRef position."
     assert by[("Client", "position")].file.endswith("(via macro)") and not by[("Client", "chat")].file.endswith("(via macro)")
     assert d.macro_notes == [] and ("Client", "clone") not in by and not d.client_traits
     assert [m.name for m in d.methods if m.target == "Client"][:4] == ["chat", "raw", "gated", "position"], "plain methods first, macro group last"
-    # the regex path is not part of the rdj front end
+
     src = (ROOT / "tools" / "rdj_index.py").read_text() + (ROOT / "tools" / "rdj.py").read_text()
     assert "ENTITY_FN" not in src and "impl_entity_functions" not in re.sub(r"#.*|\"\"\"[\s\S]*?\"\"\"", "", src)
 
 
 @test
 def test_bevy_derive_impls_count_as_derives():
-    # bevy's `#[derive(Component)]` / `#[derive(Resource)]` do not emit `#[automatically_derived]`: the JSON holds a plain
-    # `impl Component for X`. def_attrs must still show it as a derive (else gen_ecs.rs is never generated), and a hand-written
-    # impl of an unrelated trait must not.
+
+
+
     import rdj_index as ri
     r = synth_macro_crate()
     c = r.crates["azalea"]
@@ -1036,11 +1036,11 @@ def test_macros_hidden_and_cfg_treatment():
     import rdj_index as ri
     r = synth_macro_crate()
     keep = ri.build_impls(r, classes={"Client"})
-    assert "raw" in {m.name for m in keep.methods} and keep.hidden == [("Client", "raw", "kept")]      # kept = bound
+    assert "raw" in {m.name for m in keep.methods} and keep.hidden == [("Client", "raw", "kept")]
     skip = ri.build_impls(r, classes={"Client"}, hidden="skip")
     assert "raw" not in {m.name for m in skip.methods} and skip.hidden == [("Client", "raw", "skipped")]
     assert {m.name for m in skip.methods} == {m.name for m in keep.methods} - {"raw"}
-    # a cfg-gated fn whose feature is on is a plain fn; `#[cfg]` is not an attribute the JSON carries
+
     assert "gated" in {m.name for m in skip.methods}
     try:
         ri.build_impls(r, hidden="maybe")
@@ -1048,15 +1048,15 @@ def test_macros_hidden_and_cfg_treatment():
         assert "hidden" in str(e)
     else:
         raise AssertionError("bad hidden mode accepted")
-    # both spellings of doc(hidden); other attrs are not hidden
+
     for a, want in (("doc(hidden)", True), ({"other": "#[doc( hidden )]"}, True), ({"other": "#[inline]"}, False), ("inline", False), (None, False), (3, False)):
         assert ri.is_hidden({"attrs": [a]}) is want, a
     assert ri.is_hidden({}) is False
-    # the fake fixture has no hidden fn (rustdoc omits them): nothing recorded there
+
     assert rdj_impls().hidden == [] and rdj_impls().macro_notes == []
 
 
-# ---- switch (slice 8): RdjIndex, the generator CLI ---------------------------------------------------------------------------
+
 
 @test
 def test_missing_json_reasons():
@@ -1099,7 +1099,7 @@ def test_generator_cli_modes():
     assert p.returncode != 0 and "missing JSON" in p.stderr and "Traceback" not in p.stderr
 
 
-# ---- slice 10: resilience (weird crate, skipped items, format range at the CLI, mutation) -------------------------------
+
 
 WEIRD = ROOT / "tools" / "testdata" / "weird"
 
@@ -1158,7 +1158,7 @@ def test_weird_constructs_are_read():
     for m in ix.methods:
         by.setdefault(m.target, {})[m.name] = m
     assert sorted(by["Client"]) == ["bound", "grid", "hidden", "imp", "mutref", "nested", "r#match", "tick", "waits"], sorted(by["Client"])
-    assert "gated" not in by["Client"]                                      # cfg(feature) off: not in the JSON at all
+    assert "gated" not in by["Client"]
     assert sorted(by["EntityRef"]) == ["health", "hunger"] and all("(via macro)" in m.file for m in by["EntityRef"].values())
     c = by["Client"]
     assert c["waits"].is_async and c["tick"].is_async and c["tick"].is_pub and c["tick"].owner == "Tick"
@@ -1177,17 +1177,17 @@ def test_weird_generator_finishes():
     root, rdir = weird_copy()
     p, rep = run_generator(root, rdir, Path(root) / "out")
     assert p.returncode == 0 and "Traceback" not in p.stderr and p.stdout.startswith("generated"), (p.stdout, p.stderr)
-    assert rep["front_end_skipped"] == []                                     # nothing unreadable in a well-formed JSON
+    assert rep["front_end_skipped"] == []
     assert rep["classes"] and all("skipped" in c for c in rep["classes"])
 
 
 @test
 def test_skipped_items_reported():
     def mutate(raw):
-        item_named(raw, "nested", "function")["inner"]["function"]["sig"]["inputs"] = 5            # a fn the reader cannot take apart
-        item_named(raw, "Kind", "enum")["inner"]["enum"]["variants"] = 7                          # a def it cannot take apart
+        item_named(raw, "nested", "function")["inner"]["function"]["sig"]["inputs"] = 5
+        item_named(raw, "Kind", "enum")["inner"]["enum"]["variants"] = 7
         uses = [it for it in raw["index"].values() if rdj.inner_kind(it) == "use" and (it["inner"]["use"].get("name") == "DeepAlias")]
-        uses[0]["inner"]["use"] = 5                                                                # a `use` of an unknown shape
+        uses[0]["inner"]["use"] = 5
     root, rdir = weird_copy(mutate)
     p, rep = run_generator(root, rdir, Path(root) / "out")
     assert p.returncode == 0 and "Traceback" not in p.stderr and p.stdout.startswith("generated"), (p.stdout, p.stderr)
@@ -1196,16 +1196,16 @@ def test_skipped_items_reported():
     by = {it["subject"]: it for it in items}
     assert sorted(by) == ["azalea::Client::nested", "azalea::Kind", "azalea::inner::DeepAlias"] or \
         any(k.startswith("azalea#") or k.endswith("DeepAlias") for k in by), sorted(by)
-    assert all(it["why"] for it in items)                                                          # item path, then a reason
+    assert all(it["why"] for it in items)
     generated = {n for c in rep["classes"] for n in c["generated"]}
-    assert "nested" not in generated and not any(sk["name"] == "nested" for c in rep["classes"] for sk in c["skipped"])   # the rest is generated without it
+    assert "nested" not in generated and not any(sk["name"] == "nested" for c in rep["classes"] for sk in c["skipped"])
     assert "waits" in generated
 
 
 @test
 def test_dropped_variants_reported_per_variant():
     import rdj_index
-    # B4: a variant whose item is missing from the index (#[doc(hidden)] without --document-hidden-items) is reported, one line each
+
     class C:
         name = "azalea"
 
@@ -1217,9 +1217,9 @@ def test_dropped_variants_reported_per_variant():
     assert [v["name"] for v in out] == ["V5", "V6"] and dropped == ["variant #7", "variant #8"], (out, dropped)
     assert [p for p, _ in skips] == ["azalea::Kind::variant #7", "azalea::Kind::variant #8"], skips
     assert all("not in the JSON index" in why and "--document-hidden-items" in why for _, why in skips), skips
-    assert rdj_index._variants(C(), {"variants": [7]}) == []                                    # direct callers: still silent, no crash
-    # end to end: the generator report lists the dropped variant under the front end's skipped items
-    root, rdir = weird_copy(lambda raw: raw["index"].pop("22"))                                 # weird::Kind::Pair
+    assert rdj_index._variants(C(), {"variants": [7]}) == []
+
+    root, rdir = weird_copy(lambda raw: raw["index"].pop("22"))
     p, rep = run_generator(root, rdir, Path(root) / "out")
     assert p.returncode == 0 and "Traceback" not in p.stderr, p.stderr
     assert any(it["subject"] == "azalea::Kind::variant #22" and it["why"].startswith("variant dropped: not in the JSON index")
@@ -1229,7 +1229,7 @@ def test_dropped_variants_reported_per_variant():
 @test
 def test_tagged_enum_with_dropped_variant_is_reported():
     import rdj_index
-    # B4: Mapper.build_tagged / unit enums: an emitted enum narrower than the JSON listed says so (it would be `_ => {}`: an empty table)
+
     g = generator()
 
     def mapper(mutate):
@@ -1244,12 +1244,12 @@ def test_tagged_enum_with_dropped_variant_is_reported():
         gen_.m.map_ty(("path", "Kind", ()), "ret")
         return gen_.m
     m = mapper(None)
-    assert "Kind" in m.tagged and m.enum_notes == [], m.enum_notes                              # nothing dropped: silent
-    m = mapper(lambda raw: raw["index"].pop("19"))                                              # Kind::r#Loop (unit); Pair(..) stays
+    assert "Kind" in m.tagged and m.enum_notes == [], m.enum_notes
+    m = mapper(lambda raw: raw["index"].pop("19"))
     assert "Kind" in m.tagged and [v["name"] for v in m.tagged["Kind"]["variants"]] == ["Pair"], m.tagged
     assert len(m.enum_notes) == 1 and m.enum_notes[0].startswith("`Kind`: 1 of 2 variants emitted, missing variant #19"), m.enum_notes
     assert "empty table" in m.enum_notes[0], m.enum_notes
-    m = mapper(lambda raw: raw["index"].pop("22"))                                              # the tuple variant goes: a plain unit enum is left
+    m = mapper(lambda raw: raw["index"].pop("22"))
     assert "Kind" in m.enums and "Kind" not in m.tagged and "1 of 2 variants emitted" in m.enum_notes[0], (m.enums, m.enum_notes)
 
     def all_gone(raw):
@@ -1264,9 +1264,9 @@ def test_tagged_enum_with_dropped_variant_is_reported():
 
 @test
 def test_dropped_variant_warning_on_generator_stderr():
-    # B4: the generator CLI prints the same note as one `warning: enum ...` stderr line and a GEN_REPORT section; tests run the fake
-    # (Direction is a unit enum the fake exposes) with one variant removed from a copy of its JSON
-    import rdj_synth  # noqa: F401 - fixture helpers live there; the copy below only edits the JSON
+
+
+    import rdj_synth
     d = Path(tmpdir())
     shutil.copytree(FAKE_CRATE, d / "azalea")
     (d / "rustdoc").mkdir()
@@ -1286,7 +1286,7 @@ def test_dropped_variant_warning_on_generator_stderr():
 @test
 def test_rdj_hidden_cli_flag_and_report():
     import rdj_index
-    # U1: --rdj-hidden keep|skip reaches build_impls; hidden fns the JSON holds are reported when skipped (kept ones bind as usual)
+
     def hide(raw):
         item_named(raw, "nested", "function")["attrs"] = [{"other": "#[doc(hidden)]"}]
     root, rdir = weird_copy(hide)
@@ -1307,8 +1307,8 @@ def test_rdj_hidden_cli_flag_and_report():
 
 @test
 def test_local_paths_module_and_fn_with_one_path():
-    # V1 (confirmed): a module and a fn can share one path; `local_paths` keeps the last id, so a sibling crate's reference to the
-    # module used to resolve to the fn. `Crate.local_path(path, kind)` takes the item of the kind the reference recorded.
+
+
     from rdj_synth import Synth
     a, b = Synth("a"), Synth("b")
     mod = b.mod("foo", b.root)
@@ -1320,10 +1320,10 @@ def test_local_paths_module_and_fn_with_one_path():
     assert fn > mod
     as_mod, as_fn = a.foreign("b", "foo", kind="module"), a.foreign("b", "foo", kind="function")
     as_bar = a.foreign("b", "foo", "Bar")
-    other = a.foreign("b", "foo", kind="constant")                                              # no item of that kind: the old answer
+    other = a.foreign("b", "foo", kind="constant")
     r = rdj.Rdj()
     r.crates["a"], r.crates["b"] = a.crate(), b.crate()
-    assert r.crates["b"].local_paths()[("b", "foo")] == fn                                     # the old map: last wins (unchanged API)
+    assert r.crates["b"].local_paths()[("b", "foo")] == fn
     assert r.resolve("a", as_mod) == ("b", mod) and r.resolve("a", as_fn) == ("b", fn), (r.resolve("a", as_mod), r.resolve("a", as_fn))
     assert r.resolve("a", as_bar) is not None
     assert r.resolve("a", other) == ("b", fn)
@@ -1334,8 +1334,8 @@ def test_local_paths_module_and_fn_with_one_path():
 def test_explicit_names_shadow_glob_reexports():
     import rdj_index
     from rdj_synth import Synth
-    # V2 (confirmed): `pub use inner::*;` next to an explicit `Name` (own item or `pub use other::Name`) gave the glob's item a
-    # spurious public path `azalea::Name`; an explicit name shadows a glob-imported one of the same namespace (rustc).
+
+
     def paths(build):
         a = Synth("azalea")
         ids = build(a)
@@ -1361,14 +1361,14 @@ def test_explicit_names_shadow_glob_reexports():
     got, (glob, expl) = paths(explicit_use)
     assert got[("azalea", expl)] == {"azalea::Name", "azalea::other::Name"} and got[("azalea", glob)] == {"azalea::inner::Name"}, got
 
-    def no_clash(a):                                                                            # untouched: a glob name nobody shadows
+    def no_clash(a):
         inner = a.mod("inner", a.root)
         a.use(a.root, "inner", inner, glob=True)
         return a.struct("Only", inner), a.struct("Name", a.root)
     got, (only, _) = paths(no_clash)
     assert got[("azalea", only)] == {"azalea::Only", "azalea::inner::Only"}, got
 
-    def other_namespace(a):                                                                     # a fn `Name` does not shadow a glob struct `Name`
+    def other_namespace(a):
         inner = a.mod("inner", a.root)
         glob = a.struct("Name", inner)
         a.use(a.root, "inner", inner, glob=True)
@@ -1405,7 +1405,7 @@ def test_format_61_same_output_as_57():
     assert out["57"].keys() == out["61"].keys() and out["57"]
     for name, text in out["57"].items():
         t61 = out["61"][name]
-        strip = lambda x: "\n".join(l for l in x.splitlines() if "@generated" not in l and "rdj_selftest_" not in l)   # temp dir name
+        strip = lambda x: "\n".join(l for l in x.splitlines() if "@generated" not in l and "rdj_selftest_" not in l)
         text, t61 = strip(text.replace("format_version 57", "format_version N")), strip(t61.replace("format_version 61", "format_version N"))
         assert text == t61, f"{name} differs between format 57 and 61"
 
@@ -1428,7 +1428,7 @@ def _mutate(rng, raw, n):
     items = list(raw["index"].values()) + list(raw["paths"].values())
     for _ in range(n):
         d = rng.choice(items)
-        for _ in range(rng.choice((1, 1, 2, 3))):                           # sometimes dive into the payload
+        for _ in range(rng.choice((1, 1, 2, 3))):
             keys = [k for k in d if not (d is raw and k in rdj.TOP_KEYS)]
             sub = [k for k in keys if isinstance(d[k], dict) and d[k]]
             if sub and rng.random() < 0.6:
@@ -1454,19 +1454,19 @@ def test_mutation_never_crashes():
         _mutate(rng, raw, rng.choice((3, 12, 40, 150)))
         (d / "rdj" / "azalea.json").write_text(json.dumps(raw))
         p, rep = run_generator(fake, d / "rdj", d / f"out{i}")
-        err = [ln for ln in p.stderr.strip().splitlines() if not ln.startswith("warning: ")]       # loader warnings are not errors
+        err = [ln for ln in p.stderr.strip().splitlines() if not ln.startswith("warning: ")]
         assert "Traceback" not in p.stderr, f"mutation #{i} (seed 1234) crashed:\n{p.stderr[-600:]}"
         if p.returncode == 0:
             assert p.stdout.startswith("generated") and rep, f"mutation #{i}: {p.stdout!r}"
             clean += 1
             skipped += bool(rep["front_end_skipped"])
-        else:       # the one thing a mutation may legitimately cost: a class the bindings cannot do without (its path, its enum Event)
+        else:
             assert len(err) == 1 and err[0].startswith("error: "), f"mutation #{i}: expected a one-line error, got:\n{p.stderr[-600:]}"
     assert clean >= 20, f"only {clean} of 24 mutated JSONs generated bindings"
     assert skipped >= 1, "no mutation produced a skipped-items entry: the mutations are too tame to prove anything"
 
 
-# ---- slice 11: config tables in bindgen.toml --------------------------------------------------------------
+
 
 @test
 def test_config_toml_schema_errors():
@@ -1501,7 +1501,7 @@ def test_config_toml_schema_errors():
     bad(base.replace('packet = "ClientboundPacket"', 'packet = "Foo"'), "extra_event_payloads.packet", "unknown payload type")
     bad(base.replace('packet = "ClientboundPacket"', "packet = 5"), "extra_event_payloads.packet", "expected str")
     (d / "c.toml").write_text(base.replace("[extra_event_payloads]", "[x]").replace('packet = "ClientboundPacket"', "").replace("[x]", ""))
-    assert g.load_config(d / "c.toml")["EXTRA_EVENT_PAYLOADS"] == {}      # the payload table is optional
+    assert g.load_config(d / "c.toml")["EXTRA_EVENT_PAYLOADS"] == {}
     bad(base.replace('World = "The bot', "World = 5 #", 1), "hand_classes.World", "expected str")
     bad(base.replace("[hand_classes]", ""), "missing key `hand_classes`")
     assert list(cfg["HAND_CLASSES"]) == ["World", "Goal", "GoalLib", "Swarm", "AzaleaLib", "ProcessLib"] and cfg["HAND_GLOBALS"] == {"goal": "GoalLib", "azalea": "AzaleaLib", "process": "ProcessLib"}
@@ -1538,12 +1538,12 @@ def test_config_flag_and_builtin_defaults():
     assert g.CONFIG_PATH == ROOT / "bindgen.toml" and g.CONFIG_PATH.is_file()
     saved = g.CONFIG_PATH
     try:
-        g.CONFIG_PATH = Path(tmpdir()) / "absent.toml"            # default file missing -> built-in tables, not an error
+        g.CONFIG_PATH = Path(tmpdir()) / "absent.toml"
         cfg = g.load_config()
         assert cfg["CLASSES"] == {} and cfg["RECORDS"] == {} and cfg["DENY_METHODS"] == set() and cfg["EXTRA_EVENT_PAYLOADS"] == {}
         assert sorted(cfg) == sorted(saved_keys := g.load_config(saved)), sorted(set(saved_keys) ^ set(cfg))
         try:
-            g.load_config(g.CONFIG_PATH)                          # ... but the same path given explicitly must exist
+            g.load_config(g.CONFIG_PATH)
         except g.ConfigError as e:
             assert "cannot read" in str(e)
         else:
@@ -1631,7 +1631,7 @@ def test_generic_class_discovery_on_toy_crate():
         assert sorted((m.target, m.name) for m in ix.methods) == [("@toy", "double"), ("@toy", "later"), ("Counter", "add"), ("Counter", "get"), ("Mode", "label")]
         assert ix.discovered["@toy"]["free"] and ix.discovered["@toy"]["luau"] == "toy"
         assert ("Pair", "generic type") in ix.discover_skipped and not any(n == "Plain" for n, _ in ix.discover_skipped)
-        assert ix.resolve_path("Counter") == "toy::Counter" and "hand-built" in ix.frontend_label      # label of the one loaded crate
+        assert ix.resolve_path("Counter") == "toy::Counter" and "hand-built" in ix.frontend_label
         notes = "\n".join(ix.report_lines())
         assert "type `Pair`: not bound as a class (generic type)" in notes and "Counter" not in notes
         g.CLASSES.update(ix.discovered)
@@ -1643,7 +1643,7 @@ def test_generic_class_discovery_on_toy_crate():
     finally:
         g.CLASSES.clear()
         g.CLASSES.update(saved)
-    # with the azalea config (classes listed) the toy crate yields no discovery, and nothing leaks from the run above
+
     assert "Client" in g.CLASSES
     ix2 = ri.RdjIndex(root, d)
     ix2.load()
@@ -1673,7 +1673,7 @@ def test_generator_cli_on_toy_crate():
     rep = json.loads((out / "lu" / "GEN_REPORT.json").read_text())
     assert not rep["events"]["enabled"] and any(sk["reason"] == "async free fn" for c in rep["classes"] for sk in c["skipped"]), rep["classes"]
     assert any(it["kind"] == "type" and it["subject"] == "Pair" and it["why"] == "not bound as a class (generic type)" for it in rep["front_end_skipped"])
-    p2 = subprocess.run(p.args, capture_output=True, text=True)         # a rerun on the same dir is stable
+    p2 = subprocess.run(p.args, capture_output=True, text=True)
     assert p2.returncode == 0 and (out / "rs" / "gen_client.rs").read_text() == rs
 
 
@@ -1683,15 +1683,15 @@ def test_format_61_shapes():
     (`GenericArg::Infer`), `Abi` has no serde rename, `PreciseCapturingArg`, and the structured `Attribute` variants."""
     import rdj_index as ri
     U8 = {"primitive": "u8"}
-    # GenericArg::Infer is the bare string "infer" (not {"infer": ..}); the old dict shape still renders the same
+
     for infer in ("infer", {"infer": None}):
         args = {"angle_bracketed": {"args": [infer, {"type": U8}], "constraints": []}}
         assert rdj._render_args(args) == "<_, u8>", infer
-        # convert_type drops infer (and lifetimes)
+
         assert rdj.convert_type({"resolved_path": {"path": "Vec", "id": 1, "args": args}}) == ("path", "Vec", [("prim", "u8")])
-    assert rdj._render_args("return_type_notation") == ""                       # GenericArgs::ReturnTypeNotation is a bare string too
-    assert rdj.render_type("infer") == "_"                                       # Type::Infer likewise
-    # Abi: `extern "<name>"` text
+    assert rdj._render_args("return_type_notation") == ""
+    assert rdj.render_type("infer") == "_"
+
     for abi, text in (("Rust", ""), (None, ""), ({"C": {"unwind": False}}, "C"), ({"C": {"unwind": True}}, "C-unwind"),
                       ({"Cdecl": {"unwind": False}}, "cdecl"), ({"Stdcall": {"unwind": True}}, "stdcall-unwind"),
                       ({"Fastcall": {"unwind": False}}, "fastcall"), ({"Aapcs": {"unwind": False}}, "aapcs"),
@@ -1709,10 +1709,10 @@ def test_format_61_shapes():
     assert sig({"C": {"unwind": True}}) == 'pub extern "C-unwind" fn f()'
     assert sig({"SysV64": {"unwind": False}}) == 'pub extern "sysv64" fn f()'
     assert sig({"Other": "ptx-kernel"}) == 'pub extern "ptx-kernel" fn f()'
-    # `use<..>` precise-capturing bound
+
     assert rdj._render_bounds([{"use": [{"lifetime": "'a"}, {"param": "T"}]}]) == "use<'a, T>"
     assert rdj.render_type({"impl_trait": [{"use": [{"param": "T"}]}]}) == "impl use<T>"
-    # structured Attribute variants
+
     at = lambda *a: rdj.attr_texts({"attrs": list(a)})
     assert at("non_exhaustive", "macro_export", "no_mangle", "automatically_derived") == ["#[non_exhaustive]", "#[macro_export]", "#[no_mangle]"]
     assert at({"must_use": {"reason": None}}) == ["#[must_use]"]
@@ -1727,7 +1727,7 @@ def test_format_61_shapes():
     assert rep("c", align=16, int="i32") == ["#[repr(C, i32, align(16))]"]
     assert at({"other": "#[allow(dead_code)]"}, {"other": "#[attr = Inline(Hint)]"}, 7, {"a": 1, "b": 2}, {"brand_new": 1}) == ["#[allow(dead_code)]"]
 
-    # a struct variant whose fields were stripped keeps a placeholder, like a struct does
+
     class C:
         items = {2: {"name": "x", "visibility": "default", "inner": {"struct_field": U8}},
                  3: {"name": "Plain", "visibility": "default", "attrs": [], "docs": None,
@@ -1750,7 +1750,7 @@ def main() -> int:
         for t in TESTS:
             try:
                 t()
-            except Exception as e:                                      # noqa: BLE001 - report every failing test
+            except Exception as e:
                 failed += 1
                 tb = traceback.extract_tb(e.__traceback__)[-1]
                 print(f"FAIL {t.__name__}: {type(e).__name__}: {e} (line {tb.lineno})")

@@ -13,14 +13,7 @@ use super::{
 const STRING_REPLACEMENTS: &[(&str, &str)] =
     &[("\"", r#"\""#), ("\t", r"\t"), ("\r", r"\r"), ("\n", r"\n")];
 
-/**
-    Tries to return the given value as a plain string key.
 
-    A plain string key must:
-
-    - Start with an alphabetic character.
-    - Only contain alphanumeric characters and underscores.
-*/
 pub(crate) fn lua_value_as_plain_string_key(value: &LuaValue) -> Option<String> {
     if let LuaValue::String(s) = value
         && let Ok(s) = s.to_str()
@@ -34,11 +27,7 @@ pub(crate) fn lua_value_as_plain_string_key(value: &LuaValue) -> Option<String> 
     None
 }
 
-/**
-    Formats a Lua value into a pretty string.
 
-    This does not recursively format tables.
-*/
 pub(crate) fn format_value_styled(value: &LuaValue, prefer_plain: bool) -> String {
     match value {
         LuaValue::Nil => COLOR_YELLOW.apply_to("nil").to_string(),

@@ -9,7 +9,7 @@ use std::{
 use mlua::prelude::*;
 use os_str_bytes::OsStringBytes;
 
-// Inner (shared) struct
+
 
 #[derive(Debug, Default)]
 struct ProcessArgsInner {
@@ -24,17 +24,7 @@ impl FromIterator<OsString> for ProcessArgsInner {
     }
 }
 
-/**
-    A struct that can be easily shared, stored in Lua app data,
-    and that also guarantees the values are valid OS strings
-    that can be used for process arguments.
 
-    Usable directly from Lua, implementing both `FromLua` and `LuaUserData`.
-
-    Also provides convenience methods for working with the arguments
-    as either `OsString` or `Vec<u8>`, where using the latter implicitly
-    converts to an `OsString` and fails if the conversion is not possible.
-*/
 #[derive(Debug, Clone)]
 pub struct ProcessArgs {
     inner: Arc<Mutex<ProcessArgsInner>>,
@@ -67,7 +57,7 @@ impl ProcessArgs {
         inner.values.is_empty()
     }
 
-    // OS strings
+    
 
     #[must_use]
     pub fn all(&self) -> Vec<OsString> {
@@ -116,7 +106,7 @@ impl ProcessArgs {
         }
     }
 
-    // Bytes wrappers
+    
 
     #[must_use]
     pub fn all_bytes(&self) -> Vec<Vec<u8>> {
@@ -159,7 +149,7 @@ impl ProcessArgs {
         self.remove(index).and_then(OsString::into_io_vec)
     }
 
-    // Plain lua table conversion
+    
 
     #[doc(hidden)]
     #[allow(clippy::missing_errors_doc)]
@@ -176,7 +166,7 @@ impl ProcessArgs {
     }
 }
 
-// Iterator implementations
+
 
 impl IntoIterator for ProcessArgs {
     type Item = OsString;
@@ -203,7 +193,7 @@ impl<S: Into<OsString>> Extend<S> for ProcessArgs {
     }
 }
 
-// Lua implementations
+
 
 impl FromLua for ProcessArgs {
     fn from_lua(value: LuaValue, _: &Lua) -> LuaResult<Self> {

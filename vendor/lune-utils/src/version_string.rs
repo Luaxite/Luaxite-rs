@@ -5,16 +5,7 @@ use semver::Version;
 
 static LUAU_VERSION: LazyLock<Arc<String>> = LazyLock::new(create_luau_version_string);
 
-/**
-    Returns a Lune version string, in the format `Lune x.y.z+luau`.
 
-    The version string passed should be the version of the Lune runtime,
-    obtained from `env!("CARGO_PKG_VERSION")` or a similar mechanism.
-
-    # Panics
-
-    Panics if the version string is empty or contains invalid characters.
-*/
 #[must_use]
 pub fn get_version_string(lune_version: impl AsRef<str>) -> String {
     let lune_version = lune_version.as_ref();
@@ -27,7 +18,7 @@ pub fn get_version_string(lune_version: impl AsRef<str>) -> String {
 }
 
 fn create_luau_version_string() -> Arc<String> {
-    // Extract the current Luau version from a fresh Lua state / VM that can't be accessed externally.
+    
     let luau_version_full = {
         let temp_lua = Lua::new();
 
@@ -43,7 +34,7 @@ fn create_luau_version_string() -> Arc<String> {
             .to_string()
     };
 
-    // Luau version is expected to be in the format "Luau 0.x" and sometimes "Luau 0.x.y"
+    
     assert!(
         luau_version_full.starts_with("Luau 0."),
         "_VERSION global is formatted incorrectly\
@@ -51,8 +42,8 @@ fn create_luau_version_string() -> Arc<String> {
     );
     let luau_version_noprefix = luau_version_full.strip_prefix("Luau 0.").unwrap().trim();
 
-    // We make some guarantees about the format of the _VERSION global,
-    // so make sure that the luau version also follows those rules.
+    
+    
     if luau_version_noprefix.is_empty() {
         panic!(
             "_VERSION global is missing version number\

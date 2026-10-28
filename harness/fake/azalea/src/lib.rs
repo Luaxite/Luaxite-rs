@@ -1,4 +1,4 @@
-//! Fake azalea: just enough surface (same shapes as the real one) to compile-check generated bindings.
+
 #![allow(dead_code)]
 
 use std::{fmt, str::FromStr, sync::Arc, time::Duration};
@@ -12,7 +12,7 @@ pub mod ecs {
 pub use ecs::entity::Entity;
 
 pub mod core {
-    /// Real: `azalea::core::hit_result` (azalea_core::hit_result).
+    
     pub mod hit_result {
         use crate::{BlockPos, Vec3};
         #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
@@ -46,7 +46,7 @@ pub mod core {
         }
     }
     pub mod entity_id {
-        /// Minecraft's numeric entity id (real: azalea_core::entity_id).
+        
         #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
         pub struct MinecraftEntityId(pub i32);
     }
@@ -79,7 +79,7 @@ pub mod position {
 }
 pub use position::{BlockPos, Vec3};
 
-/// Real: `azalea::registry::builtin::EntityKind` (Copy + PartialEq + FromStr accepting "zombie" or "minecraft:zombie").
+
 pub mod registry {
     pub mod builtin {
         use std::str::FromStr;
@@ -101,8 +101,8 @@ pub mod registry {
             }
         }
 
-        /// Real: `azalea::registry::builtin::BlockKind`. `FromStr` accepts "stone" or "minecraft:stone";
-        /// `to_str()` (and `Display`) give `minecraft:<id>`. The fake only knows a handful of blocks.
+        
+        
         #[derive(Clone, Copy, Debug, PartialEq, Eq)]
         pub enum BlockKind {
             Air,
@@ -155,8 +155,8 @@ pub mod registry {
     }
 }
 
-/// Real: `azalea::block` (azalea_block). Its `BlockState` is a state id (stone has one state, stairs many);
-/// the fake just wraps the kind. `BlockState::from(kind)` is the default state, `BlockKind::from(state)` drops the state.
+
+
 pub mod block {
     use crate::registry::builtin::BlockKind;
     #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -173,8 +173,8 @@ pub mod block {
     }
 }
 
-/// Stand-in for `parking_lot::RwLock`, which `Client::world()` really returns inside an `Arc`: `read()` gives a
-/// guard directly (no `Result`), which is how real code calls `world.read().get_block_state(..)`.
+
+
 pub struct RwLock<T>(std::sync::RwLock<T>);
 impl<T> RwLock<T> {
     pub fn new(value: T) -> Self {
@@ -185,13 +185,13 @@ impl<T> RwLock<T> {
     }
 }
 
-/// Real: `azalea::world` (azalea_world).
+
 pub mod world {
     use crate::{BlockPos, block::BlockState, registry::builtin::BlockKind};
-    /// Real: `azalea_world::ChunkStorage` (a boxed `ChunkStorageTrait`, `Clone`). `ReachBlockPosGoal` takes its own copy.
+    
     #[derive(Clone, Debug)]
     pub struct ChunkStorage;
-    /// Real: `azalea_world::World`, whose `chunks` field is public.
+    
     pub struct World {
         pub chunks: ChunkStorage,
     }
@@ -199,8 +199,8 @@ pub mod world {
         pub fn new() -> Self {
             World { chunks: ChunkStorage }
         }
-        /// Real: `Some(state)` for any loaded position, `None` outside the loaded world. The fake world: nothing
-        /// below y=0, bedrock at 0, stone up to 62 (one diamond ore), dirt at 63 (one water block), air above.
+        
+        
         pub fn get_block_state(&self, pos: BlockPos) -> Option<BlockState> {
             let kind = match (pos.x, pos.y, pos.z) {
                 (_, y, _) if y < 0 => return None,
@@ -216,7 +216,7 @@ pub mod world {
     }
 }
 
-/// Real: `azalea::auto_tool`.
+
 pub mod auto_tool {
     #[derive(Debug)]
     pub struct BestToolResult {
@@ -225,10 +225,10 @@ pub mod auto_tool {
     }
 }
 
-/// Real: `azalea::inventory` (azalea_inventory, re-exported through azalea_client).
+
 pub mod inventory {
     use std::fmt;
-    /// Real: `azalea_registry::builtin::ItemKind`; `Display` gives `minecraft:<id>`.
+    
     #[derive(Clone, Copy, Debug, PartialEq, Eq)]
     pub struct ItemKind(pub &'static str);
     impl fmt::Display for ItemKind {
@@ -258,7 +258,7 @@ pub mod inventory {
             }
         }
     }
-    /// Real: `azalea::inventory::operations` (azalea_inventory). Same shapes minus `QuickCraft`, which nothing binds.
+    
     pub mod operations {
         #[derive(Clone, Debug)]
         pub enum ClickOperation {
@@ -311,8 +311,8 @@ pub mod inventory {
         }
         into_click!(PickupClick => Pickup, QuickMoveClick => QuickMove, SwapClick => Swap, CloneClick => Clone, ThrowClick => Throw, PickupAllClick => PickupAll);
     }
-    /// Real: a big enum with one struct variant per menu kind (`Player { .. }`, `Generic9x3 { contents, player }`, ...),
-    /// `Debug`-derived, with `slots()` = every slot in protocol order.
+    
+    
     #[derive(Clone, Debug)]
     pub enum Menu {
         Player { inventory: Vec<ItemStack> },
@@ -330,8 +330,8 @@ pub mod inventory {
     }
 }
 
-/// Real: `azalea::container` (azalea/src/container.rs). `ContainerHandle` derefs to `ContainerHandleRef` and
-/// closes the container when dropped; the fake prints when that happens.
+
+
 pub mod container {
     use crate::{
         Client,
@@ -350,28 +350,28 @@ pub mod container {
         pub fn new(id: i32, client: Client) -> Self {
             Self { id, client }
         }
-        /// Real: triggers a `CloseContainerEvent` for this container id.
+        
         pub fn close(&self) {
             println!("[fake] container {} close requested", self.id);
         }
-        /// Returns the contents of the menu, including the player's inventory. `None` if the container is closed
-        /// (the fake handle is always open until dropped).
+        
+        
         pub fn slots(&self) -> Option<Vec<ItemStack>> {
             Some(if self.id == 0 { Inventory::fake().inventory_menu.slots() } else { self.client.menu().ok()?.slots() })
         }
-        /// A shortcut for [`Self::click`] with `PickupClick::Left`.
+        
         pub fn left_click(&self, slot: impl Into<usize>) {
             self.click(PickupClick::Left { slot: Some(slot.into() as u16) });
         }
-        /// A shortcut for [`Self::click`] with `QuickMoveClick::Left`.
+        
         pub fn shift_click(&self, slot: impl Into<usize>) {
             self.click(QuickMoveClick::Left { slot: slot.into() as u16 });
         }
-        /// A shortcut for [`Self::click`] with `PickupClick::Right`.
+        
         pub fn right_click(&self, slot: impl Into<usize>) {
             self.click(PickupClick::Right { slot: Some(slot.into() as u16) });
         }
-        /// Simulate a click in the container and send the packet to perform the action.
+        
         pub fn click(&self, operation: impl Into<ClickOperation>) {
             println!("[fake] container {} click {:?}", self.id, operation.into());
         }
@@ -396,9 +396,9 @@ pub mod container {
     }
 }
 
-/// Real: `azalea::entity` is `azalea_entity` (`EntityKindComponent(pub EntityKind)` derefs to the kind).
+
 pub mod entity {
-    /// Real: `azalea_entity::HumanoidArm`.
+    
     #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
     pub enum HumanoidArm {
         Left = 0,
@@ -406,7 +406,7 @@ pub mod entity {
         Right = 1,
     }
 
-    /// Real: `azalea_entity::inventory`.
+    
     pub mod inventory {
         use crate::inventory::{ItemStack, Menu};
         #[derive(Clone, Debug)]
@@ -430,13 +430,13 @@ pub mod entity {
     pub struct EntityKindComponent(pub EntityKind);
 }
 
-/// Real: `azalea::protocol` is `azalea_protocol`.
+
 pub mod protocol {
     pub mod common {
         pub mod client_information {
             use crate::entity::HumanoidArm;
 
-            /// Same fields as the real `ClientInformation` (a Component there; the fake needs no ECS).
+            
             #[derive(Clone, Debug, Eq, PartialEq)]
             pub struct ClientInformation {
                 pub language: String,
@@ -503,8 +503,8 @@ pub mod protocol {
         pub mod game {
             use crate::{FormattedText, MinecraftEntityId};
 
-            /// Real: `azalea_protocol::packets::game::ClientboundPlayerCombatKill`, which the protocol crate's
-            /// `declare_state_packets!` macro re-exports (hence the generator's PATH_OVERRIDES entry).
+            
+            
             #[derive(Clone, Debug)]
             pub struct ClientboundPlayerCombatKill {
                 pub player_id: MinecraftEntityId,
@@ -562,15 +562,15 @@ impl fmt::Display for ConnectionError {
 pub struct GameProfile {
     pub uuid: Uuid,
     pub name: String,
-    /// Real: `Arc<GameProfileProperties>` whose `map` is an `IndexMap`, which the generator can't map, so
-    /// (as with the real azalea) `Client::profile` is skipped and hand-written in extra_state.rs.
+    
+    
     pub properties: Arc<GameProfileProperties>,
 }
 #[derive(Clone, Debug, Default)]
 pub struct GameProfileProperties {
     pub map: indexmap_like::IndexMap<String, String>,
 }
-/// Stand-in with the same generic shape as `indexmap::IndexMap<K, V>`.
+
 pub mod indexmap_like {
     #[derive(Clone, Debug, Default)]
     pub struct IndexMap<K, V>(pub Vec<(K, V)>);
@@ -621,7 +621,7 @@ pub struct Experience {
 #[derive(Clone)]
 #[non_exhaustive]
 pub enum Event {
-    /// Right after the client is created.
+    
     Init,
     Login,
     Chat(ChatPacket),
@@ -633,7 +633,7 @@ pub enum Event {
     Death(Option<Arc<protocol::packets::game::ClientboundPlayerCombatKill>>),
 }
 
-/// Real: `azalea_entity::LookDirection` (fields private, read through `y_rot()` / `x_rot()`).
+
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct LookDirection {
     y_rot: f32,
@@ -651,7 +651,7 @@ impl LookDirection {
     }
 }
 
-/// Real: `azalea_entity::Physics` (plain pub fields, `on_ground()` is a method).
+
 #[derive(Clone, Debug, Default)]
 pub struct Physics {
     pub velocity: Vec3,
@@ -668,7 +668,7 @@ impl Physics {
     }
 }
 
-/// Real: `azalea_entity::attributes::AttributeInstance` (`base` is pub, `calculate()` applies modifiers).
+
 #[derive(Clone, Debug)]
 pub struct AttributeInstance {
     pub base: f64,
@@ -682,7 +682,7 @@ impl AttributeInstance {
         self.base + self.bonus
     }
 }
-/// Real: `azalea_entity::Attributes`, one pub `AttributeInstance` field per attribute.
+
 #[derive(Clone, Debug)]
 pub struct Attributes {
     pub movement_speed: AttributeInstance,
@@ -710,7 +710,7 @@ fn fake_attributes() -> Attributes {
     }
 }
 
-/// Real: `azalea::Account` (a cloneable handle that derefs to `dyn AccountTrait`).
+
 pub trait AccountTrait: Send + Sync {
     fn username(&self) -> &str;
     fn uuid(&self) -> Uuid;
@@ -742,11 +742,11 @@ impl Client {
     pub fn fake() -> Self {
         Self { entity: Entity(7) }
     }
-    /// Send a message in chat.
+    
     pub fn chat(&self, content: impl Into<String>) {
         println!("[fake] chat: {}", content.into());
     }
-    /// Send a raw chat packet.
+    
     pub fn write_chat_packet(&self, message: &str) {
         println!("[fake] raw chat: {message}");
     }
@@ -766,44 +766,44 @@ impl Client {
         println!("[fake] lookup {uuid}");
         Some(Entity(42))
     }
-    /// Get an `EntityRef` for the client's own entity.
+    
     pub fn entity(&self) -> EntityRef {
         EntityRef::new(self.clone(), self.entity)
     }
-    /// Get an `EntityRef` for an entity with the given UUID, if it's in render distance.
+    
     pub fn entity_by_uuid(&self, uuid: Uuid) -> Option<EntityRef> {
         println!("[fake] entity_by_uuid {uuid}");
         if uuid.0 == "none" { None } else { Some(EntityRef::new(self.clone(), Entity(42))) }
     }
-    /// Create an `EntityRef` for the given ECS entity.
+    
     pub fn entity_ref_for(&self, entity: Entity) -> EntityRef {
         EntityRef::new(self.clone(), entity)
     }
-    /// Get an `Entity` in the world by its `MinecraftEntityId`.
+    
     pub fn entity_id_by_minecraft_id(&self, id: MinecraftEntityId) -> AzaleaResult<Option<Entity>> {
         Ok(if id.0 == 12 { Some(Entity(42)) } else { None })
     }
-    /// Get an `EntityRef` in the world by its `MinecraftEntityId`.
+    
     pub fn entity_by_minecraft_id(&self, id: MinecraftEntityId) -> AzaleaResult<Option<EntityRef>> {
         Ok(self.entity_id_by_minecraft_id(id)?.map(|e| EntityRef::new(self.clone(), e)))
     }
-    /// Right-click an entity.
+    
     pub fn entity_interact(&self, entity: Entity) {
         println!("[fake] entity_interact {entity:?}");
     }
-    /// Returns the direction the client is looking.
+    
     pub fn direction(&self) -> AzaleaResult<LookDirection> {
         Ok(LookDirection::new(90.0, -15.5))
     }
-    /// Returns the `GameProfile` for our client.
+    
     pub fn profile(&self) -> AzaleaResult<GameProfile> {
         Ok(GameProfile { uuid: Uuid("0000-luau".into()), name: "LuauBot".into(), properties: Default::default() })
     }
-    /// Returns the `Account` for our client (infallible, like the real one).
+    
     pub fn account(&self) -> Account {
         Account(Arc::new(OfflineAccount))
     }
-    /// Get a map of player UUIDs to their information in the tab list.
+    
     pub fn tab_list(&self) -> AzaleaResult<std::collections::HashMap<Uuid, PlayerInfo>> {
         let mut m = std::collections::HashMap::new();
         for (uuid, name, latency) in [("0000-zed", "Zed", 40), ("0000-luau", "LuauBot", 5)] {
@@ -817,8 +817,8 @@ impl Client {
         }
         Ok(m)
     }
-    /// Returns the current `HitResult`: the block or entity in the client's crosshair.
-    /// The fake alternates: block first, entity from the second call on.
+    
+    
     pub fn hit_result(&self) -> AzaleaResult<crate::core::hit_result::HitResult> {
         use crate::core::hit_result::*;
         use std::sync::atomic::{AtomicUsize, Ordering};
@@ -836,12 +836,12 @@ impl Client {
             HitResult::Entity(EntityHitResult { location: Vec3::new(3.0, 64.0, 3.0), entity: Entity(42) })
         })
     }
-    /// Get a component from this client. Real: `component<T: Component>` returning a `MappedRwLockReadGuard<T>`
-    /// (derefs to `T`); the fake only knows `Inventory` and returns a clone.
+    
+    
     pub fn component<T: FakeComponent>(&self) -> Result<T, MissingComponentError> {
         Ok(T::fake())
     }
-    /// Return the menu that is currently open, or the player's inventory if no menu is open.
+    
     pub fn menu(&self) -> AzaleaResult<inventory::Menu> {
         use inventory::{ItemStack, Menu};
         Ok(Menu::Generic9x3 {
@@ -849,8 +849,8 @@ impl Client {
             player: vec![ItemStack::new("stick", 2)],
         })
     }
-    /// Get the item in the bot's hotbar that is currently being held in its main hand.
-    /// The fake holds a stack on the first call and nothing afterwards.
+    
+    
     pub fn get_held_item(&self) -> AzaleaResult<inventory::ItemStack> {
         use std::sync::atomic::{AtomicUsize, Ordering};
         static CALLS: AtomicUsize = AtomicUsize::new(0);
@@ -860,12 +860,12 @@ impl Client {
             inventory::ItemStack::Empty
         })
     }
-    /// Open a container in the world, like a chest. Times out after 5 seconds (100 ticks).
+    
     pub async fn open_container_at(&self, pos: BlockPos) -> AzaleaResult<Option<container::ContainerHandle>> {
         self.open_container_at_with_timeout_ticks(pos, Some(20 * 5)).await
     }
-    /// Open a container in the world, or time out after a specified amount of ticks. The fake errors below y=0
-    /// (real: the world read fails).
+    
+    
     pub async fn open_container_at_with_timeout_ticks(
         &self,
         pos: BlockPos,
@@ -876,8 +876,8 @@ impl Client {
         }
         self.wait_for_container_open(timeout_ticks).await
     }
-    /// Wait until a container is open, up to the specified number of ticks. `None` on timeout. The fake opens one
-    /// straight away, except that `Some(0)` times out.
+    
+    
     pub async fn wait_for_container_open(
         &self,
         timeout_ticks: Option<usize>,
@@ -888,32 +888,32 @@ impl Client {
         tokio::time::sleep(Duration::from_millis(5)).await;
         Ok(Some(container::ContainerHandle::new(1, self.clone())))
     }
-    /// Returns a `ContainerHandleRef` to the client's open container, or their inventory. The fake has no open
-    /// container, so this is the inventory. Dropping it sends nothing (unlike `ContainerHandle`).
+    
+    
     pub fn get_inventory(&self) -> AzaleaResult<container::ContainerHandleRef> {
         Ok(container::ContainerHandleRef::new(0, self.clone()))
     }
-    /// Change the client information; the real one also sends a packet when logged in. The fake prints it.
+    
     pub fn set_client_information(&self, client_information: ClientInformation) -> AzaleaResult<()> {
         println!("[fake] set_client_information {client_information:?}");
         Ok(())
     }
-    /// Open the player's inventory. Returns `None` if another container is open (the fake never has one).
+    
     pub fn open_inventory(&self) -> AzaleaResult<Option<container::ContainerHandle>> {
         Ok(Some(container::ContainerHandle::new(0, self.clone())))
     }
-    /// Returns every player entity in render distance.
+    
     pub fn nearby_players(&self) -> AzaleaResult<Box<[EntityRef]>> {
         Ok(vec![EntityRef::new(self.clone(), Entity(1)), EntityRef::new(self.clone(), Entity(2))].into_boxed_slice())
     }
-    /// Returns an array of `EntityRef` for all known entities that match the given filter, sorted by nearest first.
-    /// (Real: generic over `F: QueryFilter`; the fake has the same shape.)
+    
+    
     pub fn nearest_entities<F>(&self) -> AzaleaResult<Box<[EntityRef]>> {
         self.nearest_entities_by::<(), F>(|_| true)
     }
-    /// Returns every entity that matches the predicate, nearest first. Real: `Q: QueryData, F: QueryFilter`,
-    /// `predicate: impl EntityPredicate<Q, F>` (any `Fn(ROQueryItem<Q>) -> bool`). The fake world holds the
-    /// bot (id 7), two players (1, 2), a zombie (3) and a cow (4); `Q` is `()` or `&EntityKindComponent`.
+    
+    
+    
     pub fn nearest_entities_by<Q: FakeQuery, F>(
         &self,
         predicate: impl Fn(Q::Item<'_>) -> bool,
@@ -926,7 +926,7 @@ impl Client {
             .map(|(id, _)| EntityRef::new(self.clone(), Entity(id)))
             .collect())
     }
-    // ---- generator tests only (no real counterpart): class types as params and in lists
+    
     pub fn test_all_entities(&self) -> Vec<EntityRef> {
         vec![self.entity(), EntityRef::new(self.clone(), Entity(3))]
     }
@@ -956,12 +956,12 @@ impl Client {
         println!("[fake] mine_with_auto_tool {block_pos:?}");
         Ok(())
     }
-    /// Get an `RwLock` with a reference to our (potentially shared) Minecraft world.
+    
     pub fn world(&self) -> AzaleaResult<Arc<RwLock<world::World>>> {
         Ok(Arc::new(RwLock::new(world::World::new())))
     }
-    /// The fake hotbar: slot 1 shovel, slot 2 pickaxe, slot 3 axe, everything else bare hand. Like the real one it
-    /// answers `index: 0, percentage_per_tick: 0` for fluids and for blocks nothing can mine (bedrock).
+    
+    
     pub fn best_tool_in_hotbar_for_block(&self, block: block::BlockState) -> AzaleaResult<auto_tool::BestToolResult> {
         use registry::builtin::BlockKind::{self, *};
         let kind: BlockKind = block.into();
@@ -976,7 +976,7 @@ impl Client {
     }
 }
 
-/// Stand-in for bevy's `Component` bound on `Client::component`.
+
 pub trait FakeComponent {
     fn fake() -> Self;
 }
@@ -986,7 +986,7 @@ impl FakeComponent for entity::inventory::Inventory {
     }
 }
 
-/// Stand-in for bevy's `QueryData` in the fake: how to turn a world row into the predicate's argument.
+
 pub trait FakeQuery {
     type Item<'a>;
     fn item(kind: &registry::builtin::EntityKind) -> Self::Item<'_>;
@@ -998,7 +998,7 @@ impl FakeQuery for () {
 impl FakeQuery for &entity::EntityKindComponent {
     type Item<'a> = &'a entity::EntityKindComponent;
     fn item(kind: &registry::builtin::EntityKind) -> &entity::EntityKindComponent {
-        // The fake world only has three kinds, so hand out static components.
+        
         use registry::builtin::EntityKind::*;
         static PLAYER: entity::EntityKindComponent = entity::EntityKindComponent(Player);
         static ZOMBIE: entity::EntityKindComponent = entity::EntityKindComponent(Zombie);
@@ -1011,7 +1011,7 @@ impl FakeQuery for &entity::EntityKindComponent {
     }
 }
 
-/// A reference to an entity in a world (real: `azalea::entity_ref::EntityRef`, re-exported at the root).
+
 #[derive(Clone)]
 pub struct EntityRef {
     client: Client,
@@ -1022,14 +1022,14 @@ impl EntityRef {
     pub fn new(client: Client, entity: Entity) -> Self {
         Self { client, entity }
     }
-    /// Returns the ECS identifier for the entity.
+    
     pub fn id(&self) -> Entity {
         self.entity
     }
 }
 
 impl EntityRef {
-    /// Attack this entity from the client that created this `EntityRef`.
+    
     pub fn attack(&self) {
         println!("[fake] entity attack {:?} (client {:?})", self.entity, self.client.entity);
     }
@@ -1058,41 +1058,41 @@ macro_rules! impl_entity_functions {
 
 impl_entity_functions! {
     Client:
-    /// Get the client's position in the world.
+    
     EntityRef:
-    /// Get the entity's position in the world.
+    
     pub fn position(&self) -> AzaleaResult<Vec3> {
         Ok(Vec3::new(1.0, 64.0, 2.0))
     }
 
     Client:
-    /// Get the Minecraft ID of this client.
+    
     EntityRef:
-    /// Get the Minecraft ID of this entity.
+    
     pub fn minecraft_id(&self) -> AzaleaResult<MinecraftEntityId> {
         Ok(MinecraftEntityId(7))
     }
 
     Client:
-    /// Returns the attribute values of our player.
+    
     EntityRef:
-    /// Returns the attribute values of the entity.
+    
     pub fn attributes(&self) -> AzaleaResult<Attributes> {
         Ok(fake_attributes())
     }
 
     Client:
-    /// Returns the complete `Physics` data for this client.
+    
     EntityRef:
-    /// Returns the complete `Physics` data for this entity.
+    
     pub fn physics(&self) -> AzaleaResult<Physics> {
         Ok(Physics { velocity: Vec3::new(0.0, -0.08, 0.0), on_ground: true, fall_distance: 1.5, ..Default::default() })
     }
 
     Client:
-    /// Get the health of this client.
+    
     EntityRef:
-    /// Get the health of this entity.
+    
     pub fn health(&self) -> AzaleaResult<f32> {
         Ok(20.0)
     }
@@ -1110,7 +1110,7 @@ pub mod pathfinder {
         use crate::BlockPos;
 
         pub struct BlockPosGoal(pub BlockPos);
-        /// Real: has a private `max_check_distance`, so the generator skips it (`bot:goto_reach` is hand-written).
+        
         pub struct ReachBlockPosGoal {
             pub pos: BlockPos,
             pub distance: f64,

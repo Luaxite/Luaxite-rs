@@ -60,7 +60,7 @@ class _Metadata:
 
     def __init__(self, cargo: str):
         self.cargo = cargo
-        self.packages: dict[str, dict] = {}          # manifest realpath -> package (+ "_ws": workspace_root)
+        self.packages: dict[str, dict] = {}
         self.done: set[str] = set()
 
     def load(self, manifest: str) -> None:
@@ -101,7 +101,7 @@ def resolve(root, cargo: str | None = None) -> list[dict]:
     """Crate set for `root`, dependencies first. Raises CrateError."""
     root = Path(root)
     md = _Metadata(cargo or os.environ.get("BINDGEN_CARGO") or "cargo")
-    seen: dict[str, dict] = {}                       # manifest realpath -> package
+    seen: dict[str, dict] = {}
     stack = list(reversed(roots(root)))
     while stack:
         d = stack.pop()

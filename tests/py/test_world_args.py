@@ -13,7 +13,7 @@ class WorldArgs(unittest.TestCase):
     def test_height_and_chunk_take_floored_numbers(self):
         self.assertRegex(self.src, r"fn is_chunk_loaded\(&self, chunk_x: f64, chunk_z: f64\)")
         self.assertRegex(self.src, r"fn height\(&self, x: f64, z: f64\)")
-        self.assertEqual(len(re.findall(r"floor_coord\(", self.src)), 5)      # definition + 4 uses
+        self.assertEqual(len(re.findall(r"floor_coord\(", self.src)), 5)
         m = re.search(r"fn floor_coord\(.*?\n\}\n", self.src, re.S)
         self.assertTrue(m)
         for needle in ("n.floor()", "is_nan()", "i32::MIN", "i32::MAX"):

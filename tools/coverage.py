@@ -20,10 +20,10 @@ import tomllib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-MAX_SLICE = 20  # PROMPT.md: slices 1..MAX_SLICE; a `todo` is owned by 2..MAX_SLICE (slice 1 is the ledger itself)
+MAX_SLICE = 20
 CLASS_LUAU = {"Client": "Bot", "EntityRef": "Entity"}
 SECTIONS = ("Client", "EntityRef", "Goal", "Event", "extra")
-REPORT_SCHEMA = 1  # GEN_REPORT.json `schema` (tools/luaxite_gen.py REPORT_SCHEMA)
+REPORT_SCHEMA = 1
 
 
 class ReportError(Exception):
@@ -191,10 +191,10 @@ def selftest():
     bad(good.replace('"todo s5 bot:component(name)"', '"todo s1 x"'), "s2..")
     bad(good.replace('"no raw ECS ids are internal"', '"no short"'), "at least 10")
     bad(good.replace('"no raw ECS ids are internal"', '"maybe later"'), "must start with")
-    # self-less library tables (`goal`, `azalea`) declare functions as function-typed properties; plain fields are not functions
+
     got = parse_dluau("declare extern type GoalLib with\n    block: (pos: number) -> number\n    function describe(self): string\n    count: number\nend\n")
     assert got == {"GoalLib": {"block", "describe"}}, got
-    # a text report or another schema is refused, not parsed
+
     with tempfile.TemporaryDirectory() as d:
         (Path(d) / "GEN_REPORT.md").write_text("## Skipped methods\n")
         (Path(d) / "old.json").write_text(json.dumps({"schema": 0}))

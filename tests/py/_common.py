@@ -14,7 +14,7 @@ FAKE = ROOT / "harness" / "fake"
 FAKE_RDJ = FAKE / "rustdoc"
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(TOOLS))
-os.environ.pop("AZL_RDJ_FORMAT_RANGE", None)  # tests assert the default accepted range
+os.environ.pop("AZL_RDJ_FORMAT_RANGE", None)
 
 
 def run(args, **kw):

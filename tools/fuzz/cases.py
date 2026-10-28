@@ -6,13 +6,13 @@ def case(name, items="", variants=()):
 U = "unimplemented!()"
 def fn(sig, body=U): return f"    {sig} {{ {body} }}"
 
-# ---- A. recursive / cyclic types
+
 case("rec_self_struct", "#[derive(Clone)] pub struct Node { pub val: i32, pub next: Option<Box<Node>> }\n" + M(fn("pub fn node(&self) -> Node")))
 case("rec_self_vec", "#[derive(Clone)] pub struct Tree { pub kids: Vec<Tree> }\n" + M(fn("pub fn tree(&self) -> Tree")))
 case("rec_mutual", "#[derive(Clone)] pub struct Ping { pub p: Option<Arc<Pong>> }\n#[derive(Clone)] pub struct Pong { pub q: Vec<Ping> }\n" + M(fn("pub fn ping(&self) -> Ping")))
 case("rec_event_payload", "#[derive(Clone)] pub struct Node { pub next: Option<Box<Node>> }", ["Rec(Node)"])
 case("rec_param", "#[derive(Clone)] pub struct Node { pub next: Option<Box<Node>> }\n" + M(fn("pub fn take(&self, n: Node)")))
-# ---- B. names
+
 case("kw_end_and_end_", M(fn("pub fn end(&self)"), fn("pub fn end_(&self)")))
 case("kw_raw_ident_method", M(fn("pub fn r#match(&self) -> i32", "0"), fn("pub fn r#fn(&self)"), fn("pub fn r#async(&self)")))
 case("kw_luau_method_names", M(*[fn(f"pub fn {k}(&self)") for k in "and break do else elseif end false for function if in local nil not or repeat return then true until while continue export type".split()]))
@@ -32,7 +32,7 @@ case("event_snake_collide2", "", ["Addplayer(u32)"])
 case("event_kw_names", "", ["End", "Function(u32)", "r#Type", "Nil"])
 case("event_unit_only_dup_of_builtin", "", ["Chat2(ChatPacket)", "Tick2"])
 case("event_empty_name_digit", "", ["V2(u32)", "V2D(u32)", "A1B2(u32)", "X__Y(u32)", "_Lead(u32)"])
-# ---- C. signature shapes
+
 SIGS = {
  "self_value": "pub fn f(self)", "self_mut_value": "pub fn f(mut self)", "self_arc": "pub fn f(self: Arc<Self>)",
  "self_typed_ref": "pub fn f(self: &Self)", "self_mutref": "pub fn f(&mut self)", "self_lifetime": "pub fn f<'a>(&'a self)",
@@ -78,13 +78,13 @@ SIGS = {
 for k, sig in SIGS.items():
     sig = sig.replace("pub fn f", "pub fn mm", 1) if "pub fn f" in sig else sig
     case("sig_" + k, M(fn(sig, "unimplemented!()")))
-# deep nesting
+
 case("deep_option_400", M(fn("pub fn deep(&self) -> " + "Option<" * 400 + "i32" + ">" * 400)))
 case("deep_tuple_400", M(fn("pub fn deep(&self) -> " + "(" * 400 + "i32,)" * 400)))
 case("deep_ref_400", M(fn("pub fn deep(&self, x: " + "&" * 400 + "i32)")))
 case("deep_array_400", M(fn("pub fn deep(&self) -> " + "[" * 400 + "u8; 1]" + "; 1]" * 399)))
 case("deep_mod_400", "".join(f"pub mod m{i} {{ " for i in range(300)) + "pub struct Deep { pub x: i32 }" + " }" * 300 + "\n" + M(fn("pub fn deep(&self) -> m0::m1::Deep")))
-# ---- D. impl headers
+
 case("impl_lt", M(fn("pub fn hdr(&self)"), hdr="impl<'a> Client"))
 case("impl_where", M(fn("pub fn hdr(&self)"), hdr="impl Client where Client: Sized"))
 case("impl_path", M(fn("pub fn hdr(&self)"), hdr="impl crate::Client"))
@@ -106,7 +106,7 @@ case("impl_unsafe_trait", "pub unsafe trait U {} unsafe impl U for Client {}")
 case("impl_const_trait_bound", "impl<const N: usize> Client { }")
 case("impl_empty", "impl Client {}")
 case("impl_attr_cfg_on_method", M("    #[cfg(feature = \"nope\")] pub fn cfg_feat(&self) {}", "    #[cfg(not(feature = \"nope\"))] pub fn cfg_not(&self) {}", "    #[cfg(test)] pub fn cfg_test(&self) {}", "    #[cfg_attr(feature=\"x\", doc(hidden))] pub fn cfg_attr_m(&self) {}", "    #[doc(hidden)] pub fn hidden(&self) {}", "    #[deprecated] pub fn depr(&self) {}", "    #[must_use] #[inline(always)] pub fn attrs(&self) {}"))
-# ---- E. macros
+
 case("macro_client_impl", "macro_rules! m { ($($n:ident => $t:ty),* $(,)?) => { impl Client { $(pub fn $n(&self) -> $t { unimplemented!() })* } } }\nm!(a_one => i32, a_two => Vec<u8>,);")
 case("macro_brace", "macro_rules! m { ($($n:ident),*) => { impl Client { $(pub fn $n(&self) {})* } } }\nm! { b_one, b_two }")
 case("macro_bracket", "macro_rules! m { ($($n:ident),*) => { impl Client { $(pub fn $n(&self) {})* } } }\nm![c_one, c_two];")
@@ -118,7 +118,7 @@ case("macro_inside_mod", "pub mod mm { macro_rules! mi { ($n:ident) => { impl su
 case("macro_with_doc", "macro_rules! m { ($(#[$a:meta])* $n:ident) => { impl Client { $(#[$a])* pub fn $n(&self) {} } } }\nm!(#[doc = \"hi\"] with_doc);")
 case("macro_impl_entity_dup", "impl_entity_functions! { }")
 case("macro_impl_entity_odd", "impl_entity_functions! { weird_one weird_two }")
-# ---- F. docs
+
 DOCS = {
  "close_bracket": "/// text ]] and --[[ and ]=] ", "star_slash": "/// ends */ here /* and nests", "quotes": "/// \"double\" 'single' `tick` \\ backslash \\n \\\" ",
  "crlf": "/// crlf\r\n    /// second", "unicode": "/// héllo 名前 🚀 \u202e rtl \u0000nul", "tab": "///\tTAB\there", "empty_doc_lines": "///\n/// after blank",
@@ -130,7 +130,7 @@ for k, d in DOCS.items():
     case("doc_" + k, M(f"    {d}\n    pub fn documented(&self) {{}}"))
 case("doc_on_event", "", ["/// docs with ]] and */ and {}\n    Documented(u32)"])
 case("doc_on_struct_field_hidden", "#[derive(Clone)] pub struct Rec { /// doc\n pub a: i32, #[doc(hidden)] pub b: i32 }\n" + M(fn("pub fn rec(&self) -> Rec")))
-# ---- G. type shapes
+
 TYPES = {
  "kw_fields": "#[derive(Clone)] pub struct T { pub r#type: i32, pub end: i32, pub local: String, pub nil: bool, pub function: f64, pub r#fn: u8 }",
  "unicode_fields": "#[derive(Clone)] pub struct T { pub héllo: i32, pub 名前: String }",
@@ -170,7 +170,7 @@ for k, d in TYPES.items():
     case("type_" + k + "_arc_ret", d + "\n" + M(fn(f"pub fn t3(&self) -> Arc<{nm}>")))
     case("type_" + k + "_arc_event", d, [f"EvA(Arc<{nm}>)"])
     case("type_" + k + "_optarc_event", d, [f"EvO(Option<Arc<{nm}>>)"])
-# dup names across modules
+
 case("dup_type_two_mods", "pub mod a { #[derive(Clone)] pub struct Dup { pub x: i32 } }\npub mod b { #[derive(Clone)] pub struct Dup { pub y: String } }\n" + M(fn("pub fn da(&self) -> a::Dup"), fn("pub fn db(&self) -> b::Dup")))
 case("dup_type_pub_and_private", "pub mod a { #[derive(Clone)] pub struct Dup { pub x: i32 } }\nmod b { #[derive(Clone)] pub struct Dup { pub y: String } }\n" + M(fn("pub fn da(&self) -> a::Dup")))
 case("dup_type_cfg_branches", "#[cfg(feature=\"a\")] #[derive(Clone)] pub struct Dup { pub x: i32 }\n#[cfg(not(feature=\"a\"))] #[derive(Clone)] pub struct Dup { pub x: i64 }\n" + M(fn("pub fn dd(&self) -> Dup")))

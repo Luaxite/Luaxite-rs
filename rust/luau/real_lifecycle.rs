@@ -66,7 +66,7 @@ async fn account_of(value: Value) -> mlua::Result<Account> {
     }
 }
 
-/// Running handler tasks of one bot above which the pump warns once. Events are never dropped: the queue stays unbounded.
+
 const BACKLOG_WARN: usize = 10_000;
 
 fn start_event_pump(
@@ -78,7 +78,7 @@ fn start_event_pump(
 ) {
     real_events::start_update_pump(client, lua.clone(), handlers.clone());
     live.enter();
-    // spawn_local: handlers call task.defer / process.create / net.serve, which need main.rs's LocalSet.
+    
     tokio::task::spawn_local(async move {
         let mut guard = PumpGuard {
             live,
@@ -92,8 +92,8 @@ fn start_event_pump(
                 continue;
             }
             let closing = matches!(event, Event::Disconnect(_) | Event::ConnectionFailed(_));
-            // One task per event: a handler that parks in `bot:wait_for(..)` or walks (`goto_*`) must not hold up the events
-            // that wake it, or `disconnect`. `InFlight` keeps `Live` busy until the task ends, so the process outlives it.
+            
+            
             let in_flight = InFlight::new(guard.live.clone(), backlog.clone());
             if !warned && backlog.load(Ordering::Relaxed) > BACKLOG_WARN {
                 warned = true;
@@ -119,7 +119,7 @@ fn start_event_pump(
                     eprintln!("[luau] {e}");
                 }
                 if closing {
-                    // after the event's own waiters got it: the rest can never be woken
+                    
                     task_handlers.close_waiters();
                 }
             });
@@ -127,11 +127,11 @@ fn start_event_pump(
                 guard.leave();
             }
         }
-        // `guard` drops here: waiters closed, `live.leave()` if it has not run yet.
+        
     });
 }
 
-/// Keeps `Live` busy while one event's handlers run (also if they panic: `Drop` runs when the task is dropped).
+
 struct InFlight(Arc<Live>, Arc<AtomicUsize>);
 
 impl InFlight {
@@ -149,8 +149,8 @@ impl Drop for InFlight {
     }
 }
 
-/// Ends a bot's life in `Live` however its event pump ends. A panic in the pump drops its future, so `Drop` still runs
-/// and `wait_idle` cannot hang on a bot that is gone.
+
+
 struct PumpGuard {
     live: Arc<Live>,
     handlers: Arc<Handlers>,
@@ -181,8 +181,8 @@ pub fn install(lua: &Lua) -> mlua::Result<Arc<Live>> {
     lua.set_app_data(live.clone());
     let t = lua.create_table()?;
 
-    // luau[AzaleaLib]: --- Joins a server with a new bot and returns it once it is created (yields; the login itself continues in the background, wait for `init`/`login` events as usual). `account` is a name (offline), `{ name }` or `{ microsoft = cache key }`; `address` is "host[:port]"; `proxy` is an optional SOCKS5 "ip:port" (no login). The returned bot has its own `on`/`wait_for` handlers.
-    // luau[AzaleaLib]: join: (opts: { account: string | { name: string? , microsoft: string? }, address: string, proxy: string? }) -> Bot
+    
+    
     t.set(
         "join",
         lua.create_async_function(|lua, opts: Table| async move {
@@ -213,8 +213,8 @@ pub fn install(lua: &Lua) -> mlua::Result<Arc<Live>> {
         })?,
     )?;
 
-    // luau[AzaleaLib]: --- Yields until every bot made by `join` / `swarm:add` has disconnected and every swarm has ended (returns at once when there is none). Only needed to run code after that: the process stays up on its own while they are alive, even after the script has ended.
-    // luau[AzaleaLib]: wait: () -> ()
+    
+    
     t.set(
         "wait",
         lua.create_async_function(|lua, ()| async move {
@@ -227,8 +227,8 @@ pub fn install(lua: &Lua) -> mlua::Result<Arc<Live>> {
         })?,
     )?;
 
-    // luau[AzaleaLib]: --- Starts an azalea Swarm that joins `address` and returns it once it is running (yields). Add bots with `swarm:add(account)`; `swarm:exit()` ends the whole swarm.
-    // luau[AzaleaLib]: swarm: (opts: { address: string }) -> Swarm
+    
+    
     t.set(
         "swarm",
         lua.create_async_function(|lua, opts: Table| async move {
@@ -249,7 +249,7 @@ pub fn install(lua: &Lua) -> mlua::Result<Arc<Live>> {
             live.enter();
             let swarm_live = live.clone();
             tokio::task::spawn_local(async move {
-                // a swarm that fails to start (bad address, ...) used to end silently: the caller only saw "ended before it started"
+                
                 let exit = builder.start(address.as_str()).await;
                 if exit.is_error() {
                     eprintln!("[luau] swarm ended with an error: {exit:?}");
@@ -264,12 +264,12 @@ pub fn install(lua: &Lua) -> mlua::Result<Arc<Live>> {
     )?;
 
     let process = lua.create_table()?;
-    // luau[ProcessLib]: --- Ends the process at once with exit code `code` (default 0), whatever bots / swarms are still running.
-    // luau[ProcessLib]: exit: (code: number?) -> ()
+    
+    
     process.set(
         "exit",
         lua.create_function(|_, code: Option<i32>| -> mlua::Result<()> {
-            // exit skips destructors, so children from `@lune/process` would be left running (the lune module's own `exit` does the same)
+            
             super::Runtime::kill_children();
             std::process::exit(code.unwrap_or(0))
         })?,
@@ -318,8 +318,8 @@ pub struct LuaSwarm {
 
 #[mlua::userdata_impl]
 impl LuaSwarm {
-    // luau[Swarm]: --- Adds a bot to the swarm and returns it once it exists (yields). `account` is a name (offline), `{ name }` or `{ microsoft = cache key }`. The bot has its own `on`/`wait_for` handlers, like one from `azalea.join`.
-    // luau[Swarm]: function add(self, account: string | { name: string?, microsoft: string? }): Bot
+    
+    
     async fn add(&self, account: Value) -> mlua::Result<LuaClient> {
         let account = account_of(account).await?;
         let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
@@ -335,8 +335,8 @@ impl LuaSwarm {
         Ok(LuaClient { client, handlers })
     }
 
-    // luau[Swarm]: --- Ends the whole swarm (every bot in it).
-    // luau[Swarm]: function exit(self): ()
+    
+    
     fn exit(&self) -> mlua::Result<()> {
         self.swarm.exit();
         Ok(())

@@ -177,8 +177,8 @@ impl FromLua for LClientInformation {
 
 #[mlua::userdata_impl]
 impl LuaClient {
-    // luau[Bot]: --- Yields until the bot can reach the block at `pos`: it stands next to it, or can look at it and hit it from within `distance` blocks (default 4.5). Use it to walk up to a chest before `open_container_at`, or to a block before `mine`. Raises an error if the world isn't loaded yet or `distance` isn't a positive number.
-    // luau[Bot]: function goto_reach(self, pos: BlockPos, distance: number?): ()
+    
+    
     async fn goto_reach(&self, pos: LBlockPos, distance: Option<f64>) -> mlua::Result<()> {
         let distance = distance.unwrap_or(DEFAULT_REACH);
         if !distance.is_finite() || distance <= 0.0 {
@@ -196,8 +196,8 @@ impl LuaClient {
         Ok(())
     }
 
-    // luau[Bot]: --- Change the client settings the server sees (language, view distance, chat visibility, skin parts, main hand, ...). Pass only the fields you want; every field you leave out is azalea's default (`language = "en_us"`, `view_distance = 8`, ...), not the value an earlier call set. If the bot is logged in the settings are sent right away, otherwise they are used when it logs in. Unknown fields and bad values are errors.
-    // luau[Bot]: function set_client_information(self, info: { language: string?, view_distance: number?, chat_visibility: ("full" | "system" | "hidden")?, chat_colors: boolean?, model_customization: { cape: boolean?, jacket: boolean?, left_sleeve: boolean?, right_sleeve: boolean?, left_pants: boolean?, right_pants: boolean?, hat: boolean? }?, main_hand: ("left" | "right")?, text_filtering_enabled: boolean?, allows_listing: boolean?, particle_status: ("all" | "decreased" | "minimal")? }): ()
+    
+    
     fn set_client_information(&self, info: LClientInformation) -> mlua::Result<()> {
         self.client.set_client_information(info.0).map_err(lua_err)
     }

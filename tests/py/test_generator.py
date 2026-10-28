@@ -24,7 +24,7 @@ class Base(unittest.TestCase):
         cls.client = (cls.rust / "gen_client.rs").read_text()
         cls.events = (cls.rust / "gen_events.rs").read_text()
         cls.types = (cls.rust / "gen_types.rs").read_text()
-        cls.report = (cls.luau / "GEN_REPORT.md").read_text()          # the text view: only checked for being rendered from the JSON
+        cls.report = (cls.luau / "GEN_REPORT.md").read_text()
         cls.report_json = json.loads((cls.luau / "GEN_REPORT.json").read_text())
 
 
@@ -59,7 +59,7 @@ class Outputs(Base):
         self.assertTrue(client["skipped"])
         for sk in client["skipped"]:
             self.assertEqual(sorted(sk), ["name", "origin", "reason", "sig"])
-            self.assertIn(f"fn {sk['name']}", sk["sig"])      # the name is data, not cut out of the signature by a reader
+            self.assertIn(f"fn {sk['name']}", sk["sig"])
 
     def test_matches_golden_sha1_list(self):
         gold = {}

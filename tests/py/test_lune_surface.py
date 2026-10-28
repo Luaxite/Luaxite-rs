@@ -8,29 +8,29 @@ import unittest
 
 from _common import ROOT, read
 
-# module -> names that must be registered in rust/luau/lune_<module>.rs and called from tests/e2e/lune_<module>.luau
+
 IN_TREE = {
     "task": ["spawn", "defer", "delay", "wait", "cancel"],
     "stdio": ["color", "style", "format", "write", "ewrite", "readLine", "readToEnd", "prompt"],
     "process": [
         "os", "arch", "endianness", "args", "cwd", "env", "exit", "exec", "create",
-        # child handle
+
         "kill", "status", "stdin", "stdout", "stderr", "read", "readToEnd", "write", "close", "ok", "code",
     ],
     "net": [
         "urlEncode", "urlDecode", "request", "socket", "serve", "tcp", "http", "ws", "connect", "stop",
-        # response
+
         "ok", "statusCode", "statusMessage", "headers", "body",
-        # request seen by serve
+
         "ip", "port", "method", "path", "query",
-        # socket
+
         "send", "next", "close", "closeCode",
-        # tcp stream
+
         "read", "write", "remoteIp", "remotePort", "localIp", "localPort",
     ],
 }
 
-# module -> public functions of the crates Lune ships (types.d.luau of lune-std-*), all of which scripts can call
+
 LUNE_CRATES = {
     "fs": ["readFile", "readDir", "writeFile", "writeDir", "removeFile", "removeDir", "metadata", "isFile", "isDir", "move", "copy"],
     "serde": ["encode", "decode", "compress", "decompress", "hash", "hmac"],
@@ -95,12 +95,12 @@ class Wiring(unittest.TestCase):
             name = f.stem
             text = f.read_text()
             if name.endswith("_sigint"):
-                # killed by SIGINT on purpose (never ends by itself): run.sh checks the exit code + the child and prints the PASS line
+
                 self.assertIn(f'echo "E2E PASS {name}"', read("tests/e2e/run.sh"), f.name)
                 continue
             self.assertIn(f'E2E PASS {name}"', text.replace("'", '"'), f.name)
             if name.endswith("_idle"):
-                continue  # ends by itself on purpose (checks that the program exits without process.exit)
+                continue
             self.assertIn("process.exit(0)", text, f"{f.name} must end the process (a server / child would keep it alive)")
 
     def test_no_forbidden_lune_crates_in_cargo(self):
