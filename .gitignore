@@ -5,3 +5,4 @@ __pycache__/
 /bind/azalea-src/
 harness/target/
 .env
+luaxite.zip
