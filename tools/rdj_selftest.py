@@ -24,8 +24,6 @@ sys.path.insert(0, str(ROOT / "tools"))
 sys.dont_write_bytecode = True
 import rdj
 
-
-
 os.environ.pop("AZL_RDJ_FORMAT_RANGE", None)
 from rdj_synth import Synth
 
@@ -65,7 +63,6 @@ def raises(fn, *needles):
             assert n in str(e), f"{n!r} not in error: {e}"
         return str(e)
     raise AssertionError("expected RdjError, nothing raised")
-
 
 
 
@@ -109,8 +106,6 @@ def test_index_integrity():
     assert {"core", "alloc", "std", "tokio"} <= {e["name"] for e in ext.values()}
     for i, s in c.paths.items():
         assert s["crate_id"] == 0 or s["crate_id"] in ext, (i, s)
-
-
         assert s["kind"] == "variant" or c.crate_name(s["crate_id"]) == s["path"][0], (i, s, c.crate_name(s["crate_id"]))
     assert c.crate_name(0) == "azalea" and c.crate_name(99999) is None
 
@@ -134,29 +129,24 @@ def test_root_items_match_source():
 @test
 def test_children_and_impls():
     c = fixture().crate("azalea")
-
     ev = by_name(c, "Event", "enum")
     body = FAKE_SRC.split("pub enum Event {", 1)[1].split("\n}", 1)[0]
     want = re.findall(r"^    ([A-Z]\w*)", body, re.M)
     assert [c.item(i)["name"] for i in c.children(ev)] == want, want
     assert all(c.kind(i) == "variant" for i in c.children(ev))
-
     cl = by_name(c, "Client", "struct")
     assert [c.item(i)["name"] for i in c.children(cl)] == ["entity"]
     mid = by_name(c, "MinecraftEntityId", "struct")
     assert [c.item(i)["name"] for i in c.children(mid)] == ["0"]
     assert c.children(by_name(c, "Uuid", "struct")) is not None
-
     death = [i for i in c.children(ev) if c.item(i)["name"] == "Death"][0]
     assert len(c.children(death)) == 1 and c.kind(c.children(death)[0]) == "struct_field"
     assert c.children(-1) == [] and c.impls(-1) == []
-
     imps = c.impls(cl)
     assert len(imps) > 5 and all(c.kind(i) == "impl" for i in imps)
     fns = [n for i in imps for n in c.children(i) if c.kind(n) == "function"]
     names = {c.item(n)["name"] for n in fns}
     assert {"chat", "position", "health"} <= names, sorted(names)[:20]
-
     tr = by_name(c, "PathfinderClientExt", "trait")
     assert c.kind(tr) == "trait" and len(c.children(tr)) > 0 and isinstance(c.impls(tr), list)
 
@@ -168,11 +158,9 @@ def test_item_path():
     ev = by_name(c, "Event", "enum")
     assert r.item_path("azalea", by_name(c, "Client", "struct")) == ("azalea", "Client")
     assert r.item_path(c, ev) == ("azalea", "Event")
-
     assert c.item_path(by_name(c, "BlockPos", "struct")) == ("azalea", "position", "BlockPos")
     assert c.item_path(by_name(c, "ClientboundPlayerCombatKill", "struct")) == (
         "azalea", "protocol", "packets", "game", "ClientboundPlayerCombatKill")
-
     death = [i for i in c.children(ev) if c.item(i)["name"] == "Death"][0]
     assert c.item_path(death) == ("azalea", "Event", "Death")
     assert c.item_path(c.children(by_name(c, "Client", "struct"))[0]) == ("azalea", "Client", "entity")
@@ -180,12 +168,10 @@ def test_item_path():
     assert c.item_path(c.children(tr)[0]) == ("azalea", "pathfinder", "PathfinderClientExt", c.item(c.children(tr)[0])["name"])
     chat = [n for i in c.impls(by_name(c, "Client", "struct")) for n in c.children(i) if c.item(n).get("name") == "chat"]
     assert len(chat) == 1 and c.item_path(chat[0]) == ("azalea", "Client", "chat")
-
     imp = c.impls(by_name(c, "Client", "struct"))[0]
     assert c.item_path(imp) is None and c.item_path(-1) is None
     use = [i for i in c.children(c.root) if c.kind(i) == "use"][0]
     assert c.item_path(use)[:1] == ("azalea",) and len(c.item_path(use)) == 2, c.item_path(use)
-
     arc = next(i for i, s in c.paths.items() if s["path"] == ["alloc", "sync", "Arc"])
     assert c.paths[arc]["crate_id"] != 0 and c.crate_name(c.paths[arc]["crate_id"]) == "alloc"
     assert c.item_path(arc) == ("alloc", "sync", "Arc")
@@ -199,7 +185,6 @@ def test_visibility_helpers():
     assert {"public", "default"} <= seen <= {"public", "default", "crate", "restricted"}, seen
     assert rdj.visibility({}) == "default" and rdj.visibility({"visibility": {"restricted": {}}}) == "restricted"
     assert rdj.inner_kind({}) == "" and rdj.inner_kind({"inner": "x"}) == "x" and rdj.payload({"inner": "x"}) == {}
-
 
 
 
@@ -264,14 +249,12 @@ def test_bad_input_errors():
     raises(lambda: rdj.load_dir(d), "not a rustdoc JSON file", "list")
     (d / "a.json").write_text('{"format_version": 57, "root": 0}')
     raises(lambda: rdj.load_dir(d), "missing keys", "index", "paths", "external_crates")
-
     (d / "a.json").write_text('{"junk": [1, 2, 3], "format_version":99}')
     raises(lambda: rdj.load_dir(d), "format_version 99")
     (d / "a.json").write_text('{"root": 7, "index": {}, "paths": {}, "external_crates": {}, "format_version": 57}')
     raises(lambda: rdj.load_dir(d), "root item id 7")
     (d / "a.json").write_text('{"root": 7, "index": [], "paths": {}, "external_crates": {}, "format_version": 57}')
     raises(lambda: rdj.load_dir(d), "`index` should be an object")
-
     d2 = tmpdir()
     shutil.copy(FIXTURE / "azalea.json", d2 / "azalea.json")
     shutil.copy(FIXTURE / "azalea.json", d2 / "azalea2.json")
@@ -289,7 +272,6 @@ def test_main_cli():
     with redirect_stdout(io.StringIO()), redirect_stderr(err):
         assert rdj.main([str(tmpdir())]) == 1 and rdj.main([]) == 2
     assert "error: " in err.getvalue()
-
 
 
 
@@ -334,14 +316,11 @@ def test_convert_type_unit_cases():
                     ({"qualified_path": {"name": "Item", "args": None, "self_type": {"generic": "Self"}, "trait": {"path": "", "id": 5, "args": None}}}, "Self::Item"),
                     ({"brand_new_variant": 1}, "<brand_new_variant>")):
         assert rdj.convert_type(t) == ("other", text), (t, rdj.convert_type(t))
-
     for bad in (None, 3, "x", [], {}, {"resolved_path": 5}, {"borrowed_ref": None}, {"a": 1, "b": 2}):
         assert rdj.convert_type(bad)[0] in ("other", "path", "ref", "slice", "tuple", "unit", "prim", "impl"), bad
-
     it = {"resolved_path": {"path": "Iterator", "id": 6, "args": {"angle_bracketed": {"args": [], "constraints": [
         {"name": "Item", "args": None, "binding": {"equality": {"type": P}}}]}}}}
     assert rdj.convert_type(it) == ("path", "Iterator", [("other", "Item = u32")])
-
 
 
 
@@ -374,25 +353,20 @@ def test_defs_shapes_and_edge_cases():
     assert one("Entity").tuple_style and one("Entity").fields[0][0] == "0"
     kinds = {d.kind for defs in js.values() for d in defs}
     assert {"struct", "enum", "trait"} <= kinds, kinds
-
     assert "StructuralPartialEq" not in " ".join(a for defs in js.values() for d in defs for a in d.attrs)
     assert any("#[non_exhaustive]" in d.attrs for defs in js.values() for d in defs if d.kind == "enum")
-
     c = fixture().crate("azalea")
     p = {"kind": {"plain": {"fields": [], "has_stripped_fields": True}}}
     assert rdj_index._struct_fields(c, p) == ([rdj_index.STRIPPED], False)
     f, ts = rdj_index._struct_fields(c, {"kind": {"tuple": [None, None]}})
     assert ts and f == [("0", ("other", "_"), False), ("1", ("other", "_"), False)], f
     assert rdj_index._struct_fields(c, {"kind": "unit"}) == ([], False)
-
     assert rdj.doc_summary("First line\nsecond [`Foo`](x) line\n\nSecond paragraph") == "First line second `Foo` line"
     assert rdj.doc_summary(None) == "" and rdj.doc_summary("") == ""
     assert rdj.attr_texts({"attrs": ["non_exhaustive", "automatically_derived", {"other": "#[allow(dead_code)]"}, {"other": "#[attr = Inline(Hint)]"}, 7]}) \
         == ["#[non_exhaustive]", "#[allow(dead_code)]"]
-
     assert rdj_index._fields(c, [None, 10 ** 9]) == [("0", ("other", "_"), False), ("1", ("other", "_"), False)]
     assert rdj_index._variants(c, {"variants": [10 ** 9]}) == []
-
 
 
 
@@ -417,9 +391,7 @@ def test_impls_filters():
     only_client = rdj_index.build_impls(r, classes={"Client"}, strip_prefix="fake/")
     assert {m.target for m in only_client.methods} == {"Client"} and len(only_client.methods) < len(d.methods)
     assert not rdj_index.build_impls(r, classes=set()).methods
-
     assert {m.file.split(" ")[0] for m in rdj_index.build_impls(r).methods} == {"fake/azalea/src/lib.rs"}
-
     plain = [m for m in d.methods if m.target == "Client" and not m.file.endswith("(via macro)")]
     c = r.crate("azalea")
     lines = {}
@@ -428,7 +400,6 @@ def test_impls_filters():
             lines.setdefault(it["name"], []).append(it["span"]["begin"][0])
     first = [min(lines[m.name]) for m in plain]
     assert first == sorted(first), "methods must come in source order"
-
     mk = lambda b, e, f="a.rs": {"span": {"filename": f, "begin": b, "end": e}}
     assert rdj_index.method_file(mk([5, 1], [9, 2]), mk([5, 1], [9, 2])) == "a.rs (via macro)"
     assert rdj_index.method_file(mk([5, 1], [9, 2]), mk([6, 5], [8, 6])) == "a.rs"
@@ -442,7 +413,6 @@ def test_impls_helpers():
     P = {"primitive": "u32"}
     S = {"generic": "Self"}
     ref = lambda t, m=False, lt=None: {"borrowed_ref": {"lifetime": lt, "is_mutable": m, "type": t}}
-
     assert ri.split_receiver([["self", ref(S)], ["a", P]]) == ("&self", [["a", P]])
     assert ri.split_receiver([["self", ref(S, True)]]) == ("&mut self", [])
     assert ri.split_receiver([["self", ref(S, False, "'a")]]) == ("&'a self", [])
@@ -450,9 +420,7 @@ def test_impls_helpers():
     assert ri.split_receiver([["self", {"resolved_path": {"path": "Arc", "id": 1, "args": {"angle_bracketed": {"args": [{"type": S}], "constraints": []}}}}]])[0] == "self: Arc<Self>"
     assert ri.split_receiver([["a", P]]) == (None, [["a", P]]) and ri.split_receiver([]) == (None, []) and ri.split_receiver(None) == (None, [])
     assert ri.split_receiver([["self"]])[0] is None
-
     assert [ri.param_name(n) for n in ("x", "_", "_x", "(a, b)", "&x", "", None, "r#type", "x2")] == ["x", None, "_x", None, None, None, None, None, "x2"]
-
     tb = lambda n: {"trait_bound": {"trait": {"path": n, "id": 1, "args": None}, "generic_params": [], "modifier": "none"}}
     gp = [{"name": "'a", "kind": {"lifetime": {"outlives": ["'b"]}}},
           {"name": "T", "kind": {"type": {"bounds": [tb("A"), tb("B")], "default": None, "is_synthetic": False}}},
@@ -465,7 +433,6 @@ def test_impls_helpers():
     assert ri.render_where([{"bound_predicate": {"type": {"generic": "T"}, "bounds": [tb("Send")], "generic_params": []}},
                             {"lifetime_predicate": {"lifetime": "'a", "outlives": ["'b"]}}]) == " where T: Send, 'a: 'b"
     assert ri.render_where([]) == "" and ri.render_where(None) == ""
-
     fn = {"name": "f", "visibility": "public", "inner": {"function": {
         "sig": {"inputs": [["self", ref(S)], ["x", P], ["_", P]], "output": P, "is_c_variadic": False},
         "generics": {"params": gp[1:2], "where_predicates": [{"bound_predicate": {"type": {"generic": "T"}, "bounds": [tb("Send")], "generic_params": []}}]},
@@ -478,7 +445,6 @@ def test_impls_helpers():
     assert ri.fn_sig_text(fn2, rdj.payload(fn2)).startswith("pub(crate) ")
     fn2["visibility"] = {"restricted": {"parent": 1, "path": "::crate::x"}}
     assert ri.fn_sig_text(fn2, rdj.payload(fn2)).startswith("pub(in crate::x) ")
-
 
 
 
@@ -504,11 +470,9 @@ def synth_workspace(drop=()):
     azalea_client: private `inner` re-exported by name / rename / a glob module, a glob cycle (`pub mod a { pub use super::*; }`)
     azalea_protocol: the `declare_state_packets!` shape: a packet in a private module, `pub use`d by `packets::game`."""
     az, cl, co, pr = Synth("azalea"), Synth("azalea_client"), Synth("azalea_core"), Synth("azalea_protocol")
-
     pos = co.mod("position", co.root)
     co.struct("Vec3", pos)
     co.struct("BlockPos", pos)
-
     inner = cl.mod("inner", cl.root, vis="default")
     c_client = cl.struct("Client", inner)
     c_only = cl.struct("OnlyRenamed", inner)
@@ -523,13 +487,11 @@ def synth_workspace(drop=()):
     cyc = cl.mod("a", cl.root)
     cl.use(cyc, "super", cl.root, glob=True)
     cl.use(ent, "crate::inner::Client", c_client, name="Client")
-
     packets = pr.mod("packets", pr.root)
     game = pr.mod("game", packets)
     kill_mod = pr.mod("c_player_combat_kill", game, vis="default")
     kill = pr.struct("ClientboundPlayerCombatKill", kill_mod)
     pr.use(game, "c_player_combat_kill::ClientboundPlayerCombatKill", kill)
-
     az.use(az.root, "azalea_client", az.foreign("azalea_client", kind="module"), glob=True)
     az.use(az.root, "azalea_core", az.foreign("azalea_core", kind="module"), name="core")
     az.use(az.root, "azalea_protocol", az.foreign("azalea_protocol", kind="module"), name="protocol")
@@ -565,13 +527,10 @@ def test_paths_synthetic_workspace():
     only = pa.paths_of("azalea_client", ("inner",), "OnlyRenamed")
     assert only[0] == "azalea::Renamed" and all(p.endswith("::Renamed") for p in only), only
     assert rp("Crate_Private") is None
-
     assert rp("ClientboundPlayerCombatKill") == "azalea::protocol::packets::game::ClientboundPlayerCombatKill" \
         == g.PATH_OVERRIDES["ClientboundPlayerCombatKill"]
-
     assert pa.paths_of("azalea_client", ("inner",), "Client")[0] == "azalea::Client"
     assert not any(len(p) > rdj_index.RdjPaths.MAX_DEPTH for ps in pa.public_paths().values() for p in ps)
-
     assert pa.aliases() == {"azalea_core": "core", "azalea_protocol": "protocol"}, pa.aliases()
     assert ("azalea", (), "*", "azalea_client") in pa.reexports and ("azalea", (), "azalea_client") in pa.globs
     assert pa.chain_public("azalea_protocol", ("packets", "game")) and not pa.chain_public("azalea", ("hidden",))
@@ -583,17 +542,14 @@ def test_paths_synthetic_workspace():
 @test
 def test_paths_missing_crates_and_errors():
     import rdj_index
-
     pa = rdj_index.RdjPaths(synth_workspace(drop=("azalea_core", "azalea_protocol")))
     assert pa.resolve_path("Direct") == "azalea::Direct" and pa.resolve_path("Client") == "azalea::Client"
     assert pa.resolve_path("Vec3") is None and pa.resolve_path("ClientboundPlayerCombatKill") is None
     pa.public_paths()
     assert ("azalea", "azalea_core") in pa.unresolved and ("azalea", "azalea_protocol") in pa.unresolved, pa.unresolved
     raises(lambda: rdj_index.RdjPaths(synth_workspace(drop=("azalea",))), "no rustdoc JSON for the root crate `azalea`")
-
     pa2 = rdj_index.RdjPaths(synth_workspace(), root="azalea_client")
     assert pa2.resolve_path("Client") == "azalea_client::Client" and pa2.resolve_path("Vec3") is None
-
     r = synth_workspace()
     c = r.crate("azalea")
     c.index[c.root]["inner"]["module"]["items"] += [10 ** 6]
@@ -606,7 +562,6 @@ def test_paths_missing_crates_and_errors():
 @test
 def test_unresolved_reason_names_the_real_cause():
     import rdj_index
-
     r = synth_workspace(drop=("azalea_core",))
     az = r.crate("azalea")
     pid = next(i for i, s in az.paths.items() if s.get("path") == ["azalea_protocol"])
@@ -627,7 +582,6 @@ def test_loader_warnings_printed_on_generator_path():
     import contextlib
     import io
     import rdj_index
-
     def load(rdir):
         err = io.StringIO()
         with contextlib.redirect_stderr(err):
@@ -660,7 +614,6 @@ def load_index_stderr(root, rdir):
 
 @test
 def test_stale_json_warns():
-
     root = tmpdir()
     shutil.copytree(FAKE_CRATE, root / "azalea")
     assert load_index_stderr(root, FIXTURE) == ""
@@ -669,7 +622,6 @@ def test_stale_json_warns():
     lines = load_index_stderr(root, FIXTURE).splitlines()
     assert len(lines) == 1 and lines[0].startswith("warning: azalea.json is stale"), lines
     assert "`azalea`" in lines[0] and "make_rustdoc_json.sh" in lines[0], lines
-
     d = tmpdir()
     shutil.copy(FIXTURE / "azalea.json", d / "azalea.json")
     lines = load_index_stderr(root, d).splitlines()
@@ -679,7 +631,6 @@ def test_stale_json_warns():
 @test
 def test_mixed_format_versions_warn():
     import rdj_index
-
     d = tmpdir()
     for f in WS2.joinpath("rustdoc").iterdir():
         if f.is_file():
@@ -727,7 +678,6 @@ enum Other { A }
 @test
 def test_cfg_gated_event_variant_is_not_exposed():
     import rdj_index
-
     g = generator()
 
     def events(src_edit):
@@ -757,7 +707,6 @@ def test_cfg_gated_event_variant_is_not_exposed():
 @test
 def test_cfg_gates_unreadable_source_warns():
     import rdj_index
-
     r = rdj.load_dir(FIXTURE)
     defs = rdj_index.build_defs(r)
     w = rdj_index.event_cfg_gates(r, defs, tmpdir(), "fake/")
@@ -765,10 +714,6 @@ def test_cfg_gates_unreadable_source_warns():
     assert all(name in w[0] for name in ("Tick", "Login", "Chat")), w[0]
     assert not any("#[cfg(" in a for d in defs["Event"] for v in d.variants for a in v["attrs"])
     assert rdj_index.event_cfg_gates(r, defs, ROOT / "harness" / "fake", "fake/") == []
-
-
-
-
 
 
 WS2 = ROOT / "tools" / "testdata" / "ws2"
@@ -802,21 +747,18 @@ def test_ws2_loader_resolves_siblings():
     bot = by_name(a, "Bot", "struct")
     pos, facing, marks = (a.item(i) for i in a.children(bot))
     vec3_b, dir_b, marker_b = by_name(b, "Vec3", "struct"), by_name(b, "Dir", "enum"), by_name(b, "Marker", "struct")
-
     tpos = rdj_index_field_type(pos)
     assert a.index.get(tpos["resolved_path"]["id"]) is None and a.paths[tpos["resolved_path"]["id"]]["crate_id"] != 0
     assert r.resolve("a", tpos["resolved_path"]["id"]) == ("b", vec3_b)
     assert r.resolve("a", rdj_index_field_type(facing)["resolved_path"]["id"]) == ("b", dir_b)
     arg = rdj_index_field_type(marks)["resolved_path"]["args"]["angle_bracketed"]["args"][0]["type"]
     assert r.resolve("a", arg["resolved_path"]["id"]) == ("b", marker_b)
-
     uses = {rdj.payload(a.item(i)).get("name"): rdj.payload(a.item(i)) for i in a.children(a.root) if a.kind(i) == "use"}
     assert sorted(uses) == ["North", "Vec3", "base"], sorted(uses)
     assert r.resolve("a", uses["Vec3"]["id"]) == ("b", vec3_b)
     nid = r.resolve("a", uses["North"]["id"])
     assert nid[0] == "b" and b.item(nid[1])["name"] == "North" and b.kind(nid[1]) == "variant" and b.parent(nid[1]) == dir_b
     assert r.resolve("a", uses["base"]["id"]) == ("b", b.root)
-
     assert r.resolve("a", bot) == ("a", bot) and r.resolve("b", vec3_b) == ("b", vec3_b)
     miss = []
     vec_id = rdj_index_field_type(marks)["resolved_path"]["id"]
@@ -839,7 +781,6 @@ def test_ws2_cross_crate_fields_and_variants():
     defs = rdj_index.build_defs(r)
     assert sorted(defs) == ["Bot", "Cmd", "Dir", "Marker", "Vec3"], sorted(defs)
     bot = by_name(a, "Bot", "struct")
-
     v3 = defs["Vec3"][0]
     assert v3.crate == "b" and v3.modpath == ("geom",) and v3.is_pub
     assert [(n, t, p) for n, t, p in v3.fields] == [("x", ("prim", "f64"), True), ("y", ("prim", "f64"), True), ("z", ("prim", "f64"), True)]
@@ -847,10 +788,8 @@ def test_ws2_cross_crate_fields_and_variants():
     assert dr.kind == "enum" and dr.crate == "b"
     assert [(v["name"], v["kind"], v["types"], v["doc"]) for v in dr.variants] == [
         ("North", "unit", [], ""), ("Offset", "tuple", [("prim", "i32")], ""), ("Pos", "struct", [("path", "Vec3", [])], "")], dr.variants
-
     assert [(n, t) for n, t, _ in defs["Bot"][0].fields] == [("pos", ("path", "Vec3", [])), ("facing", ("path", "Dir", [])),
                                                               ("marks", ("path", "Vec", [("path", "Marker", [])]))]
-
     pa = rdj_index.RdjPaths(r, root="a")
     assert pa.resolve_path("Vec3") == "a::Vec3"
     assert pa.paths_of("b", ("geom",), "Vec3") == ["a::Vec3", "a::base::geom::Vec3"]
@@ -869,7 +808,6 @@ def test_resolve_alias_quirk_and_name_fallbacks():
     a.paths[quirk] = {"crate_id": next(k for k, v in a.external_crates.items() if v["name"] == "b"), "path": ["a", "Facing", "North"], "kind": "variant"}
     try:
         assert r.resolve("a", quirk) == ("b", north_b)
-
         c = r.crate("b")
         dup = max(c.index) + 1
         c.index[dup] = dict(c.index[north_b], id=dup)
@@ -880,7 +818,6 @@ def test_resolve_alias_quirk_and_name_fallbacks():
         del c.index[dup], c.paths[dup]
         c._local_paths = None
         assert r.resolve("a", quirk) == ("b", north_b)
-
         vec3 = next(i for i, s in a.paths.items() if s["path"] == ["b", "geom", "Vec3"])
         saved = a.external_crates.pop(a.paths[vec3]["crate_id"])
         try:
@@ -946,8 +883,6 @@ def test_make_rustdoc_json_ws_order_and_failures():
 
 
 
-
-
 def synth_macro_crate():
     """`impl Client` x3 as rustdoc gives them: one hand-written impl with a plain fn, a `#[doc(hidden)]` fn and a fn whose
     `#[cfg(feature)]` is on (plain), and what `impl_entity_functions!` expands to (one impl per method, the macro call's
@@ -997,22 +932,17 @@ def test_macros_expanded_impls():
     import rdj_index as ri
     d = ri.build_impls(synth_macro_crate(), classes={"Client", "EntityRef"})
     by = {(m.target, m.name): m for m in d.methods}
-
     assert {("Client", "position"), ("Client", "health"), ("EntityRef", "position"), ("EntityRef", "health")} <= set(by)
     assert by[("Client", "position")].doc == "Client position." and by[("EntityRef", "position")].doc == "EntityRef position."
     assert by[("Client", "position")].file.endswith("(via macro)") and not by[("Client", "chat")].file.endswith("(via macro)")
     assert d.macro_notes == [] and ("Client", "clone") not in by and not d.client_traits
     assert [m.name for m in d.methods if m.target == "Client"][:4] == ["chat", "raw", "gated", "position"], "plain methods first, macro group last"
-
     src = (ROOT / "tools" / "rdj_index.py").read_text() + (ROOT / "tools" / "rdj.py").read_text()
     assert "ENTITY_FN" not in src and "impl_entity_functions" not in re.sub(r"#.*|\"\"\"[\s\S]*?\"\"\"", "", src)
 
 
 @test
 def test_bevy_derive_impls_count_as_derives():
-
-
-
     import rdj_index as ri
     r = synth_macro_crate()
     c = r.crates["azalea"]
@@ -1040,7 +970,6 @@ def test_macros_hidden_and_cfg_treatment():
     skip = ri.build_impls(r, classes={"Client"}, hidden="skip")
     assert "raw" not in {m.name for m in skip.methods} and skip.hidden == [("Client", "raw", "skipped")]
     assert {m.name for m in skip.methods} == {m.name for m in keep.methods} - {"raw"}
-
     assert "gated" in {m.name for m in skip.methods}
     try:
         ri.build_impls(r, hidden="maybe")
@@ -1048,13 +977,10 @@ def test_macros_hidden_and_cfg_treatment():
         assert "hidden" in str(e)
     else:
         raise AssertionError("bad hidden mode accepted")
-
     for a, want in (("doc(hidden)", True), ({"other": "#[doc( hidden )]"}, True), ({"other": "#[inline]"}, False), ("inline", False), (None, False), (3, False)):
         assert ri.is_hidden({"attrs": [a]}) is want, a
     assert ri.is_hidden({}) is False
-
     assert rdj_impls().hidden == [] and rdj_impls().macro_notes == []
-
 
 
 
@@ -1097,7 +1023,6 @@ def test_generator_cli_modes():
     assert p.returncode != 0 and "--rustdoc" in p.stderr and "Traceback" not in p.stderr
     p, _ = run("bad", "--rustdoc", str(ROOT / "tools"))
     assert p.returncode != 0 and "missing JSON" in p.stderr and "Traceback" not in p.stderr
-
 
 
 
@@ -1205,7 +1130,6 @@ def test_skipped_items_reported():
 @test
 def test_dropped_variants_reported_per_variant():
     import rdj_index
-
     class C:
         name = "azalea"
 
@@ -1218,7 +1142,6 @@ def test_dropped_variants_reported_per_variant():
     assert [p for p, _ in skips] == ["azalea::Kind::variant #7", "azalea::Kind::variant #8"], skips
     assert all("not in the JSON index" in why and "--document-hidden-items" in why for _, why in skips), skips
     assert rdj_index._variants(C(), {"variants": [7]}) == []
-
     root, rdir = weird_copy(lambda raw: raw["index"].pop("22"))
     p, rep = run_generator(root, rdir, Path(root) / "out")
     assert p.returncode == 0 and "Traceback" not in p.stderr, p.stderr
@@ -1229,7 +1152,6 @@ def test_dropped_variants_reported_per_variant():
 @test
 def test_tagged_enum_with_dropped_variant_is_reported():
     import rdj_index
-
     g = generator()
 
     def mapper(mutate):
@@ -1264,8 +1186,6 @@ def test_tagged_enum_with_dropped_variant_is_reported():
 
 @test
 def test_dropped_variant_warning_on_generator_stderr():
-
-
     import rdj_synth
     d = Path(tmpdir())
     shutil.copytree(FAKE_CRATE, d / "azalea")
@@ -1286,7 +1206,6 @@ def test_dropped_variant_warning_on_generator_stderr():
 @test
 def test_rdj_hidden_cli_flag_and_report():
     import rdj_index
-
     def hide(raw):
         item_named(raw, "nested", "function")["attrs"] = [{"other": "#[doc(hidden)]"}]
     root, rdir = weird_copy(hide)
@@ -1307,8 +1226,6 @@ def test_rdj_hidden_cli_flag_and_report():
 
 @test
 def test_local_paths_module_and_fn_with_one_path():
-
-
     from rdj_synth import Synth
     a, b = Synth("a"), Synth("b")
     mod = b.mod("foo", b.root)
@@ -1334,8 +1251,6 @@ def test_local_paths_module_and_fn_with_one_path():
 def test_explicit_names_shadow_glob_reexports():
     import rdj_index
     from rdj_synth import Synth
-
-
     def paths(build):
         a = Synth("azalea")
         ids = build(a)
@@ -1464,7 +1379,6 @@ def test_mutation_never_crashes():
             assert len(err) == 1 and err[0].startswith("error: "), f"mutation #{i}: expected a one-line error, got:\n{p.stderr[-600:]}"
     assert clean >= 20, f"only {clean} of 24 mutated JSONs generated bindings"
     assert skipped >= 1, "no mutation produced a skipped-items entry: the mutations are too tame to prove anything"
-
 
 
 
@@ -1643,7 +1557,6 @@ def test_generic_class_discovery_on_toy_crate():
     finally:
         g.CLASSES.clear()
         g.CLASSES.update(saved)
-
     assert "Client" in g.CLASSES
     ix2 = ri.RdjIndex(root, d)
     ix2.load()
@@ -1683,15 +1596,12 @@ def test_format_61_shapes():
     (`GenericArg::Infer`), `Abi` has no serde rename, `PreciseCapturingArg`, and the structured `Attribute` variants."""
     import rdj_index as ri
     U8 = {"primitive": "u8"}
-
     for infer in ("infer", {"infer": None}):
         args = {"angle_bracketed": {"args": [infer, {"type": U8}], "constraints": []}}
         assert rdj._render_args(args) == "<_, u8>", infer
-
         assert rdj.convert_type({"resolved_path": {"path": "Vec", "id": 1, "args": args}}) == ("path", "Vec", [("prim", "u8")])
     assert rdj._render_args("return_type_notation") == ""
     assert rdj.render_type("infer") == "_"
-
     for abi, text in (("Rust", ""), (None, ""), ({"C": {"unwind": False}}, "C"), ({"C": {"unwind": True}}, "C-unwind"),
                       ({"Cdecl": {"unwind": False}}, "cdecl"), ({"Stdcall": {"unwind": True}}, "stdcall-unwind"),
                       ({"Fastcall": {"unwind": False}}, "fastcall"), ({"Aapcs": {"unwind": False}}, "aapcs"),
@@ -1709,10 +1619,8 @@ def test_format_61_shapes():
     assert sig({"C": {"unwind": True}}) == 'pub extern "C-unwind" fn f()'
     assert sig({"SysV64": {"unwind": False}}) == 'pub extern "sysv64" fn f()'
     assert sig({"Other": "ptx-kernel"}) == 'pub extern "ptx-kernel" fn f()'
-
     assert rdj._render_bounds([{"use": [{"lifetime": "'a"}, {"param": "T"}]}]) == "use<'a, T>"
     assert rdj.render_type({"impl_trait": [{"use": [{"param": "T"}]}]}) == "impl use<T>"
-
     at = lambda *a: rdj.attr_texts({"attrs": list(a)})
     assert at("non_exhaustive", "macro_export", "no_mangle", "automatically_derived") == ["#[non_exhaustive]", "#[macro_export]", "#[no_mangle]"]
     assert at({"must_use": {"reason": None}}) == ["#[must_use]"]
@@ -1726,7 +1634,6 @@ def test_format_61_shapes():
     assert rep("rust", align=8) == ["#[repr(align(8))]"] and rep("rust", packed=2) == ["#[repr(packed(2))]"]
     assert rep("c", align=16, int="i32") == ["#[repr(C, i32, align(16))]"]
     assert at({"other": "#[allow(dead_code)]"}, {"other": "#[attr = Inline(Hint)]"}, 7, {"a": 1, "b": 2}, {"brand_new": 1}) == ["#[allow(dead_code)]"]
-
 
     class C:
         items = {2: {"name": "x", "visibility": "default", "inner": {"struct_field": U8}},

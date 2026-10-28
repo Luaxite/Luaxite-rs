@@ -49,8 +49,8 @@ pub struct LuaGoal {
 
 #[mlua::userdata_impl]
 impl LuaGoal {
-    
-    
+    // luau[Goal]: --- The goal as text (azalea's debug form), e.g. for printing while debugging.
+    // luau[Goal]: function describe(self): string
     fn describe(&self) -> mlua::Result<String> {
         Ok(format!("{:?}", self.goal))
     }
@@ -89,15 +89,15 @@ fn made(goal: impl Goal + 'static) -> LuaGoal {
 pub fn install(lua: &Lua) -> mlua::Result<()> {
     let t = lua.create_table()?;
 
-    
-    
+    // luau[GoalLib]: --- Goal: stand on this block.
+    // luau[GoalLib]: block: (pos: BlockPos) -> Goal
     t.set(
         "block",
         lua.create_function(|_, pos: LBlockPos| Ok(made(BlockPosGoal(pos.0))))?,
     )?;
 
-    
-    
+    // luau[GoalLib]: --- Goal: reach this x and z, at any height.
+    // luau[GoalLib]: xz: (x: number, z: number) -> Goal
     t.set(
         "xz",
         lua.create_function(|_, (x, z): (f64, f64)| {
@@ -108,15 +108,15 @@ pub fn install(lua: &Lua) -> mlua::Result<()> {
         })?,
     )?;
 
-    
-    
+    // luau[GoalLib]: --- Goal: reach this height (y), anywhere.
+    // luau[GoalLib]: y: (y: number) -> Goal
     t.set(
         "y",
         lua.create_function(|_, y: f64| Ok(made(YGoal { y: block_coord(y)? })))?,
     )?;
 
-    
-    
+    // luau[GoalLib]: --- Goal: get within `radius` blocks of `pos`.
+    // luau[GoalLib]: radius: (pos: Vec3, radius: number) -> Goal
     t.set(
         "radius",
         lua.create_function(|_, (pos, radius): (LVec3, f32)| {
@@ -124,8 +124,8 @@ pub fn install(lua: &Lua) -> mlua::Result<()> {
         })?,
     )?;
 
-    
-    
+    // luau[GoalLib]: --- Goal reached when every given goal is reached at once (at least one goal).
+    // luau[GoalLib]: all: (...Goal) -> Goal
     t.set(
         "all",
         lua.create_function(|_, goals: Variadic<AnyUserData>| {
@@ -140,8 +140,8 @@ pub fn install(lua: &Lua) -> mlua::Result<()> {
         })?,
     )?;
 
-    
-    
+    // luau[GoalLib]: --- Goal reached when any one of the given goals is reached (at least one goal).
+    // luau[GoalLib]: any: (...Goal) -> Goal
     t.set(
         "any",
         lua.create_function(|_, goals: Variadic<AnyUserData>| {
@@ -156,8 +156,8 @@ pub fn install(lua: &Lua) -> mlua::Result<()> {
         })?,
     )?;
 
-    
-    
+    // luau[GoalLib]: --- Goal reached everywhere the given goal is not (e.g. "get away from this block").
+    // luau[GoalLib]: inverse: (goal: Goal) -> Goal
     t.set(
         "inverse",
         lua.create_function(|_, goal: AnyUserData| Ok(made(InverseGoal(goal_of(&goal)?))))?,
@@ -168,8 +168,8 @@ pub fn install(lua: &Lua) -> mlua::Result<()> {
 
 #[mlua::userdata_impl]
 impl LuaClient {
-    
-    
+    // luau[Bot]: --- Yields until the pathfinder has reached `goal` (see the `goal` functions) or pathfinding is canceled.
+    // luau[Bot]: function goto_goal(self, goal: Goal, opts: PathfinderOpts?): ()
     async fn goto_goal(
         &self,
         goal: AnyUserData,
@@ -183,8 +183,8 @@ impl LuaClient {
         Ok(())
     }
 
-    
-    
+    // luau[Bot]: --- Start pathfinding to `goal` and return at once (it does not wait; see `is_goto_target_reached`).
+    // luau[Bot]: function start_goto_goal(self, goal: Goal, opts: PathfinderOpts?): ()
     fn start_goto_goal(
         &self,
         goal: AnyUserData,
@@ -198,8 +198,8 @@ impl LuaClient {
         Ok(())
     }
 
-    
-    
+    // luau[Bot]: --- Goal: be able to reach the block at `pos` (stand next to it, or see it and hit it from within `distance` blocks, default azalea's reach). Needs the world to be loaded.
+    // luau[Bot]: function reach_goal(self, pos: BlockPos, distance: number?): Goal
     fn reach_goal(&self, pos: LBlockPos, distance: Option<f64>) -> mlua::Result<LuaGoal> {
         if let Some(d) = distance {
             if !d.is_finite() || d <= 0.0 {

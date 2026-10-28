@@ -18,15 +18,15 @@ impl LuaClient {
 
 #[mlua::userdata_impl]
 impl LuaClient {
-    
-    
+    // luau[Bot]: --- The closest other player in render distance, or nil when nobody is around.
+    // luau[Bot]: function nearest_player(self): Entity?
     fn nearest_player(&self) -> mlua::Result<Option<LuaEntityRef>> {
         let players = self.client.nearby_players().map_err(lua_err)?;
         Ok(self.others(players).into_iter().next())
     }
 
-    
-    
+    // luau[Bot]: --- Entities in render distance (nearest first, not including the bot). With `kind` (like "zombie" or "minecraft:zombie") only entities of that type are returned. Unknown kinds are an error.
+    // luau[Bot]: function nearby_entities(self, kind: string?): { Entity }
     fn nearby_entities(&self, kind: Option<String>) -> mlua::Result<Vec<LuaEntityRef>> {
         let found = match kind {
             None => self.client.nearest_entities::<()>().map_err(lua_err)?,

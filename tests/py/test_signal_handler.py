@@ -36,7 +36,6 @@ class SignalHandler(unittest.TestCase):
         self.assertEqual(len(re.findall(r"kill_children\(\);\s*std::process::exit\(", self.handler)), 2)
 
     def test_listeners_are_registered_before_the_task_is_spawned(self):
-
         unix = self.handler[self.handler.index("#[cfg(unix)]"):self.handler.index("#[cfg(not(unix))]")]
         self.assertLess(unix.index("signal(SignalKind::terminate())"), unix.index("tokio::spawn"))
         self.assertNotIn("spawn_local", self.handler)

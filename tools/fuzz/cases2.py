@@ -3,13 +3,11 @@ CASES = {}
 def case(name, items="", variants=(), files=None): CASES[name] = (items, list(variants), files)
 U="unimplemented!()"
 def fn(sig, body=U): return f"    {sig} {{ {body} }}"
-
 for n in ["profile","goto_reach","best_tool","physics","inventory","open","account","nearby_entities","wait_for","on","from_lua","into_lua","__eq","__tostring","__index","new","clone","type_id","to_string","drop","fmt","borrow","into","try_into","deref","default","eq","hash","handlers","client","lua"]:
     case("collide_"+n, M(fn(f"pub fn {n}(&self) -> i32","0")))
 for p in ["lua","self_","v","client","handlers","x","this","args","t"]:
     case("param_"+p, M(fn(f"pub fn pp(&self, {p}: i32)")))
 case("param_lua_twice", M(fn("pub fn pp(&self, lua: i32, Lua: i32)")))
-
 case("ev_struct_variant", "", ["SV { a: i32 }"])
 case("ev_tuple2", "", ["T2(i32, i32)"])
 case("ev_tuple2_arc", "", ["T2A(Arc<ConnectionError>, i32)"])
@@ -38,7 +36,6 @@ case("ev_uuid", "", ["UU(Uuid)", "AUU(Arc<Uuid>)"])
 case("ev_double_arc", "", ["DA(Arc<Arc<ConnectionError>>)"])
 case("ev_two_enums_named_event", "pub mod other { pub enum Event { Foo } }", [])
 case("ev_dup_event_enum_cfg", "#[cfg(feature=\"y\")] pub enum Event { Only }", [])
-
 case("file_non_utf8", "", [], {"azalea/src/latin1.rs": b'// caf\xe9 \xff\xfe\npub struct Latin { pub x: i32 }\n'})
 case("file_non_utf8_in_str", "", [], {"azalea/src/latin1.rs": b'pub const S: &[u8] = b"\xff\xfe"; /* caf\xe9 */\n'})
 case("file_bom", "", [], {"azalea/src/bom.rs": b'\xef\xbb\xbfpub struct Bom { pub x: i32 }\n'})

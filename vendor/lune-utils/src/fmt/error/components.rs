@@ -27,11 +27,7 @@ static STYLED_STACK_END: LazyLock<String> = LazyLock::new(|| {
     )
 });
 
-
-
-
 const STACK_TRACE_INDENT: &str = "    ";
-
 
 #[derive(Debug, Default, Clone)]
 pub struct ErrorComponents {
@@ -40,19 +36,16 @@ pub struct ErrorComponents {
 }
 
 impl ErrorComponents {
-    
     #[must_use]
     pub fn messages(&self) -> &[String] {
         &self.messages
     }
 
-    
     #[must_use]
     pub fn trace(&self) -> Option<&StackTrace> {
         self.trace.as_ref()
     }
 
-    
     #[must_use]
     pub fn has_trace(&self) -> bool {
         self.trace
@@ -89,13 +82,9 @@ impl From<LuaError> for ErrorComponents {
         }
 
         fn lua_stack_trace(source: &str) -> Option<StackTrace> {
-            
-            
             StackTrace::from_str(source).ok()
         }
 
-        
-        
         #[allow(clippy::arc_with_non_send_sync)]
         let mut error = Arc::new(error);
         let mut messages = Vec::new();
@@ -108,7 +97,6 @@ impl From<LuaError> for ErrorComponents {
             error = cause.clone();
         }
 
-        
         let mut trace = if let LuaError::CallbackError {
             ref traceback,
             ref cause,
@@ -117,8 +105,6 @@ impl From<LuaError> for ErrorComponents {
             messages.push(lua_error_message(cause));
             lua_stack_trace(traceback)
         } else if let LuaError::RuntimeError(ref s) = *error {
-            
-            
             if let Some(pos) = s.find("stack traceback:") {
                 let (message, traceback) = s.split_at(pos);
                 messages.push(message.trim().to_string());
@@ -132,9 +118,6 @@ impl From<LuaError> for ErrorComponents {
             None
         };
 
-        
-        
-        
         if let Some(trace) = &mut trace {
             let lines = trace.lines_mut();
             loop {
@@ -152,8 +135,6 @@ impl From<LuaError> for ErrorComponents {
             }
         }
 
-        
-        
         if let Some(message) = messages.last_mut()
             && let Some(line) = trace
                 .iter()

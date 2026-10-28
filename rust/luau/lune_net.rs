@@ -77,7 +77,6 @@ struct Tcp {
     write: Arc<Mutex<Option<OwnedWriteHalf>>>,
 }
 
-
 const MAX_READ: usize = 64 << 20;
 
 fn tcp_err(name: &str, e: &std::io::Error) -> mlua::Error {
@@ -164,10 +163,7 @@ async fn tcp_connect(_: Lua, (host, port, config): (String, u16, Value)) -> mlua
     })
 }
 
-
-
 const CONNECT_TIMEOUT: Duration = Duration::from_secs(30);
-
 
 fn request_timeout(secs: Option<f64>) -> mlua::Result<Option<Duration>> {
     timeout_with_default("net.request", secs, DEFAULT_REQUEST_TIMEOUT_SECS)
@@ -192,10 +188,8 @@ struct ReqSpec {
     body: Option<Vec<u8>>,
     headers: Vec<(String, String)>,
     decompress: bool,
-    
     timeout: Option<Duration>,
 }
-
 
 fn req_err(e: reqwest::Error) -> mlua::Error {
     if e.is_timeout() {
@@ -335,8 +329,6 @@ async fn send_request(spec: ReqSpec) -> mlua::Result<Response> {
             None => headers.push((name.as_str().to_owned(), vec![value.to_owned()])),
         }
     }
-    
-    
     let too_large = || too_big("net.request: response body");
     if resp.content_length().is_some_and(|n| n > MAX_BYTES as u64) {
         return Err(too_large());
@@ -479,7 +471,6 @@ impl UserData for Socket {
                                 tokio_tungstenite::tungstenite::error::ProtocolError::ResetWithoutClosingHandshake,
                             ),
                         )) => {
-                            
                             this.set_code(1006);
                             return Ok(None);
                         }
@@ -572,8 +563,6 @@ fn build_response(reply: Option<Reply>) -> hyper::Response<Full<Bytes>> {
         .unwrap_or_else(|_| fail())
 }
 
-
-
 fn payload_too_large() -> hyper::Response<Full<Bytes>> {
     let mut r = hyper::Response::new(Full::new(Bytes::from_static(b"Payload Too Large")));
     *r.status_mut() = hyper::StatusCode::PAYLOAD_TOO_LARGE;
@@ -619,7 +608,6 @@ impl UserData for ServeRequest {
 }
 
 fn parse_query(q: Option<&str>) -> Vec<(String, String)> {
-    
     let dec = |s: &str| {
         let spaced: Vec<u8> = s
             .bytes()
@@ -724,7 +712,6 @@ async fn handle(
     };
     let wrapper = handlers.wrapper.clone();
     let (parts, body) = req.into_parts();
-    
     let announced = parts
         .headers
         .get(hyper::header::CONTENT_LENGTH)
@@ -831,7 +818,7 @@ async fn serve_fn(lua: Lua, (port, cfg): (u16, Value)) -> mlua::Result<ServeHand
     let listener = tokio::net::TcpListener::bind((address.as_str(), port))
         .await
         .map_err(|e| mlua::Error::runtime(format!("net.serve: {e}")))?;
-    let port = listener.local_addr().map_or(port, |a| a.port()); 
+    let port = listener.local_addr().map_or(port, |a| a.port());
     let wrapper = lua
         .load(HANDLER_SRC)
         .set_name("=net.serve")

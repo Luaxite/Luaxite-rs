@@ -26,9 +26,6 @@ fn parse_args() -> anyhow::Result<Vec<PathBuf>> {
     Ok(scripts)
 }
 
-
-
-
 fn install_signal_handler() -> anyhow::Result<()> {
     #[cfg(unix)]
     {

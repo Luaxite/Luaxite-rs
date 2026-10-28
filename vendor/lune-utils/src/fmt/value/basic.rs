@@ -13,7 +13,6 @@ use super::{
 const STRING_REPLACEMENTS: &[(&str, &str)] =
     &[("\"", r#"\""#), ("\t", r"\t"), ("\r", r"\r"), ("\n", r"\n")];
 
-
 pub(crate) fn lua_value_as_plain_string_key(value: &LuaValue) -> Option<String> {
     if let LuaValue::String(s) = value
         && let Ok(s) = s.to_str()
@@ -26,7 +25,6 @@ pub(crate) fn lua_value_as_plain_string_key(value: &LuaValue) -> Option<String> 
     }
     None
 }
-
 
 pub(crate) fn format_value_styled(value: &LuaValue, prefer_plain: bool) -> String {
     match value {

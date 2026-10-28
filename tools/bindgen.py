@@ -90,7 +90,6 @@ def run(root, out) -> list[str]:
     copy_glue(root, out)
     gen = os.environ.get("BINDGEN_GENERATOR") or str(HERE / "luaxite_gen.py")
     cmd = [sys.executable, gen, "--azalea", str(stage), "--rustdoc", str(out / "rdj"), "--rust-out", str(out), "--luau-out", str(out)]
-
     cmd += ["--config", str(root / "bindgen.toml") if (root / "bindgen.toml").is_file() else "builtin"]
     p = subprocess.run(cmd, capture_output=True, text=True)
     if p.returncode != 0:

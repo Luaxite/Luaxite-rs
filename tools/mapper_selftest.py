@@ -38,26 +38,22 @@ def skips(t, role, why):
 
 def main():
     n = 0
-
     for name in g.MAP_TYPES:
         i, to, frm = ok(P(name, P("String"), P("String")), "ret")
         assert i.luau == "{ [string]: string }" and i.rust == "std::collections::HashMap<String, String>", (name, i)
         assert to == "x.into_iter().map(|(k, v)| (k, v)).collect::<std::collections::HashMap<_, _>>()" and frm is None, (name, to, frm)
         n += 1
-
     i, to, _ = ok(P("HashMap", P("Uuid"), P("PlayerInfo")), "ret")
     assert i.luau == "{ [string]: PlayerInfo }" and i.rust == "std::collections::HashMap<String, LuaPlayerInfo>", i
     assert to == "x.into_iter().map(|(k, v)| (k.to_string(), LuaPlayerInfo(v))).collect::<std::collections::HashMap<_, _>>()", to
     i, to, _ = ok(P("BTreeMap", ("prim", "u32"), P("String")), "ret")
     assert i.luau == "{ [number]: string }", i
     n += 2
-
     i, _, frm = ok(P("BTreeMap", ("prim", "u32"), P("String")), "param")
     assert frm == "x.into_iter().map(|(k, v)| (k, v)).collect::<std::collections::BTreeMap<_, _>>()", frm
     i, _, frm = ok(P("HashMap", P("String"), ("prim", "f64")), "param")
     assert frm.endswith("collect::<std::collections::HashMap<_, _>>()"), frm
     n += 2
-
     i, to, frm = ok(("prim", "bool"), "param")
     assert i.rust == "LBool" and i.luau == "boolean" and to is None and frm == "x.0", (i, to, frm)
     i, to, frm = ok(("prim", "bool"), "ret")
@@ -67,22 +63,18 @@ def main():
     i, _, frm = ok(P("Vec", ("prim", "bool")), "param")
     assert i.rust == "Vec<LBool>" and ".0" in frm, (i, frm)
     n += 4
-
     i, to, frm = ok(P("Option", ("unit",)), "ret")
     assert i.luau == "boolean?" and i.rust == "Option<()>" and to == "x.map(|_| true)" and frm is None, (i, to, frm)
     skips(P("Option", ("unit",)), "param", "`Option<()>` parameter")
     n += 2
-
     skips(P("HashMap", P("Vec3"), P("String")), "ret", "map key type")
     skips(P("IndexMap", P("String"), P("String")), "param", "`IndexMap` parameter")
     skips(P("HashMap", P("String"), P("PlayerInfo")), "param", "can't be read from Luau")
     skips(P("HashMap", P("Uuid"), P("String")), "param", "nested fallible type in map")
     n += 4
-
     i, to, _ = ok(P("Vec", P("String")), "ret")
     assert i.luau == "{ string }", i
     n += 1
-
     i, to, _ = ok(P("LookDirection"), "ret")
     assert i.luau == "LookDirection" and i.rust == "LuaLookDirection" and to == "LuaLookDirection(x)", (i, to)
     assert M.records["LookDirection"]["fields"] == [("y_rot", "number", "v.y_rot()"), ("x_rot", "number", "v.x_rot()")]
@@ -97,7 +89,6 @@ def main():
     ok(P("GameProfile"), "ret")
     assert [a for a, _b, _c in M.records["GameProfile"]["fields"]] == ["uuid", "name"]
     n += 7
-
     saved = dict(g.ACCESSORS)
     try:
         g.ACCESSORS["Physics"] = dict(fields=["nope"], getters=[])
@@ -123,7 +114,6 @@ def main():
         g.ACCESSORS.clear()
         g.ACCESSORS.update(saved)
     n += 3
-
     def enum_def(name, variants):
         return g.Def("enum", name, "azalea", (), True, False, b"", variants=variants)
 
@@ -154,7 +144,6 @@ def main():
                 raise AssertionError(f"{bad} not refused")
             except g.Skip as e:
                 assert why in str(e), e
-
         M4 = g.Mapper(ix)
         M4.cur_class = "Client"
         i = M4.map_ty(P("HitResult"), "ret")
@@ -180,7 +169,6 @@ def main():
     finally:
         ix.unique_def, ix.resolve_path = real_unique, real_resolve
     n += 11
-
     import tempfile
     with tempfile.TemporaryDirectory() as tmp:
         pk = Path(tmp) / "azalea-protocol" / "src" / "packets" / "game"
@@ -218,7 +206,6 @@ def main():
             for d in added:
                 ix.defs[d.name].remove(d)
     n += 8
-
     with tempfile.TemporaryDirectory() as tmp:
         pk = Path(tmp) / "azalea-protocol" / "src" / "packets" / "game"
         pk.mkdir(parents=True)
@@ -254,7 +241,6 @@ def main():
             for d in added:
                 ix.defs[d.name].remove(d)
     n += 9
-
     mk = lambda name, derive, fields, tuple_style=False: g.Def(
         kind="struct", name=name, crate="azalea_entity", modpath=("x",), is_pub=True, generics=False,
         src=b"", tuple_style=tuple_style, fields=fields, attrs=[derive])
@@ -265,12 +251,10 @@ def main():
         mk("EcsNoClone", "#[derive(Component)]", [("0", ("prim", "u32"), True)], tuple_style=True),
         mk("EcsRes", "#[derive(Resource, Clone)]", [("0", ("prim", "bool"), True)], tuple_style=True),
         mk("EcsPlain", "#[derive(Debug, Clone)]", [("0", ("prim", "bool"), True)], tuple_style=True),
-
         mk("EcsResBoth", "#[derive(Clone, Component, Resource)]", [("0", ("prim", "bool"), True)], tuple_style=True),
     ]
     for d in added:
         ix.defs[d.name].append(d)
-
     dup_c = mk("EcsDup", "#[derive(Component, Clone)]", [("0", ("prim", "bool"), True)], tuple_style=True)
     dup_o = g.Def(kind="struct", name="EcsDup", crate="azalea_block", modpath=("y",), is_pub=True, generics=False, src=b"", fields=[])
     added += [dup_c, dup_o]
@@ -307,9 +291,7 @@ def main():
         for d in added:
             ix.defs[d.name].remove(d)
     n += 9
-
     assert "is a {}, not a {kind}" in out and " , not a" not in out, out
-
     gg = g.Generator(ix)
     gg.m.touched = set()
     gl = gg.goals()
@@ -319,8 +301,6 @@ def main():
     assert gg.goals() is gl
     assert gg.m.touched == first | {("type", "Other")}, (gg.m.touched, first)
     n += 3
-
-
     with tempfile.TemporaryDirectory() as tmp:
         (Path(tmp) / "extra_entity.rs").write_text(
             "impl LuaEntityRef {\n"

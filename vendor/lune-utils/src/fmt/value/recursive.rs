@@ -13,7 +13,6 @@ use super::{
 
 const INDENT: &str = "    ";
 
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub(crate) struct LuaValueId(usize);
 
@@ -28,7 +27,6 @@ impl From<&LuaTable> for LuaValueId {
         Self(table.to_pointer() as usize)
     }
 }
-
 
 pub(crate) fn format_value_recursive(
     value: &LuaValue,
@@ -95,7 +93,6 @@ pub(crate) fn format_value_recursive(
 fn sort_for_formatting(values: &mut [(LuaValue, LuaValue)]) {
     values.sort_by(|(a, _), (b, _)| {
         if a.type_name() == b.type_name() {
-            
             match (a, b) {
                 (LuaValue::Integer(a), LuaValue::Integer(b)) => a.cmp(b),
                 (LuaValue::Number(a), LuaValue::Number(b)) => a.partial_cmp(b).unwrap(),
@@ -103,7 +100,6 @@ fn sort_for_formatting(values: &mut [(LuaValue, LuaValue)]) {
                 _ => Ordering::Equal,
             }
         } else {
-            
             a.is_number()
                 .cmp(&b.is_number())
                 .then_with(|| a.is_string().cmp(&b.is_string()))

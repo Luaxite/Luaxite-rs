@@ -31,7 +31,6 @@ pub struct LBlockPos(pub BlockPos);
 impl FromLua for LBlockPos {
     fn from_lua(value: Value, _: &Lua) -> mlua::Result<Self> {
         let t = table(value, "a BlockPos table `{ x, y, z }`")?;
-        
         let c = |k: &str| {
             let n = num(&t, k, "BlockPos")?;
             let f = n.floor();
@@ -79,7 +78,6 @@ impl IntoLua for LVec3 {
     }
 }
 
-
 pub struct LBool(pub bool);
 
 impl FromLua for LBool {
@@ -122,7 +120,6 @@ impl FromLua for LPathfinderOpts {
         match value {
             Value::Nil => {}
             Value::Table(t) => {
-                
                 for pair in t.pairs::<Value, Value>() {
                     let (key, _) = pair?;
                     match &key {
@@ -243,8 +240,6 @@ impl std::ops::Deref for Held {
 }
 
 impl Held {
-    
-    
     #[cfg(not(feature = "real"))]
     pub fn release(self) {
         match self {

@@ -1,4 +1,3 @@
-
 #[derive(Debug, Clone, Copy)]
 pub struct ValueFormatConfig {
     pub(super) max_depth: usize,
@@ -6,7 +5,6 @@ pub struct ValueFormatConfig {
 }
 
 impl ValueFormatConfig {
-    
     #[must_use]
     pub const fn new() -> Self {
         Self {
@@ -15,13 +13,11 @@ impl ValueFormatConfig {
         }
     }
 
-    
     #[must_use]
     pub const fn with_max_depth(self, max_depth: usize) -> Self {
         Self { max_depth, ..self }
     }
 
-    
     #[must_use]
     pub const fn with_colors_enabled(self, colors_enabled: bool) -> Self {
         Self {

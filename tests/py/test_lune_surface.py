@@ -8,28 +8,21 @@ import unittest
 
 from _common import ROOT, read
 
-
 IN_TREE = {
     "task": ["spawn", "defer", "delay", "wait", "cancel"],
     "stdio": ["color", "style", "format", "write", "ewrite", "readLine", "readToEnd", "prompt"],
     "process": [
         "os", "arch", "endianness", "args", "cwd", "env", "exit", "exec", "create",
-
         "kill", "status", "stdin", "stdout", "stderr", "read", "readToEnd", "write", "close", "ok", "code",
     ],
     "net": [
         "urlEncode", "urlDecode", "request", "socket", "serve", "tcp", "http", "ws", "connect", "stop",
-
         "ok", "statusCode", "statusMessage", "headers", "body",
-
         "ip", "port", "method", "path", "query",
-
         "send", "next", "close", "closeCode",
-
         "read", "write", "remoteIp", "remotePort", "localIp", "localPort",
     ],
 }
-
 
 LUNE_CRATES = {
     "fs": ["readFile", "readDir", "writeFile", "writeDir", "removeFile", "removeDir", "metadata", "isFile", "isDir", "move", "copy"],
@@ -95,7 +88,6 @@ class Wiring(unittest.TestCase):
             name = f.stem
             text = f.read_text()
             if name.endswith("_sigint"):
-
                 self.assertIn(f'echo "E2E PASS {name}"', read("tests/e2e/run.sh"), f.name)
                 continue
             self.assertIn(f'E2E PASS {name}"', text.replace("'", '"'), f.name)

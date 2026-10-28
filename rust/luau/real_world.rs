@@ -22,9 +22,6 @@ pub struct LuaWorld {
 const TOP_Y: i32 = 319;
 const BOTTOM_Y: i32 = -64;
 const DEFAULT_LIMIT: usize = 256;
-
-
-
 const MAX_CANDIDATES: usize = 200_000;
 
 fn nearer(a: &(f64, BlockPos), b: &(f64, BlockPos)) -> std::cmp::Ordering {
@@ -33,8 +30,6 @@ fn nearer(a: &(f64, BlockPos), b: &(f64, BlockPos)) -> std::cmp::Ordering {
         .then(a.1.y.cmp(&b.1.y))
         .then(a.1.z.cmp(&b.1.z))
 }
-
-
 
 struct Nearest {
     limit: usize,
@@ -66,14 +61,12 @@ impl Nearest {
         }
     }
 
-    
     fn finish(mut self) -> Vec<BlockPos> {
         self.trim();
         self.hits.sort_by(nearer);
         self.hits.into_iter().map(|(_, pos)| pos).collect()
     }
 }
-
 
 fn floor_coord(name: &str, n: f64) -> mlua::Result<i32> {
     let f = n.floor();
@@ -120,8 +113,6 @@ fn block_kinds(value: Value) -> mlua::Result<Vec<BlockKind>> {
 }
 
 impl LuaWorld {
-    
-    
     fn chunk_is_loaded(&self, chunk_x: i32, chunk_z: i32) -> mlua::Result<bool> {
         let pos = ChunkPos::new(chunk_x, chunk_z);
         if self.partial {
@@ -138,8 +129,6 @@ impl LuaWorld {
         Ok(state.is_some())
     }
 
-    
-    
     fn loaded_chunk_map(
         &self,
         keys: &HashSet<(i32, i32)>,
@@ -173,9 +162,6 @@ impl LuaWorld {
         Ok(state.map(|state| BlockKind::from(state).to_str().to_owned()))
     }
 
-    
-    
-    
     fn search(
         &self,
         kinds: &[BlockKind],
@@ -210,9 +196,6 @@ impl LuaWorld {
             dx * dx + dy * dy + dz * dz
         };
         let chunk_key = |pos: BlockPos| (pos.x.div_euclid(16), pos.z.div_euclid(16));
-        
-        
-        
         let loaded_chunks = if self.partial {
             let mut keys: HashSet<(i32, i32)> = HashSet::new();
             {
@@ -236,8 +219,6 @@ impl LuaWorld {
                 continue;
             }
             if let Some(loaded_chunks) = &loaded_chunks {
-                
-                
                 let loaded = loaded_chunks.get(&chunk_key(pos)).copied().unwrap_or(false);
                 if !loaded {
                     continue;
@@ -290,14 +271,14 @@ mod tests {
 
 #[mlua::userdata_impl]
 impl LuaWorld {
-    
-    
+    // luau[World]: --- The block at `pos` as a name like "minecraft:stone" ("minecraft:air" for air), or nil when that position isn't in a loaded chunk. Never yields.
+    // luau[World]: function block_state(self, pos: BlockPos): string?
     fn block_state(&self, pos: LBlockPos) -> mlua::Result<Option<String>> {
         self.state_name(pos.0)
     }
 
-    
-    
+    // luau[World]: --- Whether the chunk with chunk coordinates `chunk_x`, `chunk_z` (block coordinate // 16) is loaded.
+    // luau[World]: function is_chunk_loaded(self, chunk_x: number, chunk_z: number): boolean
     fn is_chunk_loaded(&self, chunk_x: f64, chunk_z: f64) -> mlua::Result<bool> {
         self.chunk_is_loaded(
             floor_coord("chunk_x", chunk_x)?,
@@ -305,14 +286,14 @@ impl LuaWorld {
         )
     }
 
-    
-    
+    // luau[World]: --- Whether the chunk that contains the block position `pos` is loaded.
+    // luau[World]: function chunk_loaded(self, pos: BlockPos): boolean
     fn chunk_loaded(&self, pos: LBlockPos) -> mlua::Result<bool> {
         self.block_chunk_loaded(pos.0)
     }
 
-    
-    
+    // luau[World]: --- The biome at `pos` as a name like "minecraft:plains", or nil when the position isn't loaded or the server never sent that biome's name. Never yields.
+    // luau[World]: function biome(self, pos: BlockPos): string?
     #[allow(deprecated)]
     fn biome(&self, pos: LBlockPos) -> mlua::Result<Option<String>> {
         if self.partial && !self.block_chunk_loaded(pos.0)? {
@@ -325,8 +306,8 @@ impl LuaWorld {
         Ok(name.map(|n| n.to_string()))
     }
 
-    
-    
+    // luau[World]: --- The y of the highest block in the column at block coordinates `x`, `z` that isn't air, or nil when the column isn't loaded (or holds only air). Looks from y=319 down to y=-64.
+    // luau[World]: function height(self, x: number, z: number): number?
     fn height(&self, x: f64, z: f64) -> mlua::Result<Option<i32>> {
         let (x, z) = (floor_coord("x", x)?, floor_coord("z", z)?);
         if !self.block_chunk_loaded(BlockPos::new(x, 64, z))? {
@@ -344,8 +325,8 @@ impl LuaWorld {
         Ok(None)
     }
 
-    
-    
+    // luau[World]: --- The loaded block nearest to `from` (default: the bot's block) whose name is `block` (a name like "stone" or "minecraft:stone", or a table of names), no further than `max_distance` blocks away (default: no limit), or nil. Unknown names are an error. Never yields; searching a large loaded area takes a moment.
+    // luau[World]: function find_block(self, block: string | { string }, from: BlockPos?, max_distance: number?): BlockPos?
     fn find_block(
         &self,
         block: Value,
@@ -357,8 +338,8 @@ impl LuaWorld {
         Ok(found.into_iter().next().map(LBlockPos))
     }
 
-    
-    
+    // luau[World]: --- Loaded blocks named `block` (see `find_block`) within `max_distance` of `from`, nearest first, at most `limit` (default 256).
+    // luau[World]: function find_blocks(self, block: string | { string }, from: BlockPos?, max_distance: number?, limit: number?): { BlockPos }
     fn find_blocks(
         &self,
         block: Value,
@@ -374,8 +355,8 @@ impl LuaWorld {
 
 #[mlua::userdata_impl]
 impl LuaClient {
-    
-    
+    // luau[Bot]: --- A handle on the bot's world, for block reads and block searches (see `World`). Never yields.
+    // luau[Bot]: function world(self): World
     fn world(&self) -> mlua::Result<LuaWorld> {
         self.client.world().map_err(lua_err)?;
         Ok(LuaWorld {
@@ -384,8 +365,8 @@ impl LuaClient {
         })
     }
 
-    
-    
+    // luau[Bot]: --- Like `world()`, but only the chunks this bot itself has loaded (inside its view distance) count as loaded. It differs from `world()` only when several bots share one world.
+    // luau[Bot]: function partial_world(self): World
     fn partial_world(&self) -> mlua::Result<LuaWorld> {
         self.client.partial_world().map_err(lua_err)?;
         Ok(LuaWorld {
@@ -394,8 +375,8 @@ impl LuaClient {
         })
     }
 
-    
-    
+    // luau[Bot]: --- The name of the world (dimension) the bot is in, like "minecraft:overworld". Two bots or entities with the same name are in the same world.
+    // luau[Bot]: function world_name(self): string
     fn world_name(&self) -> mlua::Result<String> {
         Ok(self.client.world_name().map_err(lua_err)?.to_string())
     }

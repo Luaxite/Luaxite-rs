@@ -38,7 +38,6 @@ class KillGroup(unittest.TestCase):
         body = fn_body(self.src, "fn build_command")
         self.assertIn("#[cfg(unix)]", body)
         self.assertIn("cmd.process_group(0)", body)
-
         self.assertIn("StdinKind::Inherit", body[body.index("process_group") - 200:body.index("process_group")])
 
     def test_kill_all_kills_the_group(self):
@@ -69,9 +68,7 @@ class KillGroup(unittest.TestCase):
         body = fn_body(self.src, "fn drop(&mut self)")
         self.assertIn("c.retain_mut(", body)
         self.assertIn("e.exited = true;", body)
-
         self.assertRegex(body, r"e\.exited = true;\s*e\.group\s*\}\);")
-
         self.assertIn("e.pid != pid || e.exited", body)
 
     def test_registry_is_capped_dropping_oldest_exited_first(self):
@@ -82,7 +79,6 @@ class KillGroup(unittest.TestCase):
         self.assertLess(body.index("c.push("), body.index("MAX_TRACKED"))
 
     def test_both_call_sites_pass_the_group_flag(self):
-
         call = "Tracked::new(child.id(), cfg!(unix) && o.shell.is_some())"
         self.assertEqual(self.src.count("Tracked::new("), 2)
         self.assertEqual(self.src.count(call), 2)
@@ -99,8 +95,6 @@ class KillGroup(unittest.TestCase):
         self.assertIn("#[cfg(unix)]\nfn kill_leftover_group", self.src)
 
     def test_exec_tracks_the_child_for_every_exit_path(self):
-
-
         body = fn_body(self.src, "let exec = lua.create_async_function(")
         spawn = body.index(".spawn()")
         tracked = body.index("let _tracked = Tracked::new(child.id(), cfg!(unix) && o.shell.is_some());")
@@ -108,14 +102,12 @@ class KillGroup(unittest.TestCase):
         self.assertLess(tracked, body.index("let run = async"))
         self.assertNotIn("drop(", body)
         self.assertNotIn("mem::forget", body)
-
         rest = body[tracked:body.index("let res = lua.create_table()")]
         self.assertEqual(rest.count("return "), 1)
         self.assertLess(rest.index("kill_tree(pid)"), rest.index("return Err(e)"))
         self.assertEqual(body.count("Tracked::new("), 1)
 
     def test_create_tracked_is_dropped_after_the_wait(self):
-
         i = self.src.index("let tracked = Tracked::new(")
         task = self.src[i:self.src.index("let info = match status", i)]
         self.assertIn("let _tracked = tracked;", task)
@@ -151,7 +143,6 @@ class KillGroup(unittest.TestCase):
         self.assertIn("process.env.ORPHAN_PID_DIR", e2e)
         self.assertEqual(e2e.count("sleep 100 & echo $!"), 2)
         self.assertRegex(e2e, r"process\.create\(.*\{ shell = true \}\)")
-
         self.assertRegex(e2e, r"process\.exec\(.*\{ shell = true, stdio = \"none\" \}\)")
         self.assertIn("kill\", { \"-0\"", e2e)
         self.assertIn("process.exit(0)", e2e)
@@ -175,7 +166,6 @@ class KillGroup(unittest.TestCase):
         self.assertIn('"/F", "/T", "/PID"', tree)
 
     def test_exec_error_path_kills_the_group(self):
-
         i = self.src.index("let (status, stdout, stderr) = match outcome")
         err = self.src[i:self.src.index("let res = lua.create_table()", i)]
         self.assertLess(err.index("kill_tree(pid)"), err.index("child.kill().await"))

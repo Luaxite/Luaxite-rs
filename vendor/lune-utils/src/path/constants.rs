@@ -1,5 +1,4 @@
 
-
 pub const FILE_CHUNK_PREFIX: char = '@';
 pub const FILE_NAME_INIT: &str = "init";
 pub const FILE_NAME_CONFIG: &str = ".luaurc";

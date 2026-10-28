@@ -5,7 +5,6 @@ use semver::Version;
 
 static LUAU_VERSION: LazyLock<Arc<String>> = LazyLock::new(create_luau_version_string);
 
-
 #[must_use]
 pub fn get_version_string(lune_version: impl AsRef<str>) -> String {
     let lune_version = lune_version.as_ref();
@@ -18,7 +17,6 @@ pub fn get_version_string(lune_version: impl AsRef<str>) -> String {
 }
 
 fn create_luau_version_string() -> Arc<String> {
-    
     let luau_version_full = {
         let temp_lua = Lua::new();
 
@@ -34,7 +32,6 @@ fn create_luau_version_string() -> Arc<String> {
             .to_string()
     };
 
-    
     assert!(
         luau_version_full.starts_with("Luau 0."),
         "_VERSION global is formatted incorrectly\
@@ -42,8 +39,6 @@ fn create_luau_version_string() -> Arc<String> {
     );
     let luau_version_noprefix = luau_version_full.strip_prefix("Luau 0.").unwrap().trim();
 
-    
-    
     if luau_version_noprefix.is_empty() {
         panic!(
             "_VERSION global is missing version number\

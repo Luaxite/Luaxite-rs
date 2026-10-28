@@ -7,15 +7,12 @@ fn has_windows_drive_prefix(s: &str) -> bool {
 }
 
 fn parse_path(s: &str) -> Option<(&str, &str)> {
-    
     if let Some(rest) = s.strip_prefix("[string \"")
         && let Some((path, after)) = rest.split_once("\"]:")
     {
         return Some((path, after));
     }
 
-    
-    
     let search_start = usize::from(has_windows_drive_prefix(s)) * 2;
     let colon = search_start + s[search_start..].find(':')?;
     Some((&s[..colon], &s[colon + 1..]))
@@ -33,30 +30,24 @@ fn parse_line_number(s: &str) -> (Option<usize>, &str) {
     }
 }
 
-
 #[derive(Debug, Default, Clone, Copy)]
 pub enum StackTraceSource {
-    
     C,
-    
     #[default]
     Lua,
 }
 
 impl StackTraceSource {
-    
     #[must_use]
     pub const fn is_c(self) -> bool {
         matches!(self, Self::C)
     }
 
-    
     #[must_use]
     pub const fn is_lua(self) -> bool {
         matches!(self, Self::Lua)
     }
 }
-
 
 #[derive(Debug, Default, Clone)]
 pub struct StackTraceLine {
@@ -67,31 +58,26 @@ pub struct StackTraceLine {
 }
 
 impl StackTraceLine {
-    
     #[must_use]
     pub fn source(&self) -> StackTraceSource {
         self.source
     }
 
-    
     #[must_use]
     pub fn path(&self) -> Option<&str> {
         self.path.as_deref()
     }
 
-    
     #[must_use]
     pub fn line_number(&self) -> Option<usize> {
         self.line_number
     }
 
-    
     #[must_use]
     pub fn function_name(&self) -> Option<&str> {
         self.function_name.as_deref()
     }
 
-    
     #[must_use]
     pub const fn is_empty(&self) -> bool {
         self.path.is_none() && self.line_number.is_none() && self.function_name.is_none()
@@ -143,20 +129,17 @@ impl fmt::Display for StackTraceLine {
     }
 }
 
-
 #[derive(Debug, Default, Clone)]
 pub struct StackTrace {
     lines: Vec<StackTraceLine>,
 }
 
 impl StackTrace {
-    
     #[must_use]
     pub fn lines(&self) -> &[StackTraceLine] {
         &self.lines
     }
 
-    
     #[must_use]
     pub fn lines_mut(&mut self) -> &mut Vec<StackTraceLine> {
         &mut self.lines

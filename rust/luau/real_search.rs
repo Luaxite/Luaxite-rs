@@ -39,8 +39,8 @@ impl LuaClient {
 
 #[mlua::userdata_impl]
 impl LuaClient {
-    
-    
+    // luau[Bot]: --- Every other entity in the bot's world (nearest first, not including the bot), optionally only those of one type (`kind` like "zombie" or "minecraft:zombie"; unknown kinds are an error). Never yields. BREAKING: older versions included the bot itself (see CHANGELOG.md).
+    // luau[Bot]: function nearest_entities(self, kind: string?): { Entity }
     fn nearest_entities(&self, kind: Option<String>) -> mlua::Result<Vec<LuaEntityRef>> {
         let found = match kind {
             None => self.client.nearest_entities::<()>().map_err(lua_err)?,
@@ -58,8 +58,8 @@ impl LuaClient {
         Ok(self.others(found))
     }
 
-    
-    
+    // luau[Bot]: --- Some entity whose components `names` (see `ecs_names`) pass `pred(row, entity)` (row = `{ [name] = value }`, a snapshot), or nil. In practice the nearest one. The bot itself is not a candidate. `pred` may yield. BREAKING: older versions included the bot itself (see CHANGELOG.md).
+    // luau[Bot]: function any_entity_by(self, names: { string }, pred: (row: { [string]: any }, entity: Entity) -> boolean?): Entity?
     async fn any_entity_by(
         &self,
         lua: Lua,
@@ -73,8 +73,8 @@ impl LuaClient {
             .next())
     }
 
-    
-    
+    // luau[Bot]: --- The nearest other entity (not the bot) whose components `names` pass `pred(row, entity)`, or nil. `pred` may yield. BREAKING: older versions included the bot itself (see CHANGELOG.md).
+    // luau[Bot]: function nearest_entity_by(self, names: { string }, pred: (row: { [string]: any }, entity: Entity) -> boolean?): Entity?
     async fn nearest_entity_by(
         &self,
         lua: Lua,
@@ -88,8 +88,8 @@ impl LuaClient {
             .next())
     }
 
-    
-    
+    // luau[Bot]: --- Every other entity (nearest first, not the bot) whose components `names` pass `pred(row, entity)`. `pred` may yield. BREAKING: older versions included the bot itself (see CHANGELOG.md).
+    // luau[Bot]: function nearest_entities_by(self, names: { string }, pred: (row: { [string]: any }, entity: Entity) -> boolean?): { Entity }
     async fn nearest_entities_by(
         &self,
         lua: Lua,

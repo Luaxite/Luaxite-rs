@@ -1,5 +1,4 @@
 
-
 use std::{
     env::{current_dir, current_exe},
     ffi::OsStr,
@@ -37,24 +36,20 @@ fn create_exe() -> Arc<Path> {
         .into()
 }
 
-
 #[must_use]
 pub fn get_current_dir() -> Arc<Path> {
     Arc::clone(&CWD)
 }
-
 
 #[must_use]
 pub fn get_current_exe() -> Arc<Path> {
     Arc::clone(&EXE)
 }
 
-
 #[must_use]
 pub fn clean_path(path: impl AsRef<Path>) -> PathBuf {
     path.as_ref().clean()
 }
-
 
 #[must_use]
 pub fn clean_path_and_make_absolute(path: impl AsRef<Path>) -> PathBuf {
@@ -65,7 +60,6 @@ pub fn clean_path_and_make_absolute(path: impl AsRef<Path>) -> PathBuf {
         path.clean()
     }
 }
-
 
 #[must_use]
 pub fn append_extension(path: impl AsRef<Path>, ext: impl AsRef<OsStr>) -> PathBuf {
@@ -81,7 +75,6 @@ pub fn append_extension(path: impl AsRef<Path>, ext: impl AsRef<OsStr>) -> PathB
     }
 }
 
-
 #[must_use]
 pub fn relative_path_normalize(path: impl AsRef<Path>) -> PathBuf {
     let path = clean_path(path);
@@ -93,7 +86,6 @@ pub fn relative_path_normalize(path: impl AsRef<Path>) -> PathBuf {
         path
     }
 }
-
 
 pub fn relative_path_parent(rel: &mut PathBuf) {
     if rel.as_os_str() == Component::CurDir.as_os_str() {

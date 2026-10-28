@@ -40,7 +40,6 @@ const REGISTRIES: &[&str] = &[
     "banner_pattern",
 ];
 
-
 fn short_name(raw: &str) -> &str {
     let short = raw.strip_prefix("minecraft:").unwrap_or(raw);
     if short == "biome" {
@@ -49,7 +48,6 @@ fn short_name(raw: &str) -> &str {
         short
     }
 }
-
 
 fn holder_extra_names(holder: &RegistryHolder) -> Vec<String> {
     holder
@@ -62,7 +60,6 @@ fn holder_extra_names(holder: &RegistryHolder) -> Vec<String> {
         .collect()
 }
 
-
 fn kinds_of(client: &Client) -> Vec<String> {
     let mut kinds: Vec<String> = REGISTRIES.iter().map(|n| n.to_string()).collect();
     if let Ok(extra) = client.with_registry_holder(holder_extra_names) {
@@ -74,8 +71,6 @@ fn kinds_of(client: &Client) -> Vec<String> {
     }
     kinds
 }
-
-
 
 fn registry_name(client: &Client, raw: &str) -> mlua::Result<String> {
     let short = short_name(raw);
@@ -93,8 +88,6 @@ fn registry_name(client: &Client, raw: &str) -> mlua::Result<String> {
         kinds_of(client).join(", ")
     )))
 }
-
-
 
 fn visit<'a, K: std::fmt::Display + 'a, T>(
     keys: impl Iterator<Item = &'a K>,
@@ -142,7 +135,6 @@ fn entries_of(client: &Client, registry: &str) -> mlua::Result<Vec<String>> {
         .map_err(lua_err)
 }
 
-
 fn index_of(client: &Client, registry: &str, wanted: &str) -> mlua::Result<Option<usize>> {
     let name = registry_name(client, registry)?;
     client
@@ -164,28 +156,28 @@ fn full_name(raw: &str) -> String {
 
 #[mlua::userdata_impl]
 impl LuaClient {
-    
-    
+    // luau[Bot]: --- Names of the data registries the server sends ("enchantment", "worldgen/biome", "damage_type", ...); any of them (also `biome`, or with `minecraft:`) works as the `registry` argument of the `registry_*` methods.
+    // luau[Bot]: function registry_kinds(self): { string }
     #[lua(infallible)]
     fn registry_kinds(&self) -> Vec<String> {
         kinds_of(&self.client)
     }
 
-    
-    
+    // luau[Bot]: --- All entry names of a data registry ("minecraft:plains", ...) in protocol-id order, so `registry_name(r, i)` is entry `i + 1` of this list. Empty before the server sent the registry. Errors on an unknown registry. Never yields.
+    // luau[Bot]: function registry_entries(self, registry: string): { string }
     fn registry_entries(&self, registry: String) -> mlua::Result<Vec<String>> {
         entries_of(&self.client, &registry)
     }
 
-    
-    
+    // luau[Bot]: --- The protocol id of the entry `name` ("plains" or "minecraft:plains") in a data registry, or nil when the server has no such entry. Never yields.
+    // luau[Bot]: function registry_resolve(self, registry: string, name: string): number?
     fn registry_resolve(&self, registry: String, name: String) -> mlua::Result<Option<u32>> {
         let wanted = full_name(&name);
         Ok(index_of(&self.client, &registry, &wanted)?.map(|i| i as u32))
     }
 
-    
-    
+    // luau[Bot]: --- The name of the entry with protocol id `id` in a data registry (e.g. a biome id from a packet), or nil when there is none. Never yields.
+    // luau[Bot]: function registry_name(self, registry: string, id: number): string?
     fn registry_name(&self, registry: String, id: u32) -> mlua::Result<Option<String>> {
         let name = registry_name(&self.client, &registry)?;
         self.client
@@ -197,8 +189,8 @@ impl LuaClient {
             .map_err(lua_err)
     }
 
-    
-    
+    // luau[Bot]: --- `{ name, id }` of the entry `name` in a data registry, or nil when the server has no such entry. The entry's data (NBT) is not exposed. Never yields.
+    // luau[Bot]: function registry_get(self, registry: string, name: string): { name: string, id: number }?
     fn registry_get(
         &self,
         lua: &Lua,

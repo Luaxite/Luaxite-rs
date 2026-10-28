@@ -34,7 +34,6 @@ fn new_lua_script_error() -> LuaResult<()> {
     .eval()
 }
 
-
 mod context {
     use super::*;
 
@@ -51,8 +50,6 @@ mod context {
 
     #[test]
     fn preserves_levels() {
-        
-        
         let lua_error = new_lua_runtime_error()
             .context("level 1")
             .context("level 2")
@@ -66,7 +63,6 @@ mod context {
         );
     }
 }
-
 
 mod error_components {
     use super::*;
@@ -103,7 +99,6 @@ mod error_components {
     }
 }
 
-
 mod stack_trace_lines {
     use crate::fmt::StackTraceLine;
 
@@ -116,8 +111,6 @@ mod stack_trace_lines {
 
     #[test]
     fn windows_drive_path_is_not_truncated() {
-        
-        
         let line: StackTraceLine = r"D:\Stuff\test:3: in function 'foo'".parse().unwrap();
         assert_eq!(line.path(), Some(r"D:\Stuff\test"));
         assert_eq!(line.line_number(), Some(3));
@@ -144,7 +137,6 @@ mod stack_trace_lines {
         assert_eq!(line.line_number(), Some(1));
     }
 }
-
 
 mod general {
     use super::*;
@@ -185,6 +177,6 @@ mod general {
             .filter(|line| line.source().is_c())
             .collect::<Vec<_>>();
 
-        assert_eq!(c_stack_lines.len(), 1); 
+        assert_eq!(c_stack_lines.len(), 1);
     }
 }

@@ -54,7 +54,6 @@ class SizeCaps(unittest.TestCase):
         self.assertIn('"process.exec: stdout"', body)
         self.assertIn('"process.exec: stderr"', body)
         self.assertIn("mlua::Result<Vec<u8>>", self.process)
-
         self.assertIn("tokio::try_join!(", self.process)
         self.assertNotIn("tokio::join!(", self.process)
         self.assertRegex(self.process, r"Err\(e\) => \{\s*(?:if let Some\(pid\) = child\.id\(\) \{\s*kill_tree\(pid\);\s*\}\s*)?let _ = child\.kill\(\)\.await;\s*return Err\(e\);")
@@ -84,7 +83,6 @@ class SizeCaps(unittest.TestCase):
             self.assertIsNotNone(m, name)
             for n in names:
                 self.assertIn(n, m.group(1), f"{name}: {n}")
-
         self.assertNotIn("AsyncReadExt", self.stdio)
 
 

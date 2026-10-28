@@ -2,7 +2,6 @@ use std::fmt;
 
 use console::{Color, style};
 
-
 #[derive(Debug, Clone, Copy)]
 pub enum Label {
     Info,
@@ -11,7 +10,6 @@ pub enum Label {
 }
 
 impl Label {
-    
     #[must_use]
     pub fn name(&self) -> &str {
         match self {
@@ -21,7 +19,6 @@ impl Label {
         }
     }
 
-    
     #[must_use]
     pub fn color(&self) -> Color {
         match self {

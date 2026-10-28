@@ -56,8 +56,6 @@ use tokio::sync::oneshot;
 
 pub use gen_client::LuaClient;
 
-
-
 static SCRIPT_ERRORS: AtomicBool = AtomicBool::new(false);
 
 pub fn note_error() {
@@ -73,7 +71,6 @@ pub fn had_error() -> bool {
 pub struct Handlers {
     map: RwLock<HashMap<String, Vec<Function>>>,
     waiters: Mutex<HashMap<String, Vec<oneshot::Sender<MultiValue>>>>,
-    
     closed: AtomicBool,
 }
 
@@ -86,7 +83,6 @@ impl Handlers {
                     eprintln!("[luau] error in `init` handler: {e}");
                 }
             };
-            
             #[cfg(feature = "real")]
             tokio::task::spawn_local(run);
             #[cfg(not(feature = "real"))]
@@ -170,11 +166,6 @@ impl Handlers {
     }
 }
 
-
-
-
-
-
 fn install_coroutine_shim(lua: &Lua) -> mlua::Result<()> {
     let co: mlua::Table = lua.globals().get("coroutine")?;
     let pending = mlua::Value::LightUserData(Lua::poll_pending());
@@ -213,8 +204,6 @@ fn install_coroutine_shim(lua: &Lua) -> mlua::Result<()> {
     patch.call::<()>((pending, co))
 }
 
-
-
 struct Loading {
     table: mlua::Table,
     key: String,
@@ -225,9 +214,6 @@ impl Drop for Loading {
         let _ = self.table.set(self.key.as_str(), mlua::Value::Nil);
     }
 }
-
-
-
 
 fn begin_embedded(lua: &Lua, key: &str) -> mlua::Result<(Function, Loading)> {
     let Some((_, source)) = scripts::SCRIPTS.iter().find(|(n, _)| *n == key) else {
@@ -248,8 +234,6 @@ fn begin_embedded(lua: &Lua, key: &str) -> mlua::Result<(Function, Loading)> {
     Ok((chunk, guard))
 }
 
-
-
 fn finish_embedded(lua: &Lua, key: &str, value: mlua::Value) -> mlua::Result<mlua::Value> {
     let value = if value.is_nil() {
         mlua::Value::Boolean(true)
@@ -261,17 +245,10 @@ fn finish_embedded(lua: &Lua, key: &str, value: mlua::Value) -> mlua::Result<mlu
     Ok(value)
 }
 
-
-
-
-
-
-
 fn install_require(lua: &Lua) -> mlua::Result<()> {
     let fallback: Option<Function> = lua.globals().get("require")?;
     lua.set_named_registry_value("azalea_loaded", lua.create_table()?)?;
     lua.set_named_registry_value("azalea_loading", lua.create_table()?)?;
-    
     let resolve = lua.create_function(
         move |lua, name: String| -> mlua::Result<(mlua::Value, Option<String>)> {
             if name.starts_with("@lune/") {
@@ -382,7 +359,6 @@ impl Runtime {
         self.handlers.waiting(event)
     }
 
-    
     pub fn kill_children() {
         #[cfg(feature = "lune")]
         lune_process::kill_all();
@@ -397,8 +373,6 @@ impl Runtime {
             .load(self.source.as_str())
             .set_name(format!("@{}", self.name));
         let script_err = chunk.exec_async().await.err();
-        
-        
         if let Some(e) = &script_err {
             eprintln!("[luau] script error: {e}");
         }

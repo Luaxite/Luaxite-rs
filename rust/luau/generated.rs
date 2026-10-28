@@ -1,5 +1,3 @@
-
-
 #[allow(dead_code, unused_imports, unused_variables, clippy::all)]
 mod gen_client {
     include!(concat!(env!("OUT_DIR"), "/inc/gen_client.rs"));
@@ -12,7 +10,6 @@ mod gen_events {
 mod gen_types {
     include!(concat!(env!("OUT_DIR"), "/inc/gen_types.rs"));
 }
-
 #[cfg(feature = "packets")]
 #[allow(dead_code, unused_imports, unused_variables, clippy::all)]
 mod gen_packets_in {
@@ -23,13 +20,11 @@ mod gen_packets_in {
 mod gen_packets_out {
     include!(concat!(env!("OUT_DIR"), "/inc/gen_packets_out.rs"));
 }
-
 #[cfg(feature = "real")]
 #[allow(dead_code, unused_imports, unused_variables, clippy::all)]
 mod gen_ecs {
     include!(concat!(env!("OUT_DIR"), "/inc/gen_ecs.rs"));
 }
-
 mod scripts {
     include!(concat!(env!("OUT_DIR"), "/scripts.rs"));
 }

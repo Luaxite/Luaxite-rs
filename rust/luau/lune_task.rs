@@ -141,7 +141,6 @@ async fn wait(secs: Option<f64>) -> mlua::Result<f64> {
     } else {
         match Duration::try_from_secs_f64(secs) {
             Ok(dur) => tokio::time::sleep(dur.max(Duration::from_millis(1))).await,
-            
             Err(_) => std::future::pending::<()>().await,
         }
     }
@@ -154,8 +153,6 @@ const DELAY_SRC: &str =
 pub fn module(lua: Lua) -> mlua::Result<Table> {
     let close: Function = lua.globals().get::<Table>("coroutine")?.get("close")?;
     let close_key = lua.create_registry_value(close)?;
-    
-    
     let wrappers: Table = lua
         .load("return setmetatable({}, { __mode = 'k' })")
         .eval()?;
@@ -189,8 +186,6 @@ pub fn module(lua: Lua) -> mlua::Result<Table> {
         .into_function()?;
     let delay = lua.create_function(move |lua, args: MultiValue| {
         let tof = ThreadOrFunction::from_lua(args.get(1).cloned().unwrap_or(Value::Nil), lua)?;
-        
-        
         let thread = tof.into_thread(lua)?;
         let args: MultiValue = args
             .into_iter()

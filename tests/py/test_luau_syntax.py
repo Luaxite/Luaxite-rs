@@ -148,7 +148,6 @@ class Scripts(unittest.TestCase):
             text = Path(f).read_text()
             name = Path(f).stem
             if name.endswith("_sigint"):
-
                 self.assertIn(f"E2E PASS {name}", (ROOT / "tests/e2e/run.sh").read_text(), name)
                 continue
             self.assertIn(f"E2E PASS {name}", text, name)

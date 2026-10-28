@@ -113,7 +113,6 @@ class Synth:
         """A const generic argument (`Grid<3>`): a GenericArg, not a Type."""
         return {"const": {"expr": expr, "value": expr, "is_literal": True}}
 
-
     @staticmethod
     def span(line, col=5, end=None, file="azalea/src/lib.rs"):
         return {"filename": file, "begin": [line, col], "end": end or [line, col + 20]}
@@ -232,7 +231,6 @@ def synth_weird() -> Synth:
     P, G, S = Synth.path_type, Synth.generics, Synth.span
     u8, u16, u32_, usize_ = ({"primitive": n} for n in ("u8", "u16", "u32", "usize"))
     a = Synth("azalea", "0.0.0")
-
     inner = a.mod("inner", a.root)
     deep = a.mod("deep", inner)
     deep_s = a.struct("Deep", deep, fields=[("n", u32_, "public")], doc="Reached through a re-export chain and a glob.")
@@ -240,7 +238,6 @@ def synth_weird() -> Synth:
     chain = a.mod("chain", a.root)
     a.use(chain, "crate::inner::deep", deep, name="deep", glob=True)
     a.use(a.root, "chain::Deep", deep_s, name="Deep")
-
     grid = a.struct("Grid", a.root, fields=[("cells", {"array": {"type": u8, "len": "W"}}, "public")], doc="Const generics.")
     a.index[grid]["inner"]["struct"]["generics"] = G([Synth.const_param("W", usize_), Synth.const_param("H", usize_, "4")])
     a.struct("Raw", a.root, fields=[("r#type", u32_, "public")], doc="Raw identifier field and variant.")
@@ -254,7 +251,6 @@ def synth_weird() -> Synth:
     entity = a.struct("EntityRef", a.root)
     tick = a.trait_("Tick", a.root)
     a.fn("tick", tick, [("self", Synth.SELF_REF)], u32_, is_async=True, doc="async fn in trait", span=S(33))
-
     ic = a.impl_(P("Client", client), span=S(38, 1, [58, 2]))
     sr = Synth.SELF_REF
     a.fn("nested", ic, [("self", sr), ("m", nest)], P("Option", opt, [P("Vec", vec, [u32_])]), doc="nested generics", span=S(40))
@@ -270,7 +266,6 @@ def synth_weird() -> Synth:
     a.fn("grid", ic, [("self", sr), ("g", P("Grid", grid, [Synth.const_arg("3"), Synth.const_arg("4")]))], u32_, doc="const generic argument", span=S(50))
     a.fn("hidden", ic, [("self", sr)], u32_, doc="hidden", attrs=[{"other": "#[doc(hidden)]"}], span=S(55))
     a.fn("waits", ic, [("self", sr)], u32_, is_async=True, span=S(57))
-
     site = S(64, 1, [64, 28])
     ie = a.impl_(P("EntityRef", entity), span=site)
     for n in ("health", "hunger"):

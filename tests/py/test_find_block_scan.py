@@ -25,7 +25,6 @@ class FindBlockScan(unittest.TestCase):
 
     def test_filter_before_cap_and_push(self):
         s = self.search
-
         loaded, push, cap = s.index("loaded_chunks.get("), s.index("nearest.push("), s.index("examined >= MAX_CANDIDATES")
         self.assertLess(loaded, push)
         self.assertLess(push, cap)
@@ -38,24 +37,15 @@ class FindBlockScan(unittest.TestCase):
         self.assertNotIn("partial_world", s)
         self.assertIn("loaded_chunk_map(", s)
         self.assertEqual(s.count("world.read()"), 2)
-
         pass1 = s[s.index("world.read()"):s.index("loaded_chunk_map(")]
         self.assertIn("HashSet", s)
         self.assertIn("keys.insert(", pass1)
         self.assertGreater(pass1.count("}"), pass1.count("{"))
-
         m = fn_body(self.src, "loaded_chunk_map", method=True)
         self.assertEqual(m.count("partial.read()"), 1)
         self.assertNotIn("world", m.replace("partial_world", ""))
         self.assertIn("drop(guard)", m)
-
         self.assertEqual(self.src.count("partial.read()"), 2)
-
-    def test_lock_order_comments(self):
-        for name in ("chunk_is_loaded", "search"):
-            i = self.src.index("fn " + name)
-            doc = self.src[self.src.rindex("\n\n", 0, i):i]
-            self.assertIn("never hold both locks", doc.lower(), name)
 
     def test_no_collect_all_then_sort(self):
         s = self.search

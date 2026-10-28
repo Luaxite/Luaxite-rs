@@ -52,8 +52,6 @@ fn read_injected(conn: &Table) -> mlua::Result<Vec<Vec<u8>>> {
     Ok(out)
 }
 
-
-
 fn merge_injected(old: &[Vec<u8>], new: Vec<Vec<u8>>, live: Vec<Vec<u8>>) -> Vec<Vec<u8>> {
     if live == old {
         return new;
@@ -86,22 +84,18 @@ mod tests {
 
     #[test]
     fn merge_keeps_concurrent_changes() {
-        
         assert_eq!(
             merge_injected(&v(&["a"]), v(&["a", "b"]), v(&["a"])),
             v(&["a", "b"])
         );
-        
         assert_eq!(
             merge_injected(&v(&["a"]), v(&["a", "b"]), v(&["a", "x"])),
             v(&["a", "x", "b"])
         );
-        
         assert_eq!(
             merge_injected(&v(&["a", "b"]), v(&["b"]), v(&["a", "b", "x"])),
             v(&["b", "x"])
         );
-        
         assert_eq!(
             merge_injected(&v(&["a", "b"]), v(&["a"]), v(&["a"])),
             v(&["a"])
@@ -111,8 +105,8 @@ mod tests {
 
 #[mlua::userdata_impl]
 impl LuaClient {
-    
-    
+    // luau[Bot]: --- Queues a serverbound game packet (`kind` and the `fields` table follow the `OutPacket<Kind>` types; kinds without a constructor are listed in GEN_REPORT.md). Sent on the next ECS update; never yields. Errors on an unknown kind or a bad field.
+    // luau[Bot]: function write_packet(self, kind: OutPacketKind, fields: { [string]: any }?): ()
     fn write_packet(&self, lua: &Lua, kind: String, fields: Option<Table>) -> mlua::Result<()> {
         let fields = match fields {
             Some(t) => t,
@@ -123,8 +117,8 @@ impl LuaClient {
         Ok(())
     }
 
-    
-    
+    // luau[Bot]: --- Read-only snapshot of the connection: `state` ("handshake"|"game"|"status"|"login"|"configuration"), `is_alive`, and `injected` (raw clientbound packets queued for injection, as strings). Never yields.
+    // luau[Bot]: function raw_connection(self): { state: string, is_alive: boolean, injected: { string } }
     fn raw_connection(&self, lua: &Lua) -> mlua::Result<Table> {
         let (state, alive, injected) = self
             .client
@@ -140,11 +134,10 @@ impl LuaClient {
         snapshot(lua, state, alive, injected)
     }
 
-    
-    
+    // luau[Bot]: --- Calls `fn(conn)` with the snapshot of `raw_connection()`; afterwards `conn.state` and `conn.injected` (strings of raw clientbound packet bytes) are written back to the connection. `is_alive` is read-only. This changes how azalea treats the connection: use with care.
+    // luau[Bot]: function raw_connection_mut(self, f: (conn: { state: string, is_alive: boolean, injected: { string } }) -> ()): ()
     async fn raw_connection_mut(&self, lua: Lua, f: Function) -> mlua::Result<()> {
         let conn = self.raw_connection(&lua)?;
-        
         let old_state = conn.get::<String>("state")?;
         let old_injected = read_injected(&conn)?;
         f.call_async::<()>(conn.clone()).await?;

@@ -10,7 +10,6 @@ use mlua::prelude::*;
 use os_str_bytes::OsStringBytes;
 
 
-
 #[derive(Debug, Default)]
 struct ProcessArgsInner {
     values: Vec<OsString>,
@@ -23,7 +22,6 @@ impl FromIterator<OsString> for ProcessArgsInner {
         }
     }
 }
-
 
 #[derive(Debug, Clone)]
 pub struct ProcessArgs {
@@ -57,7 +55,6 @@ impl ProcessArgs {
         inner.values.is_empty()
     }
 
-    
 
     #[must_use]
     pub fn all(&self) -> Vec<OsString> {
@@ -106,7 +103,6 @@ impl ProcessArgs {
         }
     }
 
-    
 
     #[must_use]
     pub fn all_bytes(&self) -> Vec<Vec<u8>> {
@@ -149,7 +145,6 @@ impl ProcessArgs {
         self.remove(index).and_then(OsString::into_io_vec)
     }
 
-    
 
     #[doc(hidden)]
     #[allow(clippy::missing_errors_doc)]
@@ -165,7 +160,6 @@ impl ProcessArgs {
         Ok(tab)
     }
 }
-
 
 
 impl IntoIterator for ProcessArgs {
@@ -192,7 +186,6 @@ impl<S: Into<OsString>> Extend<S> for ProcessArgs {
         inner.values.extend(iter.into_iter().map(Into::into));
     }
 }
-
 
 
 impl FromLua for ProcessArgs {

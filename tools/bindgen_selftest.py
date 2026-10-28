@@ -86,7 +86,6 @@ def test_closure_order_and_filters():
     r = layout()
     got = resolve(r)
     assert [c["name"] for c in got] == ["ws-c", "ws-b", "solo", "ws-a"], [c["name"] for c in got]
-
     assert {c["lib"] for c in got} == {"ws_a", "ws_b", "ws_c", "solo"}
     a = got[3]
     assert a["dir"] == str(r / "bind/ws/a") and a["manifest"] == str(r / "bind/ws/a/Cargo.toml"), a
@@ -321,7 +320,6 @@ def test_bindgen_on_fake_crate():
     rer = {l.split("=", 1)[1] for l in lines if l.startswith("cargo:rerun-if-changed=")}
     for want in (r / "src", r / "bind/azalea/src", r / "bind/azalea/Cargo.toml", r / "bindgen.toml"):
         assert str(want) in rer, (want, rer)
-
     for f in ("gen_client.rs", "gen_events.rs", "gen_types.rs"):
         a, b = (out / f).read_text().splitlines(), (ROOT / "harness/src/luau" / f).read_text().splitlines()
         assert a[1:] == b[1:] and a[0].startswith("// ") and a[0].split(" @ ")[1] == b[0].split(" @ ")[1], f
@@ -334,7 +332,6 @@ def test_bindgen_on_fake_crate():
     report = json.loads((out / "GEN_REPORT.json").read_text())
     assert report["schema"] == 1 and report["classes"][0]["luau"] == "Bot", report["classes"][0]
     assert (r / "types/bindings.d.luau").read_text() == (out / "bindings.d.luau").read_text()
-
     import api_list
     want = api_list.build((out / "bindings.d.luau").read_text(), r / "bindgen.toml")
     assert (out / "API_list.md").read_text() == want and (r / "types/API_list.md").read_text() == want
@@ -343,7 +340,6 @@ def test_bindgen_on_fake_crate():
     assert (out / "API.json").read_text() == api_list.dumps(api) and (r / "types/API.json").read_text() == api_list.dumps(api)
     bot = next(c for c in api["classes"] if c["name"] == "Bot")
     assert any(m["decl"] == "declare function Bot:chat(content: string): ()" for m in bot["members"]) and {"name": "bot", "type": "Bot"} in api["globals"]
-
     st = (r / "types/bindings.d.luau").stat().st_mtime_ns
     st2 = (r / "types/API_list.md").stat().st_mtime_ns
     st3 = (r / "types/API.json").stat().st_mtime_ns
@@ -387,7 +383,6 @@ def test_bindgen_passes_config_or_builtin():
     assert run_bindgen(r, r.parent / "out", {"BINDGEN_GENERATOR": str(gen)}).returncode == 0
     a = argv()
     assert a[a.index("--config") + 1] == str(r / "bindgen.toml"), a
-
     out = r.parent / "out2"
     assert run_bindgen(r, out).returncode == 0
     assert (out / "gen_client.rs").read_text().splitlines()[1:] == (ROOT / "harness/src/luau/gen_client.rs").read_text().splitlines()[1:]
@@ -440,7 +435,6 @@ def test_bindgen_on_toy_crate_without_config():
     skipped = [sk for c in json.loads((out / "GEN_REPORT.json").read_text())["classes"] for sk in c["skipped"]]
     assert any("async free fn" in sk["reason"] for sk in skipped), skipped
     assert "declare extern type Counter with" in (tmp / "types" / "bindings.d.luau").read_text()
-
 
 
 BUILD_RS = ROOT / "build.rs"
@@ -516,7 +510,6 @@ def test_build_rs_compiles_and_runs():
     main, mods = parse_scripts_rs((out / "scripts.rs").read_text())
     assert (main, mods) == expected_scripts(r), (main, mods)
     assert set(mods) == {"main", "util.strings", "a.b.c"}
-
     os.rename(r / "src/main.luau", r / "src/main.lua")
     p = run_build_rs(exe, r, out)
     assert p.returncode == 0 and parse_scripts_rs((out / "scripts.rs").read_text())[0] == str(r / "src/main.lua"), p.stderr

@@ -39,9 +39,6 @@ class RdjError(Exception):
 
 
 
-
-
-
 def accepted_range(accept: Optional[tuple] = None) -> tuple:
     if accept is not None:
         return (int(accept[0]), int(accept[1]))
@@ -85,9 +82,6 @@ def format_error(path: Path, fv, rng: tuple, meta: dict) -> RdjError:
         f"the JSON was produced by {rustc}. Regenerate it with tools/make_rustdoc_json.sh on the pinned toolchain, "
         f"or at your own risk accept it with AZL_RDJ_FORMAT_RANGE={fv}-{fv}"
     )
-
-
-
 
 
 
@@ -198,9 +192,6 @@ class Crate:
             if "automatically_derived" in (it.get("attrs") or []):
                 out.append(_last_seg(tr))
             elif _last_seg(tr) in _BEVY_DERIVES and not (p.get("is_synthetic") or p.get("blanket_impl")):
-
-
-
                 out.append(_last_seg(tr))
         return out
 
@@ -279,9 +270,6 @@ class Crate:
 
 
 
-
-
-
 class Rdj:
     def __init__(self):
         self.crates: dict = {}
@@ -317,7 +305,6 @@ class Rdj:
 
     def external_crates(self, crate) -> dict:
         return self.crate(crate).external_crates
-
 
     def summary(self, crate, id) -> Optional[dict]:
         """The `paths` entry of an id of `crate` (what rustdoc keeps of an item defined elsewhere), or None."""
@@ -416,7 +403,6 @@ def load_dir(directory, accept: Optional[tuple] = None) -> Rdj:
             rdj.warnings.append(f"{f.name}: file name differs from the crate name `{c.name}`")
         if c.name == "azalea_entity" and not any(c.kind(i) == "module" and (c.item(i) or {}).get("name") == "metadata"
                                                  for i in c.children(c.root)):
-
             rdj.warnings.append(f"{f.name}: no `metadata` module (azalea-entity documented without its `bevy_ecs` feature): "
                                 "gen_ecs.rs will lose the entity-metadata components; re-make the JSON with AZL_RDJ_FEATURES=--all-features")
         rdj.crates[c.name] = c
@@ -425,11 +411,6 @@ def load_dir(directory, accept: Optional[tuple] = None) -> Rdj:
         rdj.warnings.append(f"the crate JSONs mix format_versions ({', '.join(f'{n} {v}' for n, v in sorted(fvs.items()))}); "
                             "re-make them all with one toolchain")
     return rdj
-
-
-
-
-
 
 
 
@@ -456,7 +437,6 @@ def _generic_args(args) -> tuple:
             elif "const" in a:
                 c = a["const"]
                 out.append({"__text__": (c.get("expr") or c.get("value") or "_") if isinstance(c, dict) else str(c)})
-
         for c in ab.get("constraints") or []:
             if not isinstance(c, dict):
                 continue
@@ -564,8 +544,6 @@ def _render_bounds(bounds) -> str:
     return " + ".join(parts)
 
 
-
-
 _ABI_NAMES = {"C": "C", "Cdecl": "cdecl", "Stdcall": "stdcall", "Fastcall": "fastcall", "Aapcs": "aapcs", "Win64": "win64",
               "SysV64": "sysv64", "System": "system"}
 
@@ -639,9 +617,6 @@ def render_type(t) -> str:
     if k == "infer":
         return "_"
     return f"<{k}>"
-
-
-
 
 
 

@@ -88,7 +88,6 @@ class CargoWarnings(unittest.TestCase):
         self.assertEqual(self.go(["not json", ""]).returncode, 2)
 
     def test_render_diagnostics_log_has_no_messages_and_says_why(self):
-
         p = self.go(['{"reason":"compiler-artifact","package_id":"path+file:///w/luaxite#0.1.0","fresh":false}', '{"reason":"build-finished","success":true}'])
         self.assertEqual(p.returncode, 2)
         self.assertIn("json-render-diagnostics", p.stderr)

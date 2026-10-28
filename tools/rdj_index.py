@@ -166,9 +166,6 @@ def build_defs(r: rdj.Rdj, crates=None, skips: Optional[list] = None) -> dict:
 
 
 
-
-
-
 MACRO_LABEL = "(via macro)"
 IDENT = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
 
@@ -181,8 +178,6 @@ class ImplData:
     client_traits: set = field(default_factory=set)
     goal_impls: set = field(default_factory=set)
     clone_impls: set = field(default_factory=set)
-
-
     macro_notes: list = field(default_factory=list)
     hidden: list = field(default_factory=list)
 
@@ -310,13 +305,6 @@ def _trait_name(p: dict) -> Optional[str]:
 
 
 
-
-
-
-
-
-
-
 def is_hidden(it: dict) -> bool:
     """`#[doc(hidden)]` on an item (format 57 lists it as {"other": "#[doc(hidden)]"}; older/newer ones as a bare string)."""
     for a in it.get("attrs") or []:
@@ -407,9 +395,6 @@ def build_impls(r: rdj.Rdj, crates=None, classes=None, strip_prefix: str = "", h
 
 
 
-
-
-
 class RdjPaths:
     """The path half of the generator's index, from rustdoc JSON: the module tree is walked the way rustc
     resolves names: from the root crate's root module through every *public* item, following `pub use` items (renames, globs,
@@ -443,7 +428,6 @@ class RdjPaths:
         self._paths = None
         self._scan()
 
-
     def _scan(self):
         for cname in self.crates:
             c = self.r.crate(cname)
@@ -474,7 +458,6 @@ class RdjPaths:
                 if glob:
                     self.globs.append((c.name, modpath, p.get("source") or ""))
 
-
     def aliases(self) -> dict:
         """`pub use azalea_core as core;` at the root crate's root: {crate name: exported name}."""
         return {full: exported for crate, modpath, exported, full in self.reexports
@@ -486,7 +469,6 @@ class RdjPaths:
     def unique_def(self, name: str):
         pubs = [d for d in self.defs.get(name, []) if d.is_pub]
         return pubs[0] if len(pubs) == 1 else None
-
 
     def _resolve(self, c: rdj.Crate, id):
         """(crate name, item id) of a `use` target: a local item, or an item of another crate found by its `paths` entry
@@ -527,7 +509,6 @@ class RdjPaths:
                     from_glob.append(False)
             except Exception as e:
                 note_skip(self.skips, c, cid, it, e)
-
         explicit = {(n, self._ns_of(t)) for (n, t), g in zip(out, from_glob) if not g}
         out = [nt for nt, g in zip(out, from_glob) if not (g and (nt[0], self._ns_of(nt[1])) in explicit)]
         if not self._cut:
@@ -575,9 +556,6 @@ class RdjPaths:
         if d is None:
             return None
         return self.to_azalea(d.crate, d.modpath, d.name)
-
-
-
 
 
 
@@ -649,7 +627,6 @@ def workspace_prefix(r: rdj.Rdj, root: str = "azalea") -> str:
     fn = ((sp or {}).get("filename") or "").replace("\\", "/")
     parts = fn.split("/")
     return "/".join(parts[:-3]) + "/" if len(parts) > 3 and parts[-2:] == ["src", "lib.rs"] else ""
-
 
 
 

@@ -16,9 +16,6 @@ use super::lune_libs::{
 
 const STDIO_KINDS: &str = "default, inherit, forward, none";
 
-
-
-
 struct Entry {
     pid: u32,
     exited: bool,
@@ -66,15 +63,10 @@ impl Drop for Tracked {
     }
 }
 
-
-
-
-
 #[cfg(unix)]
 fn kill_group_cmd(pid: u32) -> String {
     format!("kill -9 -{pid} 2>/dev/null; kill -9 {pid} 2>/dev/null")
 }
-
 
 fn kill_tree(pid: u32) {
     #[cfg(unix)]
@@ -91,8 +83,6 @@ fn kill_tree(pid: u32) {
         .status();
 }
 
-
-
 #[cfg(unix)]
 fn kill_leftover_group(pid: u32) {
     let _ = std::process::Command::new("sh")
@@ -101,8 +91,6 @@ fn kill_leftover_group(pid: u32) {
         .stderr(Stdio::null())
         .status();
 }
-
-
 
 pub(super) fn kill_all() {
     let entries = match CHILDREN.lock() {
@@ -154,8 +142,6 @@ struct Opts {
     stdin: StdinKind,
     out: Kind,
     err: Kind,
-    
-    
     timeout: Option<Duration>,
 }
 
@@ -174,7 +160,6 @@ fn parse_opts(func: &str, options: Option<Table>) -> mlua::Result<Opts> {
         None => None,
     };
     if func == "exec" {
-        
         o.timeout = timeout_with_default("process.exec", raw_timeout, DEFAULT_EXEC_TIMEOUT_SECS)?;
     } else if raw_timeout.is_some() {
         return Err(mlua::Error::runtime(format!(
@@ -229,7 +214,6 @@ fn out_stdio(k: Kind) -> Stdio {
         Kind::None => Stdio::null(),
     }
 }
-
 
 async fn read_all<R: AsyncRead + Unpin>(
     reader: Option<R>,
@@ -305,9 +289,6 @@ fn build_command(program: &str, args: &[String], o: &Opts) -> Command {
     });
     cmd.stdout(out_stdio(o.out)).stderr(out_stdio(o.err));
     cmd.kill_on_drop(true);
-    
-    
-    
     #[cfg(unix)]
     if !matches!(o.stdin, StdinKind::Inherit) {
         cmd.process_group(0);
@@ -354,7 +335,6 @@ impl UserData for Writer {
         });
     }
 }
-
 
 const MAX_READ: usize = 64 << 20;
 
@@ -441,10 +421,6 @@ pub fn module(lua: Lua) -> mlua::Result<Table> {
             };
             let (timeout, out_kind, err_kind) = (o.timeout, o.out, o.err);
             let (out_reader, err_reader) = (child.stdout.take(), child.stderr.take());
-            
-            
-            
-            
             let run = async {
                 let (_, stdout, stderr) = tokio::try_join!(
                     async {
@@ -521,8 +497,6 @@ pub fn module(lua: Lua) -> mlua::Result<Table> {
             );
             let kill = Arc::new(Notify::new());
             let (tx, rx) = watch::channel(None);
-            
-            
             let tracked = Tracked::new(child.id(), cfg!(unix) && o.shell.is_some());
             let kill_wait = kill.clone();
             tokio::task::spawn_local(async move {

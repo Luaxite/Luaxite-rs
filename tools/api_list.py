@@ -127,7 +127,6 @@ def parse(text: str) -> Model:
         if not line or line.lstrip().startswith("--"):
             continue
         if line.startswith("type "):
-
             if line.endswith("="):
                 alts = []
                 while i < len(lines) and re.match(r"\s+\|", lines[i]):

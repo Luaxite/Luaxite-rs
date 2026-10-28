@@ -17,12 +17,8 @@ use self::recursive::format_value_recursive;
 
 pub use self::config::ValueFormatConfig;
 
-
-
-
 static COLORS_LOCK: LazyLock<Arc<ReentrantMutex<()>>> =
     LazyLock::new(|| Arc::new(ReentrantMutex::new(())));
-
 
 #[must_use]
 #[allow(clippy::missing_panics_doc)]
@@ -38,7 +34,6 @@ pub fn pretty_format_value(value: &LuaValue, config: &ValueFormatConfig) -> Stri
     set_colors_enabled(were_colors_enabled);
     res.expect("using fmt for writing into strings should never fail")
 }
-
 
 #[must_use]
 #[allow(clippy::missing_panics_doc)]

@@ -26,7 +26,6 @@ def bullets(text, title):
 class Fixture(unittest.TestCase):
 
     def test_matches_the_committed_api_list_byte_for_byte(self):
-
         self.assertEqual(api_list.build(D_LUAU, CONFIG), GOLDEN)
 
     def test_is_deterministic(self):
@@ -136,7 +135,6 @@ class ApiJson(unittest.TestCase):
         self.assertIn({"name": "bot", "type": "Bot"}, api["globals"])
         goal = next(c for c in api["classes"] if c["prefix"] == "goal")
         self.assertTrue(goal["library"] and not any(m["method"] for m in goal["members"]))
-
         decls = [m["decl"] for c in api["classes"] for m in c["members"]]
         self.assertEqual(sorted(decls), sorted(l[3:-1] for l in GOLDEN.splitlines() if l.startswith("- `declare function ")))
 

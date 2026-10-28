@@ -1,5 +1,4 @@
 
-
 use std::{
     ffi::OsStr,
     fmt,
@@ -11,12 +10,9 @@ use mlua::prelude::*;
 use super::constants::{FILE_EXTENSIONS, FILE_NAME_INIT};
 use super::std::append_extension;
 
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum LuauFilePath {
-    
     File(PathBuf),
-    
     Directory(PathBuf),
 }
 
@@ -24,7 +20,6 @@ impl LuauFilePath {
     fn resolve(module: impl AsRef<Path>) -> Result<Self, LuaNavigateError> {
         let module = module.as_ref();
 
-        
         if module
             .file_name()
             .is_some_and(|n| n == OsStr::new(FILE_NAME_INIT))
@@ -34,7 +29,6 @@ impl LuauFilePath {
 
         let mut found = None;
 
-        
         for ext in FILE_EXTENSIONS {
             let candidate = append_extension(module, ext);
             if candidate.is_file() && found.replace(candidate).is_some() {
@@ -42,7 +36,6 @@ impl LuauFilePath {
             }
         }
 
-        
         if module.is_dir() {
             let init = Path::new(FILE_NAME_INIT);
             for ext in FILE_EXTENSIONS {
@@ -52,15 +45,11 @@ impl LuauFilePath {
                 }
             }
 
-            
-            
             if found.is_none() {
                 return Ok(Self::Directory(module.to_path_buf()));
             }
         }
 
-        
-        
         found.map(Self::File).ok_or(LuaNavigateError::NotFound)
     }
 
@@ -107,17 +96,13 @@ impl fmt::Display for LuauFilePath {
     }
 }
 
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LuauModulePath {
-    
     source: PathBuf,
-    
     target: LuauFilePath,
 }
 
 impl LuauModulePath {
-    
     #[must_use]
     pub fn strip(path: impl Into<PathBuf>) -> PathBuf {
         let mut path: PathBuf = path.into();
@@ -141,20 +126,17 @@ impl LuauModulePath {
         path
     }
 
-    
     pub fn resolve(module: impl Into<PathBuf>) -> Result<Self, LuaNavigateError> {
         let source = module.into();
         let target = LuauFilePath::resolve(&source)?;
         Ok(Self { source, target })
     }
 
-    
     #[must_use]
     pub fn source(&self) -> &Path {
         &self.source
     }
 
-    
     #[must_use]
     pub fn target(&self) -> &LuauFilePath {
         &self.target

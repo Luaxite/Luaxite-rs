@@ -15,8 +15,8 @@ impl LuaEntityRef {
     }
 }
 
-
-
+// luau[Entity]: --- Distance in blocks between the feet of this entity and another one.
+// luau[Entity]: function distance_to(self, other: Entity): number
 #[mlua::userdata_impl]
 impl LuaEntityRef {
     fn distance_to(&self, other: UserDataRef<LuaEntityRef>) -> mlua::Result<f64> {

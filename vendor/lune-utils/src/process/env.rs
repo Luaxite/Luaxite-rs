@@ -11,7 +11,6 @@ use mlua::prelude::*;
 use os_str_bytes::{OsStrBytes, OsStringBytes};
 
 
-
 #[derive(Debug, Default)]
 struct ProcessEnvInner {
     values: BTreeMap<OsString, OsString>,
@@ -24,7 +23,6 @@ impl FromIterator<(OsString, OsString)> for ProcessEnvInner {
         }
     }
 }
-
 
 #[derive(Debug, Clone)]
 pub struct ProcessEnv {
@@ -58,7 +56,6 @@ impl ProcessEnv {
         inner.values.is_empty()
     }
 
-    
 
     #[must_use]
     pub fn get_all(&self) -> Vec<(OsString, OsString)> {
@@ -99,7 +96,6 @@ impl ProcessEnv {
         inner.values.remove(key);
     }
 
-    
 
     #[must_use]
     pub fn get_all_bytes(&self) -> Vec<(Vec<u8>, Vec<u8>)> {
@@ -131,7 +127,6 @@ impl ProcessEnv {
         }
     }
 
-    
 
     #[doc(hidden)]
     #[allow(clippy::missing_errors_doc)]
@@ -148,7 +143,6 @@ impl ProcessEnv {
         Ok(tab)
     }
 }
-
 
 
 impl IntoIterator for ProcessEnv {
@@ -184,7 +178,6 @@ impl<K: Into<OsString>, V: Into<OsString>> Extend<(K, V)> for ProcessEnv {
         );
     }
 }
-
 
 
 impl FromLua for ProcessEnv {
