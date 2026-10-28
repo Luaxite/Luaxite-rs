@@ -25,12 +25,12 @@ start_goto_with_opts_block_pos = "start_goto_with_opts"
 
 # Goals the generator can't build but a hand-written method covers; the reason goes into GEN_REPORT.md.
 [handwritten_goals]
-AndGoal = "covered by `goal.all(a, b)` in rust/luau/real_goal.rs"
-AndGoals = "covered by `goal.all(...)` in rust/luau/real_goal.rs"
-OrGoal = "covered by `goal.any(a, b)` in rust/luau/real_goal.rs"
-OrGoals = "covered by `goal.any(...)` in rust/luau/real_goal.rs"
-InverseGoal = "covered by `goal.inverse(g)` in rust/luau/real_goal.rs"
-ReachBlockPosGoal = "covered by `bot:goto_reach(pos, distance?)` in rust/luau/extra_misc.rs"
+AndGoal = "covered by `goal.all(a, b)` in rust_binds/luau/real_goal.rs"
+AndGoals = "covered by `goal.all(...)` in rust_binds/luau/real_goal.rs"
+OrGoal = "covered by `goal.any(a, b)` in rust_binds/luau/real_goal.rs"
+OrGoals = "covered by `goal.any(...)` in rust_binds/luau/real_goal.rs"
+InverseGoal = "covered by `goal.inverse(g)` in rust_binds/luau/real_goal.rs"
+ReachBlockPosGoal = "covered by `bot:goto_reach(pos, distance?)` in rust_binds/luau/extra_misc.rs"
 
 # Luau callback parameter names for event payloads (cosmetic).
 [event_arg_names]
@@ -48,19 +48,19 @@ ReceiveChunk = "chunk"
 [hidden_events]
 
 # Event names scripts can use with `bot:on(..)` / `bot:wait_for(..)` that are not `azalea::Event` variants: hand-written glue fires them
-# (name = doc line for the .d.luau; the payload is always empty). `update`: rust/luau/real_events.rs (real azalea only; never fires in the harness).
+# (name = doc line for the .d.luau; the payload is always empty). `update`: rust_binds/luau/real_events.rs (real azalea only; never fires in the harness).
 [extra_events]
 update = "Fires on every ECS update (at least once per game tick, usually faster). Only handlers that finish quickly should use it."
 packet = "Fires for every clientbound game packet the server sends (a table tagged by `kind`; see `ClientboundPacket`). Use `bot:on_packet(kind, fn)` for one kind only. Busy servers send hundreds per second: keep handlers short."
 
 # Payload type of an extra event (default: none). Only `ClientboundPacket` exists; such an event is declared only when that type is generated
-# (real azalea), so the fake azalea's outputs do not change. `packet`: rust/luau/real_events.rs (cargo feature `packets`, default on).
+# (real azalea), so the fake azalea's outputs do not change. `packet`: rust_binds/luau/real_events.rs (cargo feature `packets`, default on).
 [extra_event_payloads]
 packet = "ClientboundPacket"
 
 # Luau classes that have no azalea type behind them: pure hand-written userdata (name = doc line for the .d.luau). The class is declared in
-# azalea.d.luau when some rust/luau/extra_*.rs / real_*.rs has `// luau[Name]:` lines for it (so the harness, without rust/luau/real_world.rs,
-# does not get `World`). `World`: rust/luau/real_world.rs, returned by `bot:world()` / `bot:partial_world()`.
+# azalea.d.luau when some rust_binds/luau/extra_*.rs / real_*.rs has `// luau[Name]:` lines for it (so the harness, without rust_binds/luau/real_world.rs,
+# does not get `World`). `World`: rust_binds/luau/real_world.rs, returned by `bot:world()` / `bot:partial_world()`.
 [hand_classes]
 World = "The bot's loaded world: block reads and block searches. Get one with `bot:world()`."
 Goal = "A pathfinding goal. Make one with the `goal` functions or `bot:reach_goal(..)`; combine them with `goal.all/any/inverse`; use it with `bot:goto_goal(goal)`."
@@ -69,7 +69,7 @@ Swarm = "A running azalea swarm. Start one with `azalea.swarm{ address }`, add b
 AzaleaLib = "The `azalea` global: `join` a server with a bot, start a `swarm`, `wait` for the bots to leave."
 ProcessLib = "The `process` global: `process.exit(code)` ends the process."
 
-# Globals (name = class) for hand-only classes; declared only when the class is (like [hand_classes]). rust/luau/real_goal.rs installs `goal`.
+# Globals (name = class) for hand-only classes; declared only when the class is (like [hand_classes]). rust_binds/luau/real_goal.rs installs `goal`.
 [hand_globals]
 goal = "GoalLib"
 azalea = "AzaleaLib"

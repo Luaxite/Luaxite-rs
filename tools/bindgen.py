@@ -54,13 +54,13 @@ def copy_glue(root: Path, out: Path) -> None:
     for old in list(out.glob("extra_*.rs")) + list(out.glob("real_*.rs")):
         old.unlink()
     for pat in ("extra_*.rs", "real_*.rs"):
-        for f in sorted((root / "rust" / "luau").glob(pat)):
+        for f in sorted((root / "rust_binds" / "luau").glob(pat)):
             shutil.copy(f, out / f.name)
 
 
 def write_inc(out: Path) -> None:
     """O/inc/gen_*.rs = O/gen_*.rs minus file-level inner attributes (`#![allow(..)]`): rustc rejects those in an `include!`d file, so the
-    host wraps each in `#[allow(..)] mod gen_x { include!(\"$OUT_DIR/inc/gen_x.rs\") }` (rust/luau/generated.rs)."""
+    host wraps each in `#[allow(..)] mod gen_x { include!(\"$OUT_DIR/inc/gen_x.rs\") }` (rust_binds/luau/generated.rs)."""
     inc = out / "inc"
     shutil.rmtree(inc, ignore_errors=True)
     inc.mkdir()
@@ -70,7 +70,7 @@ def write_inc(out: Path) -> None:
 
 
 def rerun_lines(root: Path, crates: list[dict]) -> list[str]:
-    paths = [root / "src", root / "rust"]
+    paths = [root / "src", root / "rust", root / "rust_binds"]
     for c in crates:
         paths += [Path(c["dir"]) / "src", Path(c["manifest"])]
     paths.append(root / "bindgen.toml")

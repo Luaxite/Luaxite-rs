@@ -19,6 +19,7 @@ on:
             - Cargo.lock
             - rust-toolchain.toml
             - rust/**
+            - rust_binds/**
             - tools/**
             - .github/actions/azalea/**
             - .github/workflows/api-docs.yml

@@ -1,4 +1,4 @@
-"""tools/api_surface.py and tools/cargo_warnings.py (the helpers of .github/workflows/compile.yml) on small synthetic inputs."""
+"""tools/api_surface.py and tools/cargo_warnings.py (the helpers of .github/workflows/rust.yml) on small synthetic inputs."""
 import json
 import sys
 import tempfile

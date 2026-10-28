@@ -12,7 +12,7 @@ from test_size_caps import fn_body
 
 class RequireAsync(unittest.TestCase):
     def setUp(self):
-        self.src = read("rust/luau/mod.rs")
+        self.src = read("rust_binds/luau/mod.rs")
         self.body = fn_body(self.src, "fn install_require")
 
     def test_harness_copy_is_in_sync(self):

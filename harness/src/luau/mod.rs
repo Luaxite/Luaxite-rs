@@ -1,4 +1,7 @@
 mod convert;
+// Sample `//BIND pub` file (see its header); its fns are Luau globals through the generated `binds::register`.
+#[allow(dead_code)]
+mod demo_binds;
 mod extra_block;
 mod extra_container;
 mod extra_entity;
@@ -57,6 +60,33 @@ use tokio::sync::oneshot;
 pub use gen_client::LuaClient;
 
 static SCRIPT_ERRORS: AtomicBool = AtomicBool::new(false);
+
+/// The Lua state of the most recently created `Runtime` (fallback for `current_lua`).
+static CURRENT: Mutex<Option<Lua>> = Mutex::new(None);
+
+tokio::task_local! {
+    /// The Lua state of the script running in this task (set around `Runtime::run_standalone`).
+    static TASK_LUA: Lua;
+}
+
+/// The mlua `Lua` of the running script, for Rust code that is not a `#[bind]` fn (a bound fn can take `&Lua` as its first param instead).
+///
+/// Rule: inside a script's own task (`Runtime::run_standalone` and everything it awaits) this is that script's state, even with several
+/// `Runtime`s in one process. Anywhere else (a `tokio::spawn`ed task, a plain thread) it is the state of the LAST `Runtime` created, so
+/// with more than one script pass the handle explicitly. `Lua` is a cheap clone (a handle, `Send` under mlua's `send` feature).
+///
+/// Panics with `current_lua called before a Runtime exists` when no `Runtime` has been created yet.
+#[allow(dead_code)]
+pub fn current_lua() -> Lua {
+    if let Ok(lua) = TASK_LUA.try_with(|l| l.clone()) {
+        return lua;
+    }
+    CURRENT
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .clone()
+        .expect("current_lua called before a Runtime exists")
+}
 
 pub fn note_error() {
     SCRIPT_ERRORS.store(true, Ordering::SeqCst);
@@ -342,10 +372,18 @@ impl Runtime {
         Self::with_source("main.luau".into(), scripts::MAIN.to_string())
     }
 
+    /// The mlua state of this script, to do whatever you want with it (load chunks, set globals, create functions, ...).
+    #[allow(dead_code)]
+    pub fn lua(&self) -> &Lua {
+        &self.lua
+    }
+
     fn with_source(name: String, source: String) -> anyhow::Result<Self> {
         let lua = Lua::new();
         install_coroutine_shim(&lua).context("installing coroutine shim")?;
         install_require(&lua).context("installing require")?;
+        binds::register(&lua).context("registering #[bind] functions")?;
+        *CURRENT.lock().unwrap_or_else(|e| e.into_inner()) = Some(lua.clone());
         Ok(Self {
             lua,
             handlers: Arc::new(Handlers::default()),
@@ -366,6 +404,11 @@ impl Runtime {
 
     #[cfg(feature = "real")]
     pub async fn run_standalone(&self) -> anyhow::Result<()> {
+        TASK_LUA.scope(self.lua.clone(), self.run_scoped()).await
+    }
+
+    #[cfg(feature = "real")]
+    async fn run_scoped(&self) -> anyhow::Result<()> {
         real_goal::install(&self.lua)?;
         let live = real_lifecycle::install(&self.lua)?;
         let chunk = self

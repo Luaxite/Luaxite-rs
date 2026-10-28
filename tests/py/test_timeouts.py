@@ -11,9 +11,9 @@ from test_size_caps import fn_body
 
 class Timeouts(unittest.TestCase):
     def setUp(self):
-        self.libs = read("rust/luau/lune_libs.rs")
-        self.process = read("rust/luau/lune_process.rs")
-        self.net = read("rust/luau/lune_net.rs")
+        self.libs = read("rust_binds/luau/lune_libs.rs")
+        self.process = read("rust_binds/luau/lune_process.rs")
+        self.net = read("rust_binds/luau/lune_net.rs")
 
 
     def test_timeout_helper(self):

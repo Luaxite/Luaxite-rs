@@ -63,36 +63,36 @@ and add a line below naming the slice and why.
   an ECS `Entity` carries the bot's client (`LuaX(v, client)`, `TypeInfo.needs_client`) and is only returned by `Client` methods.
   Effect: `HitResult` (+ `BlockHitResult`, `EntityHitResult`, `Direction` types) is generated, so `bot:hit_result()` is generated and its hand
   version is gone from extra_state.rs (same Luau fields, plus `world_border` on blocks; typed as a union of the two tagged tables instead of one table
-  with optional fields). Real: Client 86 generated (+1). Fake: 47 (+1). Real-only: `entity:kind()` lives in rust/luau/real_entity.rs, which
+  with optional fields). Real: Client 86 generated (+1). Fake: 47 (+1). Real-only: `entity:kind()` lives in rust_binds/luau/real_entity.rs, which
   the generator now scans for `// luau[..]:` lines like extra_*.rs (it shows under the hand-written methods of luau/GEN_REPORT.md; the fake has no real_*.rs).
 
 - `azalea/rust/gen_events.rs`, `azalea/rust/gen_client.rs`, `azalea/luau/azalea.d.luau`, `azalea/luau/GEN_REPORT.md` and the same of `fake`
   (golden, full-coverage slice 5): `Init` left `[hidden_events]` (tools/luaxite.toml), so `"init"` is a generated event name (EVENT_NAMES, the
-  `Event::Init` dispatch arm, `on`/`wait_for` overloads); rust/luau/mod.rs replays it (a handler registered with `on("init", f)` runs as its own task,
+  `Event::Init` dispatch arm, `on`/`wait_for` overloads); rust_binds/luau/mod.rs replays it (a handler registered with `on("init", f)` runs as its own task,
   `wait_for("init")` returns at once). New `[extra_events]` table: names hand-written glue fires (`update`, from real_events.rs) are appended to
   EVENT_NAMES and get `on`/`wait_for` overloads (gen_client.rs is unchanged by this: only EVENT_NAMES in gen_events.rs). `wait_tick`/`wait_update` come
   from real_events.rs (hand-written list of the real GEN_REPORT; the fake has none). Rust not compiled.
 
-- `azalea/luau/azalea.d.luau`, `azalea/luau/GEN_REPORT.md` (golden, full-coverage slice 6): new hand-only class `World` (rust/luau/real_world.rs, real only;
+- `azalea/luau/azalea.d.luau`, `azalea/luau/GEN_REPORT.md` (golden, full-coverage slice 6): new hand-only class `World` (rust_binds/luau/real_world.rs, real only;
   declared through the new `[hand_classes]` table in tools/luaxite.toml, emitted only when some extra_*.rs / real_*.rs has `// luau[World]:` lines)
   with `block_state is_chunk_loaded chunk_loaded biome height find_block find_blocks`, and `Bot.world` / `Bot.partial_world` returning it. The `fake` set
   and gen_*.rs are unchanged. Rust not compiled.
 
 - `azalea/luau/azalea.d.luau`, `azalea/luau/GEN_REPORT.md` (golden, full-coverage slice 7): `Container` gains `quick_craft(kind, slots)` (drag-click:
-  start / add per slot / end), `id()`, `title()`, `contents()` from the new rust/luau/real_inventory.rs (real only; the fake has no `QuickCraft*` types, so
+  start / add per slot / end), `id()`, `title()`, `contents()` from the new rust_binds/luau/real_inventory.rs (real only; the fake has no `QuickCraft*` types, so
   the `fake` set and gen_*.rs are unchanged). `Container:open` in extra_container.rs became `pub(super)` so the sibling module can use it. Rust not compiled.
 
 - `azalea/luau/azalea.d.luau`, `azalea/luau/GEN_REPORT.md` (golden, full-coverage slice 8): goal values. New hand-only classes `Goal` and `GoalLib` + the global
   `declare goal: GoalLib` (new `[hand_classes]` entries and `[hand_globals]` table in tools/luaxite.toml; generator `HAND_GLOBALS`), from the new
-  rust/luau/real_goal.rs (real only): `goal.block/xz/y/radius/all/any/inverse`, `Goal:describe()`, `bot:goto_goal`, `bot:start_goto_goal`, `bot:reach_goal`.
+  rust_binds/luau/real_goal.rs (real only): `goal.block/xz/y/radius/all/any/inverse`, `Goal:describe()`, `bot:goto_goal`, `bot:start_goto_goal`, `bot:reach_goal`.
   The five combinator goals (`AndGoal`, `AndGoals`, `OrGoal`, `OrGoals`, `InverseGoal`) now say "covered by ..." in "Goals not exposed" (`[handwritten_goals]`).
-  gen_*.rs and the `fake` set are unchanged. `rust/luau/mod.rs` installs the global (`real_goal::install`, feature real). Rust not compiled.
+  gen_*.rs and the `fake` set are unchanged. `rust_binds/luau/mod.rs` installs the global (`real_goal::install`, feature real). Rust not compiled.
 - **s9 (registries)**: `luau/azalea.d.luau` gains `Bot.registry_kinds/registry_entries/registry_resolve/registry_name/registry_get` (from the new
-  rust/luau/real_registry.rs, real only: concrete data registries by name, over `Client::with_registry_holder`); `luau/GEN_REPORT.md` now lists
+  rust_binds/luau/real_registry.rs, real only: concrete data registries by name, over `Client::with_registry_holder`); `luau/GEN_REPORT.md` now lists
   `resolve_registry_key/resolve_registry_name/with_registry_holder/with_resolved_registry` as hand-written. gen_*.rs and the `fake` set are unchanged.
   Entry data (NBT) is not exposed, only names and ids. Rust not compiled.
 - **s11 (lifecycle)**: `luau/azalea.d.luau` gains class `AzaleaLib` (`join`) and `declare azalea: AzaleaLib` (new `[hand_classes]` entry and `[hand_globals]` line in
-  tools/luaxite.toml), from the new rust/luau/real_lifecycle.rs (real only; installed by `Runtime::handle` on Init). `luau/GEN_REPORT.md` lists
+  tools/luaxite.toml), from the new rust_binds/luau/real_lifecycle.rs (real only; installed by `Runtime::handle` on Init). `luau/GEN_REPORT.md` lists
   `join/join_with_proxy/start_client` as hand-written. gen_*.rs and the `fake` set are unchanged. Rust not compiled.
 - **s12 (lifecycle II)**: `luau/azalea.d.luau`: `AzaleaLib.join` now takes `address: string?` (defaults to the `--server` flag) and its doc says so. No other generated change;
   gen_*.rs and the `fake` set are unchanged. New Rust: `Runtime::run_standalone` (mod.rs), `Live` in real_lifecycle.rs, main.rs flags. Rust not compiled.
@@ -101,7 +101,7 @@ and add a line below naming the slice and why.
   convert are left out and listed in GEN_REPORT.md). `gen_types.rs` gains the records those fields need (20 -> 31 converted types, e.g. Identifier, GlobalPos-like records),
   `luau/azalea.d.luau` gains `Packet<Name>` types and `type ClientboundPacket`, `luau/GEN_REPORT.md` the section "Packets in". Nothing calls it yet (`on("packet")` is s14).
   `gen_client.rs`, `gen_events.rs` and the `fake` set are unchanged. Rust not compiled.
-- **s14 (packets in II)**: `rust/luau/gen_events.rs` gains the event name `"packet"`; `luau/azalea.d.luau` gains `Bot.on("packet", ..)` / `wait_for("packet")` (payload `ClientboundPacket`) and the
+- **s14 (packets in II)**: `rust_binds/luau/gen_events.rs` gains the event name `"packet"`; `luau/azalea.d.luau` gains `Bot.on("packet", ..)` / `wait_for("packet")` (payload `ClientboundPacket`) and the
   per-kind overloads `Bot.on_packet(name, handler)` / `Bot.wait_for_packet(name)` (one per `ClientboundGamePacket` variant); `luau/GEN_REPORT.md` lists the `packet` event. New config table
   `[extra_event_payloads]` (tools/luaxite.toml): an extra event with a payload type is declared only when that type is generated, so the `fake` set is unchanged. `gen_client.rs`,
   `gen_types.rs`, `gen_packets_in.rs` are unchanged. New Rust: `dispatch_packet` + `on_packet`/`wait_for_packet` (real_events.rs, cargo feature `packets`), hook in `Runtime::handle`. Rust not compiled.
@@ -110,10 +110,10 @@ and add a line below naming the slice and why.
   in GEN_REPORT.md "Packets out"). `tools/luaxite.toml` `[path_overrides]` gains six unit enums only serverbound packets use (InteractionHand, RecipeBookType, UpdateType, StructureMode,
   TestBlockMode, Mode), so `gen_types.rs` gains their conversions (32 -> 36 converted types); `luau/azalea.d.luau` gains those enum types, `OutPacket<Kind>` field types and `type OutPacketKind`.
   `gen_client.rs`, `gen_events.rs`, `gen_packets_in.rs` and the `fake` set are unchanged. Nothing calls `packet_from_table` yet (`bot:write_packet` is s16). Rust not compiled.
-- **s16 (packets out II)**: `luau/azalea.d.luau` (azalea set) gains `Bot:write_packet`, `Bot:raw_connection`, `Bot:raw_connection_mut` from the `// luau[Bot]:` lines of the new `rust/luau/real_packets.rs`; `luau/GEN_REPORT.md` unchanged in content apart from the hand-method list if any. `gen_*.rs` and the fake set are unchanged. Rust not compiled.
-- **s17 (ECS I)**: the azalea golden lists an EIGHTH file, `rust/gen_ecs.rs` (`golden.sh`; the fake set stays at 5; written only when azalea source has types deriving `Component`/`Resource`). It holds `ECS_ENTRIES` (540 types: 529 components, 11 resources; 447 readable), `read_component(lua, client, entity, name)`, `read_resource(lua, client, name)` and `ecs_name_error`. `gen_types.rs` gains the records/enums those values need (36 -> 50 converted types) and `luau/azalea.d.luau` their Luau types plus `Bot:ecs_names` (hand, rust/luau/real_ecs.rs); `luau/GEN_REPORT.md` gains the "ECS components and resources" section. `gen_client.rs`, `gen_events.rs`, `gen_packets_*.rs` and the fake set are unchanged. Rust not compiled.
-- **s18 (ECS II)**: `rust/gen_ecs.rs` gains `read_ref_component` (the `EntityRef` twin of `read_component`); `luau/azalea.d.luau` gains the hand methods of `rust/luau/real_ecs.rs` (`Bot:component get_component entity_component get_entity_component resource map_resource map_get_resource query_self try_query_self query_entity try_query_entity`, `Entity:component get_component query_self try_query_self`). Queries are read-only snapshots over the slice-17 table. Other generated files and the fake set unchanged. Rust not compiled.
-- **s19 (ECS III)**: `luau/azalea.d.luau` gains `Bot:any_entity_by nearest_entity_by nearest_entities_by nearest_entities` (hand, `rust/luau/real_search.rs`: predicate over a row snapshot of the components named in `names`). The `_id_` variants of azalea are the same methods (an `Entity` value is the handle). Generated Rust and the fake set unchanged. Rust not compiled.
+- **s16 (packets out II)**: `luau/azalea.d.luau` (azalea set) gains `Bot:write_packet`, `Bot:raw_connection`, `Bot:raw_connection_mut` from the `// luau[Bot]:` lines of the new `rust_binds/luau/real_packets.rs`; `luau/GEN_REPORT.md` unchanged in content apart from the hand-method list if any. `gen_*.rs` and the fake set are unchanged. Rust not compiled.
+- **s17 (ECS I)**: the azalea golden lists an EIGHTH file, `rust/gen_ecs.rs` (`golden.sh`; the fake set stays at 5; written only when azalea source has types deriving `Component`/`Resource`). It holds `ECS_ENTRIES` (540 types: 529 components, 11 resources; 447 readable), `read_component(lua, client, entity, name)`, `read_resource(lua, client, name)` and `ecs_name_error`. `gen_types.rs` gains the records/enums those values need (36 -> 50 converted types) and `luau/azalea.d.luau` their Luau types plus `Bot:ecs_names` (hand, rust_binds/luau/real_ecs.rs); `luau/GEN_REPORT.md` gains the "ECS components and resources" section. `gen_client.rs`, `gen_events.rs`, `gen_packets_*.rs` and the fake set are unchanged. Rust not compiled.
+- **s18 (ECS II)**: `rust/gen_ecs.rs` gains `read_ref_component` (the `EntityRef` twin of `read_component`); `luau/azalea.d.luau` gains the hand methods of `rust_binds/luau/real_ecs.rs` (`Bot:component get_component entity_component get_entity_component resource map_resource map_get_resource query_self try_query_self query_entity try_query_entity`, `Entity:component get_component query_self try_query_self`). Queries are read-only snapshots over the slice-17 table. Other generated files and the fake set unchanged. Rust not compiled.
+- **s19 (ECS III)**: `luau/azalea.d.luau` gains `Bot:any_entity_by nearest_entity_by nearest_entities_by nearest_entities` (hand, `rust_binds/luau/real_search.rs`: predicate over a row snapshot of the components named in `names`). The `_id_` variants of azalea are the same methods (an `Entity` value is the handle). Generated Rust and the fake set unchanged. Rust not compiled.
 
 - `azalea/luau/azalea.d.luau` and `fake/luau/azalea.d.luau` (golden, CI fix): the generator now writes `declare extern type X with ... end`
   instead of `declare class X ... end`. Current Luau rejects the old `declare class` form (luau-lsp, which the `luau` job in
@@ -126,7 +126,7 @@ and add a line below naming the slice and why.
   (`block: (pos: BlockPos) -> Goal`, `all: (...Goal) -> Goal`, `join: (opts: { .. }) -> Bot`) instead of `function block(pos: BlockPos): Goal`.
   luau-lsp (generator.yml `luau` job) rejected the old lines with "'self' must be present as the unannotated first parameter", which made it
   drop the whole definitions file ("Unknown global 'bot'" for every script). The `goal` / `azalea` tables are called with `.`, so they cannot take
-  `self`. Only those 8 lines changed (the `// luau[GoalLib|AzaleaLib]:` comments in rust/luau/real_goal.rs and real_lifecycle.rs); the generator
+  `self`. Only those 8 lines changed (the `// luau[GoalLib|AzaleaLib]:` comments in rust_binds/luau/real_goal.rs and real_lifecycle.rs); the generator
   (`extra_fn_name`) and tools/check.sh / tools/coverage.py now read `name: (..)` members like `function name`, so `GEN_REPORT.md`, the API
   baseline and the coverage ledger are unchanged. The other seven files of the azalea set and all five of the fake set are byte-identical.
 
@@ -145,15 +145,17 @@ and add a line below naming the slice and why.
   `azalea::` path found"), so more types convert. The tree-sitter golden is unchanged.
 
 - `azalea/rust/gen_packets_in.rs`: `--frontend rustdoc` only, same probable cause as gen_types.rs above (more packet field types resolve), also unchecked.
-  To check: `diff /tmp/azl-real-rdj/rust/gen_packets_in.rs rust/luau/gen_packets_in.rs` after `sh tools/check.sh`.
+  To check: `diff /tmp/azl-real-rdj/rust/gen_packets_in.rs rust_binds/luau/gen_packets_in.rs` after `sh tools/check.sh`.
 
 - **layout (Rust moved out of `src/`)**: `fake/luau/azalea.d.luau` and `fake/luau/GEN_REPORT.md` change in exactly three lines: the hand-written
-  glue is now `rust/luau/extra_*.rs` (was `src/luau/extra_*.rs`) in the report heading and in the two `-- hand-written (...)` comments of the `.d.luau`.
+  glue is now `rust_binds/luau/extra_*.rs` (was `src/luau/extra_*.rs`) in the report heading and in the two `-- hand-written (...)` comments of the `.d.luau`.
   `src/` now holds only `.luau` scripts. The three `gen_*.rs` files and every generated name are byte-identical. Earlier entries above still say
-  `src/luau/...`; read those as `rust/luau/...` (generated type definitions moved from `src/bindings.d.luau` to `types/bindings.d.luau` in the same step).
+  `src/luau/...`; read those as `rust_binds/luau/...` (generated type definitions moved from `src/bindings.d.luau` to `types/bindings.d.luau` in the same step).
 
 - project rename luaxide -> luaxite: the generated-file header names `tools/luaxite_gen.py`, so the sha1 of rust/gen_client.rs, rust/gen_events.rs, rust/gen_types.rs and luau/azalea.d.luau changed (header line only; with the old name substituted back they match the previous golden byte for byte). Golden rewritten with GOLDEN_FORCE=1.
 
 - s11 `goto_reach` doc: `luau/azalea.d.luau` changes in one line (the `goto_reach` doc says "default azalea's reach" instead of "default 4.5, azalea's reach"; the default now comes from `ReachBlockPosGoal::new`, as in `reach_goal`). No generated Rust or name changed.
 
 - s8 `goto_reach` doc: `luau/azalea.d.luau` changes in one line (the `goto_reach` doc says "default 4.5" instead of "default azalea's reach"; `goto_reach` without a distance uses an explicit 4.5 again via `ReachBlockPosGoal::new_with_distance`). No generated Rust or name changed. Golden rewritten with GOLDEN_FORCE=1.
+
+- directory split `rust/luau` + `rust/bind` -> `rust_binds/luau` + `rust_binds/bind` (`rust/` keeps only main.rs): the hand-written glue path is named in the generated output, so `luau/azalea.d.luau`, `luau/GEN_REPORT.json` and `luau/GEN_REPORT.md` changed (only the `rust/luau/...` -> `rust_binds/luau/...` text in the two `-- hand-written (...)` comments, the report heading and one `why` string). `gen_*.rs` are unchanged. The logical names `rust/gen_*.rs` in `fake.sha1` stay: they are golden.sh's own labels, not a directory. Golden rewritten with GOLDEN_FORCE=1.

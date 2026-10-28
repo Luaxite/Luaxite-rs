@@ -21,10 +21,10 @@ def fn_body(src, marker):
 
 class SizeCaps(unittest.TestCase):
     def setUp(self):
-        self.libs = read("rust/luau/lune_libs.rs")
-        self.process = read("rust/luau/lune_process.rs")
-        self.stdio = read("rust/luau/lune_stdio.rs")
-        self.net = read("rust/luau/lune_net.rs")
+        self.libs = read("rust_binds/luau/lune_libs.rs")
+        self.process = read("rust_binds/luau/lune_process.rs")
+        self.stdio = read("rust_binds/luau/lune_stdio.rs")
+        self.net = read("rust_binds/luau/lune_net.rs")
 
     def test_shared_constant(self):
         self.assertRegex(self.libs, r"pub const MAX_BYTES: usize = 64 \* 1024 \* 1024;")

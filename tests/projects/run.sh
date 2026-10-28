@@ -24,7 +24,7 @@ for name in $names; do
     rm -rf "$scratch"; mkdir -p "$scratch"
     cp Cargo.toml build.rs bindgen.toml rust-toolchain.toml "$scratch"/
     [ -f Cargo.lock ] && cp Cargo.lock "$scratch"/
-    for d in rust tools bind vendor; do ln -s "$root/$d" "$scratch/$d"; done
+    for d in rust rust_binds tools bind vendor; do ln -s "$root/$d" "$scratch/$d"; done
     cp -R "$proj/src" "$scratch/src"
     if ! (cd "$scratch" && CARGO_TARGET_DIR=$work/build cargo build); then
         echo "FAIL $name: cargo build"; fail=1; continue

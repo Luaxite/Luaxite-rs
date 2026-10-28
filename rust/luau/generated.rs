@@ -28,3 +28,8 @@ mod gen_ecs {
 mod scripts {
     include!(concat!(env!("OUT_DIR"), "/scripts.rs"));
 }
+// Functions marked `#[bind]` / `//BIND` under rust/ (tools/bind_gen.py via build.rs). A child of crate::luau, so private fns of mod.rs are callable.
+#[allow(dead_code, unused_imports, unused_variables, clippy::all)]
+mod binds {
+    include!(concat!(env!("OUT_DIR"), "/binds.rs"));
+}

@@ -291,7 +291,7 @@ def fake_project() -> Path:
     shutil.copytree(ROOT / "harness/fake/azalea", r / "bind/azalea", ignore=shutil.ignore_patterns("target"))
     write(r / "bindgen.toml", (ROOT / "bindgen.toml").read_text())
     for f in (ROOT / "harness/src/luau").glob("extra_*.rs"):
-        write(r / "rust/luau" / f.name, f.read_text())
+        write(r / "rust_binds/luau" / f.name, f.read_text())
     return r
 
 

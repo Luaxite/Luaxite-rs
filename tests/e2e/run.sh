@@ -34,7 +34,8 @@ if [ "${LUNE_ONLY:-0}" != 1 ]; then
         run "$n" 180 "tests/e2e/$n.luau"
     done
 fi
-run offline_api 30 tests/e2e/offline_api.luau   # the API that needs no bot (also what .github/workflows/compile.yml runs on every OS)
+run offline_api 30 tests/e2e/offline_api.luau   # the API that needs no bot (also what .github/workflows/rust.yml runs on every OS)
+run bind_demo 30 tests/e2e/bind_demo.luau   # the globals bound from rust_binds/luau/demo_binds.rs (//BIND pub)
 run lune 30 tests/e2e/lune.luau
 run lune_fs 30 tests/e2e/lune_fs.luau
 run lune_serde 30 tests/e2e/lune_serde.luau

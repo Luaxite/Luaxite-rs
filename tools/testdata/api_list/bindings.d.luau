@@ -28,7 +28,7 @@ declare extern type AzaleaLib with
     swarm: (opts: { address: string }) -> Swarm
     --- Doc for join.
     join: (opts: { account: string | { name: string?, microsoft: string? }, address: string, proxy: string? }) -> Bot
-    -- hand-written (rust/luau/extra_*.rs)
+    -- hand-written (rust_binds/luau/extra_*.rs)
 end
 
 -- Class GoalLib.
@@ -47,14 +47,14 @@ declare extern type GoalLib with
     any: (...Goal) -> Goal
     --- Doc for all.
     all: (...Goal) -> Goal
-    -- hand-written (rust/luau/extra_*.rs)
+    -- hand-written (rust_binds/luau/extra_*.rs)
 end
 
 -- Class ProcessLib.
 declare extern type ProcessLib with
     --- Doc for exit.
     exit: (code: number?) -> ()
-    -- hand-written (rust/luau/extra_*.rs)
+    -- hand-written (rust_binds/luau/extra_*.rs)
 end
 
 -- Class Container.
@@ -87,7 +87,7 @@ declare extern type Container with
     function contents(self): { Item | false }?
     --- Doc for close.
     function close(self): ()
-    -- hand-written (rust/luau/extra_*.rs)
+    -- hand-written (rust_binds/luau/extra_*.rs)
 end
 
 -- Class World.
@@ -106,14 +106,14 @@ declare extern type World with
     function block_state(self, pos: BlockPos): string?
     --- Doc for biome.
     function biome(self, pos: BlockPos): string?
-    -- hand-written (rust/luau/extra_*.rs)
+    -- hand-written (rust_binds/luau/extra_*.rs)
 end
 
 -- Class Goal.
 declare extern type Goal with
     --- Doc for describe.
     function describe(self): string
-    -- hand-written (rust/luau/extra_*.rs)
+    -- hand-written (rust_binds/luau/extra_*.rs)
 end
 
 -- Class Swarm.
@@ -122,7 +122,7 @@ declare extern type Swarm with
     function exit(self): ()
     --- Doc for add.
     function add(self, account: string | { name: string?, microsoft: string? }): Bot
-    -- hand-written (rust/luau/extra_*.rs)
+    -- hand-written (rust_binds/luau/extra_*.rs)
 end
 
 -- Class Entity.
@@ -151,7 +151,7 @@ declare extern type Entity with
     function attributes(self): Attributes
     --- Doc for attack.
     function attack(self): ()
-    -- hand-written (rust/luau/extra_*.rs)
+    -- hand-written (rust_binds/luau/extra_*.rs)
 end
 
 -- Class Bot.
@@ -356,7 +356,7 @@ declare extern type Bot with
     function any_entity_by(self, names: { string }, pred: (row: { [string]: any }, entity: Entity) -> boolean?): Entity?
     --- Doc for account.
     function account(self): { username: string, uuid: string }
-    -- hand-written (rust/luau/extra_*.rs)
+    -- hand-written (rust_binds/luau/extra_*.rs)
 end
 
 declare azalea: AzaleaLib

@@ -1,4 +1,4 @@
-"""find_block / find_blocks scan (rust/luau/real_world.rs) and registry lookups (rust/luau/real_registry.rs), checked on source structure
+"""find_block / find_blocks scan (rust_binds/luau/real_world.rs) and registry lookups (rust_binds/luau/real_registry.rs), checked on source structure
 (the root crate can't be built here): the loaded-chunk filter runs before a hit counts, only the `limit` nearest are kept (no full sort),
 and registry lookups neither rebuild the whole name list nor depend only on the hard-coded list."""
 import re
@@ -20,7 +20,7 @@ def fn_body(src: str, name: str, method: bool = False) -> str:
 
 class FindBlockScan(unittest.TestCase):
     def setUp(self):
-        self.src = read("rust/luau/real_world.rs")
+        self.src = read("rust_binds/luau/real_world.rs")
         self.search = fn_body(self.src, "search", method=True)
 
     def test_filter_before_cap_and_push(self):
@@ -74,7 +74,7 @@ class FindBlockScan(unittest.TestCase):
 
 class RegistryLookups(unittest.TestCase):
     def setUp(self):
-        self.src = read("rust/luau/real_registry.rs")
+        self.src = read("rust_binds/luau/real_registry.rs")
 
     def test_resolve_get_name_do_not_build_the_whole_list(self):
         for name in ("registry_resolve", "registry_name", "registry_get"):

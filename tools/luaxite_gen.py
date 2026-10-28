@@ -4,9 +4,9 @@ luaxite_gen.py - generate the Luau <-> azalea bridge from azalea's own rustdoc J
 
 Reads the rustdoc JSON of the azalea workspace you vendor (--azalea DIR, --rustdoc DIR) and writes:
 
-  rust/luau/gen_client.rs   Luau -> azalea : `bot:method()` forwards to azalea::Client
-  rust/luau/gen_events.rs   azalea -> Luau : azalea::Event variants fire `bot:on(...)` handlers
-  rust/luau/gen_types.rs    value conversions (enums <-> strings, structs -> tables)
+  rust_binds/luau/gen_client.rs   Luau -> azalea : `bot:method()` forwards to azalea::Client
+  rust_binds/luau/gen_events.rs   azalea -> Luau : azalea::Event variants fire `bot:on(...)` handlers
+  rust_binds/luau/gen_types.rs    value conversions (enums <-> strings, structs -> tables)
   luau/azalea.d.luau       Luau type definitions for luau-lsp (both directions)
   luau/GEN_REPORT.json     what was generated, what was skipped and why (the machine-readable report; tools read this)
   luau/GEN_REPORT.md       the same report as text for people (rendered from the JSON, never parsed)
@@ -1892,7 +1892,7 @@ def emit_dluau(gen: Generator, src_label: str, extras: dict) -> str:
             ret = w.ret.luau if w.ret else "()"
             L.append(f"    function {w.name}(self{luau_params(w)}): {ret}")
         if extras.get(cg.luau):
-            L.append("    -- hand-written (rust/luau/extra_*.rs)")
+            L.append("    -- hand-written (rust_binds/luau/extra_*.rs)")
             L += [f"    {ln}" for _f, ln in extras[cg.luau]]
         L += ["end", ""]
     for gname, cname in HAND_GLOBALS.items():
@@ -2017,7 +2017,7 @@ def render_report_md(r: dict) -> str:
     ]
     for c in r["classes"]:
         L += [f"### {c['name']}", "", ", ".join(f"`{n}`" for n in c["generated"]) or "(none)", ""]
-    L += ["## Hand-written methods (rust/luau/extra_*.rs)", ""]
+    L += ["## Hand-written methods (rust_binds/luau/extra_*.rs)", ""]
     for cls, names in r["hand_written"].items():
         L.append(f"- `{cls}`: " + ", ".join(f"`{n}`" for n in names))
     if not r["hand_written"]:
@@ -2096,7 +2096,7 @@ CliArgs = getattr(argparse, "Argument" + "Pars" + "er")
 def main():
     ap = CliArgs(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--azalea", default="bind/azalea-src", help="path to the azalea workspace (default: bind/azalea-src)")
-    ap.add_argument("--rust-out", default="rust/luau", help="where gen_*.rs go (default: rust/luau)")
+    ap.add_argument("--rust-out", default="rust_binds/luau", help="where gen_*.rs go (default: rust_binds/luau)")
     ap.add_argument("--luau-out", default="luau", help="where azalea.d.luau and GEN_REPORT.json/.md go (default: luau)")
     ap.add_argument("--rustdoc", required=True, help="directory of <crate>.json files (cargo rustdoc --output-format json)")
     ap.add_argument("--config", default=None, metavar="PATH",

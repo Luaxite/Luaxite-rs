@@ -9,8 +9,9 @@
 #   3e. coverage ledger (tools/coverage.py: selftest, then every API GEN_REPORT.json lists as not generated is classified in
 #       tools/coverage.toml; `--strict`, run by hand, is the finish line of the full-coverage chain: no `todo` left)
 #   4. nothing in tools/baseline_api.txt vanished from types/bindings.d.luau (when a build produced it)
-#   5. hand-written glue in harness/src/luau matches the real rust/luau (real_*.rs, cargo feature `real`: only declared in mod.rs, never in the harness)
+#   5. hand-written glue in harness/src/luau matches the real rust_binds/luau (real_*.rs, cargo feature `real`: only declared in mod.rs, never in the harness)
 #   6. harness builds (no `error`) and test.luau runs without a `[luau]` error line
+#   7. bind e2e (tools/bind_e2e.sh): the bind_gen register() for rust/ compiled into a scratch harness, tests/e2e/bind_demo.luau run through it
 # Env: SKIP_HARNESS=1 (log A: no toolchain; also implied when `cargo` is not on PATH).
 set -u
 PYTHONDONTWRITEBYTECODE=1; export PYTHONDONTWRITEBYTECODE
@@ -65,23 +66,23 @@ else
 fi
 
 echo "== harness glue is a copy of the real glue"
-for f in mod.rs convert.rs; do   # (generated.rs differs on purpose: OUT_DIR includes vs the harness gen files)
-    cmp -s "rust/luau/$f" "harness/src/luau/$f" || bad "harness/src/luau/$f differs from rust/luau/$f"
+for f in mod.rs convert.rs demo_binds.rs; do   # (generated.rs differs on purpose: OUT_DIR includes vs the harness gen files)
+    cmp -s "rust_binds/luau/$f" "harness/src/luau/$f" || bad "harness/src/luau/$f differs from rust_binds/luau/$f"
 done
-for f in rust/luau/extra_*.rs; do
+for f in rust_binds/luau/extra_*.rs; do
     [ -e "$f" ] || continue
     cmp -s "$f" "harness/src/luau/$(basename "$f")" || bad "harness/src/luau/$(basename "$f") differs from $f"
 done
 
-[ -f rust/luau/generated.rs ] && [ -f harness/src/luau/generated.rs ] || bad "rust/luau/generated.rs and harness/src/luau/generated.rs must both exist"
-for m in $(sed -n 's/^mod \(real_[a-z0-9_]*\);.*/\1/p' rust/luau/mod.rs); do
-    [ -e "rust/luau/$m.rs" ] || bad "rust/luau/mod.rs declares $m but rust/luau/$m.rs is missing"
+[ -f rust_binds/luau/generated.rs ] && [ -f harness/src/luau/generated.rs ] || bad "rust_binds/luau/generated.rs and harness/src/luau/generated.rs must both exist"
+for m in $(sed -n 's/^mod \(real_[a-z0-9_]*\);.*/\1/p' rust_binds/luau/mod.rs); do
+    [ -e "rust_binds/luau/$m.rs" ] || bad "rust_binds/luau/mod.rs declares $m but rust_binds/luau/$m.rs is missing"
 done
-grep -q 'cfg(feature = "real")' rust/luau/mod.rs && ! grep -q '^real = ' Cargo.toml && bad "mod.rs gates on feature real but Cargo.toml has no such feature"
-grep -q 'cfg(feature = "lune")' rust/luau/mod.rs && ! grep -q '^lune = ' Cargo.toml && bad "mod.rs gates on feature lune but Cargo.toml has no such feature"
-grep -q '^mod lune_libs;' rust/luau/mod.rs && [ ! -e rust/luau/lune_libs.rs ] && bad "rust/luau/mod.rs declares lune_libs but rust/luau/lune_libs.rs is missing"
-for m in $(sed -n 's/^mod \(lune_[a-z0-9_]*\);.*/\1/p' rust/luau/mod.rs); do
-    [ -e "rust/luau/$m.rs" ] || bad "rust/luau/mod.rs declares $m but rust/luau/$m.rs is missing"
+grep -q 'cfg(feature = "real")' rust_binds/luau/mod.rs && ! grep -q '^real = ' Cargo.toml && bad "mod.rs gates on feature real but Cargo.toml has no such feature"
+grep -q 'cfg(feature = "lune")' rust_binds/luau/mod.rs && ! grep -q '^lune = ' Cargo.toml && bad "mod.rs gates on feature lune but Cargo.toml has no such feature"
+grep -q '^mod lune_libs;' rust_binds/luau/mod.rs && [ ! -e rust_binds/luau/lune_libs.rs ] && bad "rust_binds/luau/mod.rs declares lune_libs but rust_binds/luau/lune_libs.rs is missing"
+for m in $(sed -n 's/^mod \(lune_[a-z0-9_]*\);.*/\1/p' rust_binds/luau/mod.rs); do
+    [ -e "rust_binds/luau/$m.rs" ] || bad "rust_binds/luau/mod.rs declares $m but rust_binds/luau/$m.rs is missing"
 done
 grep -nE 'mlua-luau-scheduler|lune-std-(net|task|process|stdio)' Cargo.toml && bad "Cargo.toml depends on mlua-luau-scheduler or lune-std-net/task/process/stdio (in-tree lune_*.rs replace them)"
 grep -E '^mlua = ' Cargo.toml | grep -q '"send"' || bad "the mlua line in Cargo.toml lost the \`send\` feature"
@@ -103,6 +104,9 @@ else
     grep -F '[luau]' /tmp/luaxite_run.log && bad "test.luau printed a [luau] error line"
     [ "$status" -eq 0 ] || bad "harness run exited $status"
 fi
+
+echo "== bind e2e (tools/bind_e2e.sh: generated register() on real mlua in a scratch harness)"
+sh tools/bind_e2e.sh || bad "tools/bind_e2e.sh failed"
 
 if [ "$fail" -eq 0 ]; then echo "check: OK"; else echo "check: FAILED"; fi
 exit "$fail"

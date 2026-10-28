@@ -1,4 +1,4 @@
-"""raw_connection_mut (rust/luau/real_packets.rs) yields in the callback, so it must not write the whole snapshot back over the live
+"""raw_connection_mut (rust_binds/luau/real_packets.rs) yields in the callback, so it must not write the whole snapshot back over the live
 connection: only a changed `state` is set, and a changed `injected` list is merged into the current one (merge_injected)."""
 import re
 import unittest
@@ -8,7 +8,7 @@ from _common import read
 
 class PacketsRace(unittest.TestCase):
     def setUp(self):
-        src = read("rust/luau/real_packets.rs")
+        src = read("rust_binds/luau/real_packets.rs")
         self.body = src[src.index("async fn raw_connection_mut"):]
 
     def test_no_wholesale_write_back(self):
@@ -22,9 +22,9 @@ class PacketsRace(unittest.TestCase):
         self.assertRegex(self.body, r"if let Some\(state\) = state\s*\{\s*c\.state = state;")
 
     def test_merge_has_rust_unit_tests(self):
-        src = read("rust/luau/real_packets.rs")
+        src = read("rust_binds/luau/real_packets.rs")
         self.assertIn("fn merge_injected(", src)
-        self.assertGreaterEqual(len(re.findall(r"assert_eq!\(merge_injected\(", src)), 4)
+        self.assertGreaterEqual(len(re.findall(r"assert_eq!\(\s*merge_injected\(", src)), 4)
 
 
 if __name__ == "__main__":

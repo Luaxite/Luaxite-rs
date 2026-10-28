@@ -270,7 +270,7 @@
   "goals_not_exposed": [
     {
       "name": "ReachBlockPosGoal",
-      "why": "private fields; covered by `bot:goto_reach(pos, distance?)` in rust/luau/extra_misc.rs"
+      "why": "private fields; covered by `bot:goto_reach(pos, distance?)` in rust_binds/luau/extra_misc.rs"
     }
   ],
   "macros_not_expanded": [],

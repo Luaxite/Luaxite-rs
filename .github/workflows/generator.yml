@@ -61,6 +61,6 @@ jobs:
                   unzip -q luau-lsp.zip
                   chmod +x luau-lsp
             - name: scripts and e2e tests against types/bindings.d.luau
-              run: ./luau-lsp analyze --defs=types/bindings.d.luau $(ls src/*.luau | grep -v '\.d\.luau$') tests/e2e/*.luau
+              run: ./luau-lsp analyze --defs=types/bindings.d.luau --defs=rust_binds/luau/demo_binds.d.luau $(ls src/*.luau | grep -v '\.d\.luau$') tests/e2e/*.luau
             - name: harness/test.luau against the fake's definitions
               run: ./luau-lsp analyze --defs=harness/luau/azalea.d.luau harness/test.luau

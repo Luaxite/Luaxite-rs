@@ -6,7 +6,7 @@ usage: python3 tools/coverage.py [--report $GEN_REPORT|GEN_REPORT.json] [--dluau
 
 Keys = what GEN_REPORT.json lists as not generated: `Client.<fn>` / `EntityRef.<fn>` (Skipped methods), `Goal.<Type>` (Goals not exposed),
 `Event.<Variant>` (Events notes), plus `extra.<name>` for APIs the report cannot see. Status strings (tools/coverage.toml):
-  hand <Luau name | Class.name>   bound by hand (rust/luau/extra_*.rs etc.); the name must be declared in types/bindings.d.luau
+  hand <Luau name | Class.name>   bound by hand (rust_binds/luau/extra_*.rs etc.); the name must be declared in types/bindings.d.luau
   todo sN <what>                  planned, owned by slice N of the current chain
   no <reason>                     cannot / must not be a script API (reason >= 10 chars)
 Exit 1 when: a skipped API has no entry (unclassified), an entry matches nothing (stale), a `hand` name is not in the .d.luau,

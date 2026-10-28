@@ -1,4 +1,4 @@
-"""`// luau[Class]: function name(self, ..)` declarations in rust/luau/{extra,real}_*.rs vs the Rust method they annotate.
+"""`// luau[Class]: function name(self, ..)` declarations in rust_binds/luau/{extra,real}_*.rs vs the Rust method they annotate.
 
 The generator copies those lines into azalea.d.luau as free text and never looks at the Rust; this keeps the parameter
 counts in sync (Luau params minus `self` == Rust params minus `self` and the `Lua` handle). Self-less library-table decls
@@ -11,7 +11,7 @@ from pathlib import Path
 from _common import ROOT
 import luaxite_gen as g
 
-RUST_DIR = ROOT / "rust" / "luau"
+RUST_DIR = ROOT / "rust_binds" / "luau"
 FN_DECL = re.compile(r"function (\w+)\(")
 OPEN, CLOSE = "([{<", ")]}>"
 

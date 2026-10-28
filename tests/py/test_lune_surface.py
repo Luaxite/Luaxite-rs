@@ -50,9 +50,9 @@ def mentions(text, name):
 class InTreeModules(unittest.TestCase):
     def test_every_name_is_registered_in_rust(self):
         for mod, names in IN_TREE.items():
-            src = read(f"rust/luau/lune_{mod}.rs")
+            src = read(f"rust_binds/luau/lune_{mod}.rs")
             for n in names:
-                self.assertIn(f'"{n}"', src, f"@lune/{mod}: `{n}` is not registered in rust/luau/lune_{mod}.rs")
+                self.assertIn(f'"{n}"', src, f"@lune/{mod}: `{n}` is not registered in rust_binds/luau/lune_{mod}.rs")
 
     def test_every_name_is_exercised_by_its_e2e_script(self):
         missing = [f"@lune/{mod}.{n}" for mod, names in IN_TREE.items() for n in names if not mentions(script(f"lune_{mod}"), n)]
@@ -72,7 +72,7 @@ class LuneCrateModules(unittest.TestCase):
 
 class Wiring(unittest.TestCase):
     def test_require_knows_all_nine_modules_and_roblox_is_unsupported(self):
-        libs = read("rust/luau/lune_libs.rs")
+        libs = read("rust_binds/luau/lune_libs.rs")
         for mod in ALL_MODULES:
             self.assertIn(f'"{mod}"', libs, mod)
         self.assertIn("roblox", libs)

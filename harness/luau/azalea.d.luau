@@ -58,7 +58,7 @@ declare extern type Entity with
     function physics(self): Physics
     --- Get the entity's position in the world.
     function position(self): Vec3
-    -- hand-written (rust/luau/extra_*.rs)
+    -- hand-written (rust_binds/luau/extra_*.rs)
     --- Distance in blocks between the feet of this entity and another one.
     function distance_to(self, other: Entity): number
 end
@@ -166,7 +166,7 @@ declare extern type Bot with
     function walk(self, direction: WalkDirection): ()
     --- Send a raw chat packet.
     function write_chat_packet(self, message: string): ()
-    -- hand-written (rust/luau/extra_*.rs)
+    -- hand-written (rust_binds/luau/extra_*.rs)
     --- The block at `pos` as a name like "minecraft:stone" ("minecraft:air" for air), or nil when that position isn't in a loaded chunk. Reads the loaded world and never yields.
     function block_at(self, pos: BlockPos): string?
     --- Which hotbar slot mines `block` (a name like "stone" or "minecraft:stone") fastest. `slot` is 0-based, as `set_selected_hotbar_slot` takes it; `percentage_per_tick` is the mining progress per tick with that slot (0 when the block can't be mined, like water or bedrock). Unknown names are an error.

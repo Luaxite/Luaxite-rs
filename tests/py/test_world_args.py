@@ -1,4 +1,4 @@
-"""World coordinate arguments (rust/luau/real_world.rs): `height` / `is_chunk_loaded` take numbers and floor them (a fractional
+"""World coordinate arguments (rust_binds/luau/real_world.rs): `height` / `is_chunk_loaded` take numbers and floor them (a fractional
 `bot:position().x` is fine, NaN / out of i32 range is a clear error); `find_block` distances use i64 so far-apart positions can't overflow i32."""
 import re
 import unittest
@@ -8,7 +8,7 @@ from _common import read
 
 class WorldArgs(unittest.TestCase):
     def setUp(self):
-        self.src = read("rust/luau/real_world.rs")
+        self.src = read("rust_binds/luau/real_world.rs")
 
     def test_height_and_chunk_take_floored_numbers(self):
         self.assertRegex(self.src, r"fn is_chunk_loaded\(&self, chunk_x: f64, chunk_z: f64\)")

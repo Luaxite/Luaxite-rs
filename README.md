@@ -56,6 +56,24 @@ end)
 Scripts are plain Luau. `azalea` is a global, and `require` works for
 modules in `src/` (embedded at build time) and for `@lune/*`.
 
+## Binding your own Rust
+
+Rust code under `rust/` (`main.rs` and any module it declares) can be exposed to scripts as Luau globals, with no glue:
+
+```rust
+use luaxite_bind::bind;
+
+#[bind]
+pub fn Name() {
+    // ...
+}
+```
+
+`#[bind]` binds that fn. Or put a comment on **line 1** of a file to choose which fns it binds: `//BIND pub` (only `pub fn`s), `//BIND all` (every fn), `//BIND macro` (only `#[bind]` fns; the default). See `rust_binds/luau/demo_binds.rs`.
+Arguments and returns can be integers, floats, `bool`, `String` or `Option` of those; a `Result<T, E: Display>` return raises a Luau error. Generic, `self`, `async`, nested and test fns, fns inside an `impl` / `trait` / inline `mod`, and private fns of files other than `main.rs` and `rust_binds/luau/mod.rs` (the generated code cannot call them) are skipped with a build warning. A `#[cfg(..)]` on the fn or on the `mod x;` that declares its file is copied to the binding.
+
+To use the mlua instance itself, take `&mlua::Lua` as the first parameter (Luau does not see it); other Rust code can call `luau::current_lua()`, and a `Runtime` has `lua()`.
+
 ## Lune
 
 `require("@lune/<name>")` supports nine of Lune's modules:

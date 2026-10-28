@@ -9,7 +9,7 @@ from _common import ROOT, TOOLS, d_luau_functions, read, run
 
 DLUAU = read("harness/luau/azalea.d.luau")
 BASELINE = [l.strip() for l in read("tools/baseline_api.txt").splitlines() if l.strip()]
-EXTRAS = sorted(glob.glob(str(ROOT / "rust/luau/extra_*.rs")))
+EXTRAS = sorted(glob.glob(str(ROOT / "rust_binds/luau/extra_*.rs")))
 SCRIPTS = sorted(glob.glob(str(ROOT / "tests/e2e/*.luau")))
 NOT_BOT_METHODS = {"add", "read", "write", "close", "exit"}
 
@@ -75,7 +75,7 @@ class Declarations(unittest.TestCase):
 
     def test_harness_glue_is_a_copy_of_the_real_glue(self):
         for f in ["mod.rs", "convert.rs"] + [Path(p).name for p in EXTRAS]:
-            self.assertEqual(read(f"rust/luau/{f}"), read(f"harness/src/luau/{f}"), f)
+            self.assertEqual(read(f"rust_binds/luau/{f}"), read(f"harness/src/luau/{f}"), f)
 
     def test_gen_files_exist_for_the_harness(self):
         for f in ["gen_client.rs", "gen_events.rs", "gen_types.rs"]:
@@ -88,7 +88,7 @@ class Config(unittest.TestCase):
         cfg = tomllib.loads(read("bindgen.toml"))
         for key in ["deny_methods", "path_overrides", "renames"]:
             self.assertIn(key, cfg)
-        client = read("harness/src/luau/gen_client.rs") + read("rust/luau/mod.rs")
+        client = read("harness/src/luau/gen_client.rs") + read("rust_binds/luau/mod.rs")
         for _old, new in cfg["renames"].items():
             self.assertRegex(DLUAU + client, rf"\b{re.escape(new)}\b")
 

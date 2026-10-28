@@ -2,6 +2,13 @@
 mod gen_client;
 mod gen_events;
 mod gen_types;
+// The host's `binds` (OUT_DIR/binds.rs from tools/bind_gen.py) has nothing to bind in the harness: an empty register, same signature.
+mod binds {
+    pub fn register(lua: &mlua::Lua) -> mlua::Result<()> {
+        let _ = lua;
+        Ok(())
+    }
+}
 #[allow(dead_code)]
 mod scripts {
     pub const MAIN: &str = "";

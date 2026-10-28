@@ -32,7 +32,7 @@ def gone(pid):
 
 class KillGroup(unittest.TestCase):
     def setUp(self):
-        self.src = read("rust/luau/lune_process.rs")
+        self.src = read("rust_binds/luau/lune_process.rs")
 
     def test_children_lead_their_own_group_on_unix(self):
         body = fn_body(self.src, "fn build_command")

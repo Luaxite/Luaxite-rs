@@ -47,7 +47,7 @@ class SignalHandler(unittest.TestCase):
         self.assertLess(body.index("parse_args()"), body.index("install_signal_handler()"))
 
     def test_kill_children_kills_the_tracked_processes(self):
-        body = fn_body(read("rust/luau/mod.rs"), "pub fn kill_children")
+        body = fn_body(read("rust_binds/luau/mod.rs"), "pub fn kill_children")
         self.assertIn('#[cfg(feature = "lune")]', body)
         self.assertIn("lune_process::kill_all()", body)
 

@@ -1,0 +1,8 @@
+[package]
+name = "luaxite_bind"
+version = "0.1.0"
+edition = "2024"
+description = "The `#[bind]` marker attribute of luaxite: selects a fn under rust/ (or rust_binds/) for binding to Luau."
+
+[lib]
+proc-macro = true

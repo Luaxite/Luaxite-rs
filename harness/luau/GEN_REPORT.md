@@ -18,7 +18,7 @@ Front end: rustdoc JSON (rustc 1.97.0 (2d8144b78 2026-07-07), format_version 57)
 
 `attack`, `attributes`, `health`, `minecraft_id`, `physics`, `position`
 
-## Hand-written methods (rust/luau/extra_*.rs)
+## Hand-written methods (rust_binds/luau/extra_*.rs)
 
 - `Bot`: `block_at`, `best_tool_in_hotbar_for_block`, `best_tool_for`, `held_item`, `inventory`, `goto_reach`, `set_client_information`, `nearest_player`, `nearby_entities`, `account`, `tab_list`
 - `Container`: `slots`, `close`, `left_click`, `right_click`, `shift_click`, `middle_click`, `double_click`, `swap`, `throw`, `drop_cursor`
@@ -64,7 +64,7 @@ Front end: rustdoc JSON (rustc 1.97.0 (2d8144b78 2026-07-07), format_version 57)
 
 ## Goals not exposed
 
-- `ReachBlockPosGoal`: private fields; covered by `bot:goto_reach(pos, distance?)` in rust/luau/extra_misc.rs
+- `ReachBlockPosGoal`: private fields; covered by `bot:goto_reach(pos, distance?)` in rust_binds/luau/extra_misc.rs
 
 ## Skipped methods
 

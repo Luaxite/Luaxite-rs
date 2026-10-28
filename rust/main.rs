@@ -1,5 +1,10 @@
+// The Luau glue (azalea bindings, Lune libs, #[bind] registration) lives in rust_binds/, so this folder holds only what you edit.
+#[path = "../rust_binds/luau/mod.rs"]
 mod luau;
 
+// `#[bind]` for fns in this file (a bare `#[bind]`, as the scanner accepts, needs the import; `#[luaxite_bind::bind]` does not).
+#[allow(unused_imports)]
+use luaxite_bind::bind;
 use std::{path::PathBuf, sync::Arc};
 
 const USAGE: &str = "usage: luaxite [<script.luau>...]
