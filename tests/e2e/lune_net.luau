@@ -1,6 +1,4 @@
 --!nocheck
--- e2e: @lune/net, (urlEncode / urlDecode / tcp.connect errors / request errors). Needs no server; the tcp round trip and request / serve come in later slices.
--- Prints "E2E PASS lune_net" when every check holds.
 local net = require("@lune/net")
 
 assert(not pcall(function()
@@ -10,7 +8,6 @@ assert(type(net.urlEncode) == "function" and type(net.urlDecode) == "function", 
 assert(type(net.tcp) == "table" and type(net.tcp.connect) == "function", "tcp.connect")
 assert(type(net.http) == "table" and type(net.ws) == "table", "http and ws submodules")
 
--- urlEncode: `A-Za-z0-9-_.~` stay, the rest is %XX (uppercase)
 assert(net.urlEncode("hello world!") == "hello%20world%21", "space and !")
 assert(net.urlEncode("a-b_c.d~E9") == "a-b_c.d~E9", "unreserved characters stay")
 assert(net.urlEncode("a/b?c=d&e") == "a%2Fb%3Fc%3Dd%26e", "reserved characters are escaped")
@@ -19,7 +16,6 @@ assert(net.urlEncode("") == "", "empty")
 assert(net.urlEncode("\0\255", true) == "%00%FF", "asBinary encodes raw bytes")
 assert(not pcall(net.urlEncode, "\255"), "non-binary encode rejects invalid UTF-8")
 
--- urlDecode
 assert(net.urlDecode("hello%20world%21") == "hello world!", "decode")
 assert(net.urlDecode("%C3%A9") == "é", "decode utf-8")
 assert(net.urlDecode("a+b") == "a+b", "+ stays a plus")
@@ -32,8 +28,7 @@ assert(net.urlDecode(net.urlEncode(sample)) == sample, "round trip")
 local raw = "\0\1\2\254\255 %"
 assert(net.urlDecode(net.urlEncode(raw, true), true) == raw, "binary round trip")
 
--- tcp.connect: bad calls raise (pcall keeps the script going; "e2e-expected" marks the text for run.sh)
-local ok, err = pcall(net.tcp.connect, "127.0.0.1", 1) -- nothing listens on port 1
+local ok, err = pcall(net.tcp.connect, "127.0.0.1", 1)
 assert(not ok and string.find(tostring(err), "net.tcp.connect", 1, true), "connection refused raises: " .. tostring(err))
 ok, err = pcall(net.tcp.connect, "127.0.0.1", 80, true)
 assert(not ok and string.find(tostring(err), "not implemented yet: tls", 1, true), "tls is not implemented yet: " .. tostring(err))
@@ -42,7 +37,6 @@ assert(not ok and string.find(tostring(err), "tls", 1, true), "tls in the config
 ok = pcall(net.tcp.connect, "127.0.0.1", 80, "e2e-expected-nope")
 assert(not ok, "a bad config raises")
 
--- request: only argument / url errors here (no network in the e2e run); the real request goes to our own `serve` in a later slice
 assert(type(net.request) == "function" and type(net.http.request) == "function", "request and http.request")
 ok, err = pcall(net.request, "e2e-expected not a url")
 assert(not ok and string.find(tostring(err), "net.request", 1, true), "a bad url raises: " .. tostring(err))
@@ -54,20 +48,17 @@ ok, err = pcall(net.request, { url = "http://127.0.0.1/", method = "e2e expected
 assert(not ok and string.find(tostring(err), "method", 1, true), "a bad method raises: " .. tostring(err))
 ok = pcall(net.http.request, { url = "http://127.0.0.1/", headers = { a = 1 } })
 assert(not ok, "headers must map strings to strings")
--- nothing listens on port 1: a refused connection is an error, not a crash
 ok, err = pcall(net.request, "http://127.0.0.1:1/")
 assert(not ok and string.find(tostring(err), "net.request", 1, true), "a refused connection raises: " .. tostring(err))
 
--- socket: bad / refused urls raise (the real round trip is against our own `serve`, a later slice)
 assert(type(net.socket) == "function" and type(net.ws.connect) == "function", "socket and ws.connect")
 ok, err = pcall(net.socket, "e2e-expected not a url")
 assert(not ok and string.find(tostring(err), "net.socket", 1, true), "a bad socket url raises: " .. tostring(err))
-ok, err = pcall(net.ws.connect, "ws://127.0.0.1:1") -- nothing listens on port 1
+ok, err = pcall(net.ws.connect, "ws://127.0.0.1:1")
 assert(not ok and string.find(tostring(err), "net.socket", 1, true), "a refused websocket raises: " .. tostring(err))
 ok = pcall(net.socket, 42)
 assert(not ok, "a number is not a url")
 
--- serve (http): our own server, request / tcp round trips against it
 assert(type(net.serve) == "function" and type(net.http.serve) == "function", "serve and http.serve")
 ok, err = pcall(net.serve, 18081, 42)
 assert(not ok and string.find(tostring(err), "net.serve", 1, true), "serve needs a function or a table: " .. tostring(err))
@@ -115,9 +106,8 @@ assert(string.sub(raw, 1, 12) == "HTTP/1.1 200", "raw status line: " .. string.s
 c:close()
 
 server.stop()
-server.stop() -- twice is fine
+server.stop()
 
--- serve (websocket): our own `socket` against our own `serve`
 local wsServer = net.serve(18082, {
 	handleRequest = function()
 		return "plain"
@@ -147,7 +137,7 @@ assert(s.closeCode == 1000, "client close code")
 assert(s:next() == nil, "next after close is nil")
 ok = pcall(s.send, s, "late")
 assert(not ok, "send after close raises")
-s:close() -- twice is fine
+s:close()
 
 local s2 = net.ws.connect("ws://127.0.0.1:18082")
 s2:send("bye")
@@ -156,7 +146,6 @@ assert(s2.closeCode == 4000, "peer close code: " .. tostring(s2.closeCode))
 assert(net.request("http://127.0.0.1:18082/").body == "plain", "plain requests still reach handleRequest")
 wsServer.stop()
 
--- query decoding: `+` is a space, `%2B` a plus; the client's own query encoder round-trips
 local task = require("@lune/task")
 local qSeen
 local qServer = net.serve(0, function(req)
@@ -170,7 +159,6 @@ net.request({ url = "http://127.0.0.1:" .. qServer.port .. "/", query = { s = "x
 assert(qSeen.query.s == "x y+z", "client query round trip: " .. tostring(qSeen.query.s))
 qServer.stop()
 
--- an abruptly closed client ends `socket:next()` with nil instead of raising
 local abrupt = nil
 local abruptServer = net.serve(0, {
 	handleWebSocket = function(socket)
@@ -187,7 +175,7 @@ local head = ""
 repeat
 	head ..= raw:read()
 until string.find(head, "\r\n\r\n", 1, true)
-raw:close() -- no close frame
+raw:close()
 for _ = 1, 20 do
 	if abrupt ~= nil then
 		break
@@ -197,7 +185,6 @@ end
 assert(abrupt == true, "next() after an abrupt disconnect returns nil, got: " .. tostring(abrupt))
 abruptServer.stop()
 
--- a huge read size must not abort the process
 local bigServer = net.serve(0, function()
 	return "ok"
 end)
@@ -208,7 +195,6 @@ assert(string.sub(bigFirst, 1, 12) == "HTTP/1.1 200", "read(2^40) returns the av
 bigConn:close()
 bigServer.stop()
 
--- options.timeout: absent = a 120 s default, 0 = no limit, a negative value raises, a short one times out (the server below answers late)
 local tServer = net.serve(0, function(req)
 	if req.path == "/slow" then
 		task.wait(1.5)

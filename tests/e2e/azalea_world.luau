@@ -1,10 +1,8 @@
--- e2e: world / block queries on a flat world. Prints "E2E PASS azalea_world".
 local function expect(cond: any, msg: string)
 	if not cond then
 		error("E2E FAIL: " .. msg, 2)
 	end
 end
--- Anything not asserted with `expect` is a soft check: a mismatch prints "E2E WARN" (run.sh does not count it) and is logged for review.
 local function soft(label: string, f: (...any) -> ...any, ...: any): (boolean, any)
 	local ok, res = pcall(f, ...)
 	if not ok then
@@ -29,7 +27,6 @@ local below = { x = bx, y = math.floor(pos.y) - 1, z = bz }
 local world = bot:world()
 expect(bot:world_name() == "minecraft:overworld", "world_name: " .. tostring(bot:world_name()))
 
--- block_state / block_at agree and name the grass floor of a flat world
 expect(world:block_state(below), "block_state below")
 local name = bot:block_at(below)
 expect(type(name) == "string" and name:find("minecraft:", 1, true) == 1, "block_at is a namespaced name: " .. tostring(name))
@@ -57,13 +54,11 @@ if has(world, "biome") then
 	end)
 end
 
--- best tool: the fixture-independent contract
 local slot = bot:best_tool_for("stone")
 expect(slot == nil or (slot >= 0 and slot <= 8), "best_tool_for: nil or a hotbar slot")
 local best = bot:best_tool_in_hotbar_for_block("stone")
 expect(type(best.slot) == "number" and type(best.percentage_per_tick) == "number", "best_tool_in_hotbar_for_block shape")
 
--- the cheap mutating one: mine the block below a neighbour column, then see it turn to air
 local target = { x = bx + 2, y = math.floor(pos.y) - 1, z = bz }
 if bot:block_at(target) ~= "minecraft:air" then
 	soft("mine", function()

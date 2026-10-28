@@ -1,5 +1,3 @@
--- cargo run -- src/world.luau   (joins the `address` given to azalea.join below)
--- Chat "!find <block>" and the bot reports the nearest such block within 64 blocks and walks next to it.
 local bot = azalea.join { account = "WorldBot", address = "localhost" }
 
 bot:wait_for("spawn")

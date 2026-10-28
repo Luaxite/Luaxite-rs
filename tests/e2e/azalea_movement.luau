@@ -1,10 +1,8 @@
--- e2e: walking, looking, the pathfinder (goto / start_goto / goals). Prints "E2E PASS azalea_movement".
 local function expect(cond: any, msg: string)
 	if not cond then
 		error("E2E FAIL: " .. msg, 2)
 	end
 end
--- Anything not asserted with `expect` is a soft check: a mismatch prints "E2E WARN" (run.sh does not count it) and is logged for review.
 local function soft(label: string, f: (...any) -> ...any, ...: any): (boolean, any)
 	local ok, res = pcall(f, ...)
 	if not ok then
@@ -27,7 +25,6 @@ local function dist(a: any, b: any): number
 	return math.sqrt((a.x - b.x) ^ 2 + (a.z - b.z) ^ 2)
 end
 
--- walk: forward moves, none stops
 local start = bot:position()
 bot:set_direction(0, 0)
 bot:walk("forward")
@@ -43,7 +40,6 @@ expect(not pcall(function()
 	bot:walk("sideways" :: any)
 end), "an unknown walk direction raises")
 
--- goto / goto_xz (yield until done)
 local here = bot:position()
 local gx, gz = math.floor(here.x) + 8, math.floor(here.z)
 bot:goto_xz(gx, gz)
@@ -55,7 +51,6 @@ bot:goto_with_opts({ x = gx, y = y, z = gz }, { retry_on_no_path = false, allow_
 expect(dist(bot:position(), { x = gx, z = gz }) < 3, "goto_with_opts arrived")
 bot:goto_with_opts_xz(gx - 6, gz, { allow_mining = false })
 expect(dist(bot:position(), { x = gx - 6, z = gz }) < 3, "goto_with_opts_xz arrived")
--- a misspelled pathfinder option and a NaN coordinate are errors (they used to be ignored / turn into 0); the bot does not move
 local bad_ok, bad_err = pcall(bot.goto_with_opts, bot, { x = gx, y = y, z = gz }, { allow_minin = false })
 expect(not bad_ok and string.find(tostring(bad_err), "allow_minin", 1, true) ~= nil, "unknown PathfinderOpts key raises: " .. tostring(bad_err))
 bad_ok, bad_err = pcall(bot.goto_with_opts, bot, { x = 0 / 0, y = y, z = gz }, { allow_mining = false })
@@ -63,9 +58,8 @@ expect(not bad_ok and string.find(tostring(bad_err), "coordinate", 1, true) ~= n
 bot:goto_reach({ x = gx + 3, y = y - 1, z = gz })
 expect(dist(bot:position(), { x = gx + 3, z = gz }) < 6, "goto_reach got close")
 
--- start_goto returns at once; stop_pathfinding ends it
 local before = bot:position()
-bot:start_goto_xz(math.floor(before.x) + 20, math.floor(before.z)) -- start_goto_xz takes whole numbers (i32): a fractional position is an error
+bot:start_goto_xz(math.floor(before.x) + 20, math.floor(before.z))
 bot:wait_ticks(10)
 bot:stop_pathfinding()
 bot:wait_ticks(10)
@@ -82,7 +76,6 @@ if has(bot, "is_executing_path") then
 	end)
 end
 
--- goals: combinators
 local p = bot:position()
 local x = p.x + 6
 bot:goto_goal(goal.any(goal.xz(x, p.z), goal.xz(x + 1, p.z)))
@@ -94,7 +87,6 @@ soft("goal.block", function()
 	bot:goto_goal(goal.block({ x = math.floor(p.x), y = math.floor(p.y), z = math.floor(p.z) }))
 end)
 
--- other goto flavours, soft: signatures differ per azalea version
 local q = bot:position()
 for _, spec in {
 	{ "goto_y", { math.floor(q.y) } },
@@ -107,7 +99,6 @@ for _, spec in {
 	end
 end
 
--- jump / sprint / crouch toggles
 for _, call in { { "jump" }, { "set_jumping", true }, { "set_jumping", false }, { "set_crouching", true }, { "set_crouching", false }, { "sprint", "forward" } } do
 	if has(bot, call[1]) then
 		soft(call[1], (bot :: any)[call[1]], bot, table.unpack(call, 2))

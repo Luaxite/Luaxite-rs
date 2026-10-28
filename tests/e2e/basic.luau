@@ -1,4 +1,3 @@
--- e2e: single bot against a flat-world server. Prints "E2E PASS basic" when every check holds.
 local bot = azalea.join { account = "E2EBasic", address = "localhost" }
 
 bot:wait_for("spawn")

@@ -1,10 +1,8 @@
--- e2e: a swarm of bots from azalea.swarm, exit order, and azalea.wait. Prints "E2E PASS azalea_swarm".
 local function expect(cond: any, msg: string)
 	if not cond then
 		error("E2E FAIL: " .. msg, 2)
 	end
 end
--- Anything not asserted with `expect` is a soft check: a mismatch prints "E2E WARN" (run.sh does not count it) and is logged for review.
 local function soft(label: string, f: (...any) -> ...any, ...: any): (boolean, any)
 	local ok, res = pcall(f, ...)
 	if not ok then

@@ -1,4 +1,3 @@
--- e2e: clientbound packet events and serverbound writes. Prints "E2E PASS packets".
 local bot = azalea.join { account = "E2EPackets", address = "localhost" }
 
 print("E2E packets: start")

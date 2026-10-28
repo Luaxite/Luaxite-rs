@@ -1,11 +1,8 @@
--- e2e: the bound API surface. Every name here must exist on the object the bindings put it on; names not listed as "known" are
--- looked up on every object and only reported when nowhere. Prints "E2E PASS azalea_surface".
 local function expect(cond: any, msg: string)
 	if not cond then
 		error("E2E FAIL: " .. msg, 2)
 	end
 end
--- Anything not asserted with `expect` is a soft check: a mismatch prints "E2E WARN" (run.sh does not count it) and is logged for review.
 local function soft(label: string, f: (...any) -> ...any, ...: any): (boolean, any)
 	local ok, res = pcall(f, ...)
 	if not ok then
@@ -28,7 +25,6 @@ local world = bot:world()
 local inventory = bot:open_inventory()
 expect(inventory ~= nil, "open_inventory")
 
--- known: generated from azalea (the fixture mirrors them), hand-written (rust/luau/extra_*.rs) or used by the other e2e scripts
 local BOT = {
 	"on", "wait_for", "chat", "write_chat_packet", "attack", "attributes", "direction", "entity", "entity_by_minecraft_id", "entity_by_uuid",
 	"entity_id_by_minecraft_id", "entity_id_by_uuid", "entity_interact", "entity_ref_for", "experience", "get_held_item", "get_inventory",
@@ -36,10 +32,8 @@ local BOT = {
 	"minecraft_id", "nearby_players", "open_container_at", "open_container_at_with_timeout_ticks", "open_inventory", "physics", "position",
 	"profile", "set_direction", "start_goto", "start_goto_with_opts", "start_goto_with_opts_xz", "start_goto_xz", "stop_pathfinding",
 	"wait_for_container_open", "wait_ticks", "walk",
-	-- hand-written
 	"block_at", "best_tool_for", "best_tool_in_hotbar_for_block", "held_item", "inventory", "goto_reach", "set_client_information",
 	"nearest_player", "nearby_entities", "account", "tab_list",
-	-- real-only glue, used by basic / packets / multi
 	"world", "ecs_names", "component", "query_self", "nearest_entity_by", "nearest_entities", "registry_resolve", "registry_entries",
 	"goto_goal", "on_packet", "wait_for_packet", "write_packet", "raw_connection", "exit", "wait_tick", "wait_update",
 }
@@ -67,7 +61,6 @@ for _, name in { "join", "swarm", "wait" } do
 end
 expect(has(process, "exit"), "process.exit")
 
--- the rest of the real API (tools/baseline_api.txt): found on any object, else reported
 local OTHERS = {
 	"all", "any", "any_entity_by", "attack_cooldown_remaining_ticks", "biome", "block_interact", "chunk_loaded", "contents", "crouching",
 	"describe", "dimensions", "disconnect", "distance_to_client", "exists", "eye_position", "find_blocks", "force_stop_pathfinding",

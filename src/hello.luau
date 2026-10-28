@@ -1,5 +1,3 @@
--- cargo run -- src/hello.luau   (joins the `address` given to azalea.join below)
--- `bot` is the azalea client. Everything it can do is listed in types/bindings.d.luau.
 local bot = azalea.join { account = "HelloBot", address = "localhost" }
 
 bot:on("spawn", function()
@@ -18,8 +16,7 @@ bot:on("chat", function(packet)
 	local gx, gz = tonumber(x), tonumber(z)
 	if gx and gz then
 		bot:chat("on my way")
-		bot:goto_xz(gx, gz) -- yields until the pathfinder is done
-		-- the pathfinder can give up (no path, unloaded chunks): only say "arrived" when the bot is really there
+		bot:goto_xz(gx, gz)
 		local p = bot:position()
 		if math.abs(p.x - gx) < 3 and math.abs(p.z - gz) < 3 then
 			bot:chat("arrived")

@@ -1,7 +1,3 @@
--- e2e: two bots from one script, each with its own handlers. Prints "E2E PASS multi".
-
--- A joined bot's events are dispatched as they arrive, and `wait_for` only sees events that fire after it is called: remember the spawn
--- from a handler made right after each join, so a bot that spawned while the other one was still joining is not waited for forever.
 local alice = azalea.join { account = "E2EAlice", address = "localhost" }
 local alice_up = false
 alice:on("spawn", function() alice_up = true end)
@@ -27,7 +23,6 @@ end
 assert(heard, "bob did not hear alice")
 print("E2E multi: chat ok")
 
--- Packet events must reach bots made by azalea.join too.
 assert(bob:wait_for_packet("set_time").kind == "set_time", "no packet event on a joined bot")
 
 print("E2E PASS multi")

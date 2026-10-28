@@ -1,4 +1,3 @@
--- e2e: @lune/serde. Needs no server. Prints "E2E PASS lune_serde".
 local serde = require("@lune/serde")
 
 local function same(a: any, b: any): boolean
@@ -23,7 +22,6 @@ end
 
 local value = { name = "azalea", n = 42, pi = 3.5, ok = true, list = { 1, 2, 3 }, nested = { a = { b = "c" } } }
 
--- encode / decode round trips for every text format
 for _, format in { "json", "yaml", "toml" } do
 	local text = serde.encode(format :: any, value)
 	assert(type(text) == "string" and #text > 0, format .. " encode")
@@ -41,7 +39,6 @@ assert(not pcall(serde.decode, "json", "{ nope"), "bad json raises")
 assert(not pcall(serde.encode, "nope" :: any, {}), "unknown format raises")
 assert(not pcall(serde.encode, "json", { f = function() end }), "functions are not serializable")
 
--- compress / decompress for every format
 local text = string.rep("luaxite lune ", 200)
 for _, format in { "brotli", "gzip", "lz4", "zlib", "zstd" } do
 	local packed = serde.compress(format :: any, text)
@@ -52,7 +49,6 @@ end
 assert(serde.decompress("gzip", serde.compress("gzip", "")) == "", "empty input")
 assert(not pcall(serde.decompress, "gzip", "not gzip data"), "garbage raises")
 
--- hash: known vectors
 local abc = {
 	md5 = "900150983cd24fb0d6963f7d28e17f72",
 	sha1 = "a9993e364706816aba3e25717850c26c9cd0d89d",
@@ -70,7 +66,6 @@ for _, algo in { "sha224", "sha384", "sha512", "sha3-256", "sha3-512", "blake3" 
 end
 assert(not pcall(serde.hash, "nope" :: any, "x"), "unknown algorithm raises")
 
--- hmac: RFC-style vector
 assert(
 	serde.hmac("sha256", "The quick brown fox jumps over the lazy dog", "key") == "f7bc83f430538424b13298e6aa6fb143ef4d59a14946175997479dbc2d1a3cd8",
 	"hmac sha256"

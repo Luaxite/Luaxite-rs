@@ -1,10 +1,8 @@
--- e2e: the ECS bridge (components, queries, entity searches) and the registries. Prints "E2E PASS azalea_ecs".
 local function expect(cond: any, msg: string)
 	if not cond then
 		error("E2E FAIL: " .. msg, 2)
 	end
 end
--- Anything not asserted with `expect` is a soft check: a mismatch prints "E2E WARN" (run.sh does not count it) and is logged for review.
 local function soft(label: string, f: (...any) -> ...any, ...: any): (boolean, any)
 	local ok, res = pcall(f, ...)
 	if not ok then
@@ -27,7 +25,7 @@ local me = bot:entity()
 local names = bot:ecs_names()
 expect(type(names) == "table" and #names > 10, "ecs_names lists components")
 local set = {}
-for _, entry in names do -- ecs_names() rows are { name, kind, luau, readable }
+for _, entry in names do
 	set[entry.name] = true
 end
 for _, n in { "Health", "Physics", "Position" } do
@@ -43,7 +41,6 @@ soft("component error mentions the name", function()
 	expect(tostring(err):find("NotAComponent", 1, true), tostring(err))
 end)
 
--- queries over the bot itself
 local ran = false
 expect(bot:query_self({ "Health", "Physics" }, function(row)
 	ran = true
@@ -51,7 +48,6 @@ expect(bot:query_self({ "Health", "Physics" }, function(row)
 end), "query_self returns the predicate result")
 expect(ran, "query_self ran the function")
 
--- the entity searches never return the bot itself (same as nearby_entities)
 expect(bot:nearest_entity_by({ "Health" }, function(row, entity)
 	return entity == me
 end) == nil, "nearest_entity_by excludes the bot")
@@ -68,7 +64,6 @@ for _, e in bot:nearest_entities() do
 	expect(e ~= me, "nearest_entities excludes the bot")
 end
 
--- a predicate may yield
 local yielded = false
 bot:nearest_entity_by({ "Health" }, function()
 	bot:wait_ticks(1)
@@ -95,7 +90,6 @@ if has(bot, "any_entity_by") then
 	end)
 end
 
--- registries
 expect(bot:registry_resolve("enchantment", "sharpness"), "registry_resolve enchantment")
 local entries = bot:registry_entries("enchantment")
 expect(#entries > 0, "registry_entries")

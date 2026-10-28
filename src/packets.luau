@@ -1,5 +1,3 @@
--- cargo run -- src/packets.luau   (joins the `address` given to azalea.join below)
--- Reads clientbound packets and writes a serverbound one.
 local bot = azalea.join { account = "PacketsBot", address = "localhost" }
 
 bot:on_packet("set_health", function(packet)

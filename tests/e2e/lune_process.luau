@@ -1,5 +1,4 @@
 --!nocheck
--- e2e: @lune/process basics (os / arch / endianness / args / cwd / env / exit / exec / create). Needs no server. Prints "E2E PASS lune_process" when every check holds.
 local process = require("@lune/process")
 
 assert(not pcall(function()
@@ -30,7 +29,6 @@ end
 assert(type(process.exit) == "function", "exit is a function")
 
 assert(type(process.exec) == "function", "exec is a function")
--- exec: errors raised before / while starting (they are caught here)
 local ok, err = pcall(process.exec, "sh", {}, { stdio = "e2e-expected-nope" })
 assert(not ok and string.find(tostring(err), "forward", 1, true), "bad stdio kind lists the valid ones: " .. tostring(err))
 ok, err = pcall(process.exec, "e2e-expected-no-such-program-xyz")
@@ -67,7 +65,6 @@ if process.os ~= "windows" then
 	assert(r.stderr == "", "per-stream kind")
 end
 
--- create: spawns at once, status() yields until the child exits, kill() ends a long-running child
 assert(type(process.create) == "function", "create is a function")
 ok, err = pcall(process.create, "e2e-expected-no-such-program-xyz")
 assert(not ok, "create of a missing program raises: " .. tostring(err))
@@ -83,22 +80,20 @@ if process.os ~= "windows" then
 	child.kill()
 	local st = child.status()
 	assert(st.ok == false and st.code == 9, "killed child: ok false, code 9, got " .. tostring(st.code))
-	child.kill() -- killing a dead child is a no-op
+	child.kill()
 	assert(child.status().ok == false, "status can be asked again")
 
-	-- streams: a `cat` round trip (write, close = EOF, read everything back)
 	local cat = process.create("cat")
 	cat.stdin:write("ping ")
 	cat.stdin:write("pong")
 	cat.stdin:close()
-	cat.stdin:close() -- closing twice is fine
+	cat.stdin:close()
 	assert(not pcall(cat.stdin.write, cat.stdin, "late"), "write after close raises")
 	assert(cat.stdout:readToEnd() == "ping pong", "cat echoes its stdin")
 	assert(cat.stdout:readToEnd() == "" and cat.stdout:read() == nil, "readToEnd is empty and read is nil at EOF")
 	local cs = cat.status()
 	assert(cs.ok and cs.code == 0, "cat exits 0 after EOF")
 
-	-- read(size) chunks, then nil at EOF
 	local chunky = process.create("sh", { "-c", "printf abcde" })
 	local got = ""
 	local first = chunky.stdout:read(2)
@@ -114,13 +109,11 @@ if process.os ~= "windows" then
 	end
 	assert(got == "abcde", "chunks join up: " .. got)
 
-	-- stderr is its own stream
 	local errp = process.create("sh", { "-c", "echo err >&2; echo out" })
 	assert(errp.stderr:readToEnd() == "err\n" and errp.stdout:readToEnd() == "out\n", "stdout and stderr are separate")
 	assert(errp.status().ok, "status after reading")
 end
 
--- a huge read size must not abort the process (the buffer is capped; a read returns what is there)
 do
 	local big = process.create("sh", { "-c", "printf short" })
 	local got = ""
@@ -134,7 +127,6 @@ do
 	assert(got == "short", "read(1e12) on a short stream: " .. got)
 end
 
--- options.timeout: exec has a default limit (600 s) that `timeout = 0` removes; a given value is used, a bad one raises; create takes none
 if process.os ~= "windows" then
 	local r0 = process.exec("sh", { "-c", "echo t0" }, { timeout = 0 })
 	assert(r0.ok == true and r0.stdout == "t0\n", "exec with timeout = 0 runs without a limit: " .. r0.stdout)

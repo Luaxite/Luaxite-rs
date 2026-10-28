@@ -1,7 +1,3 @@
--- e2e: smoke sweep over the rest of the bound API (tools/baseline_api.txt): every name below is looked up on the bot, its entity, its
--- world, its inventory container and `goal`, then called with plausible arguments. A call that raises is only a warning (the exact
--- argument shapes belong to azalea and change with it); what must hold is that the sweep runs to the end without crashing the process,
--- that no name is missing everywhere, and that nothing returns a value Luau cannot hold. Prints "E2E PASS azalea_sweep".
 local bot = azalea.join { account = "E2ESweep", address = "localhost" }
 bot:wait_for("spawn")
 bot:wait_ticks(40)
@@ -20,31 +16,23 @@ end
 
 local targets: { any } = { bot, me, world, inv, goal }
 
--- { name, args... }: args are passed after `self`
 local specs: { { any } } = {
-	-- bot state
 	{ "attack_cooldown_remaining_ticks" }, { "has_attack_cooldown" }, { "crouching" }, { "jumping" }, { "hunger" }, { "is_alive" },
 	{ "logged_in" }, { "is_mining" }, { "movement_state" }, { "server_username" }, { "username" }, { "uuid" }, { "ticks_connected" },
 	{ "is_calculating_path" }, { "is_goto_target_reached" }, { "get_held_item" }, { "hit_result" }, { "partial_world" }, { "dimensions" },
 	{ "player_uuid_by_username", "E2ESweep" }, { "wait_tick" }, { "wait_update" }, { "wait_updates", 2 },
-	-- entities
 	{ "entity_id_by_minecraft_id", bot:minecraft_id() }, { "entity_id_by_uuid", uuid }, { "entity_ref_for", me }, { "kind" }, { "id" },
 	{ "entity_interact", me }, { "entity_component", me, "Health" }, { "get_entity_component", me, "Health" }, { "get_component", "Health" },
 	{ "query_entity", me, { "Health" }, row_has_health }, { "try_query_entity", me, { "Health" }, row_has_health },
 	{ "nearest_entities_by", { "Health" }, row_has_health },
-	-- resources and registries
 	{ "map_resource", "Time", noop }, { "map_get_resource", "Time", noop }, { "resource", "Time" },
 	{ "registry_get", "enchantment", "sharpness" }, { "registry_kinds" }, { "registry_name", "enchantment", 0 },
 	{ "raw_connection_mut" }, { "quick_craft" },
-	-- world
 	{ "chunk_loaded", ipos.x // 16, ipos.z // 16 }, { "contents", below }, { "describe", below }, { "title" },
-	-- interaction (harmless on a flat world)
 	{ "block_interact", below }, { "interact" }, { "start_use_item" }, { "start_mining", below }, { "left_click_mine", below },
 	{ "mine_with_auto_tool", { x = ipos.x + 3, y = ipos.y - 1, z = ipos.z } },
-	{ "open_container_at", { x = ipos.x, y = ipos.y + 5, z = ipos.z } }, -- nothing there: nil after the 5 second timeout
-	-- movement toggles
+	{ "open_container_at", { x = ipos.x, y = ipos.y + 5, z = ipos.z } },
 	{ "jump" }, { "set_jumping", false }, { "set_crouching", false }, { "sprint", "none" },
-	-- pathfinder variants, each followed by a stop
 	{ "start_goto", { x = ipos.x + 4, y = ipos.y, z = ipos.z } }, { "start_goto_xz", ipos.x + 4, ipos.z },
 	{ "start_goto_y", ipos.y }, { "start_goto_radius", { x = ipos.x + 4, y = ipos.y, z = ipos.z }, 2 },
 	{ "start_goto_with_opts", { x = ipos.x + 4, y = ipos.y, z = ipos.z }, { allow_mining = false } },
@@ -56,10 +44,8 @@ local specs: { { any } } = {
 	{ "goto_with_opts_y", ipos.y, { allow_mining = false } },
 	{ "goto_with_opts_radius", { x = ipos.x + 2, y = ipos.y, z = ipos.z }, 2, { allow_mining = false } },
 	{ "wait_until_goto_target_reached" }, { "force_stop_pathfinding" },
-	-- container clicks (also covered with checked results in azalea_inventory)
 	{ "left_click", 30 }, { "right_click", 30 }, { "middle_click", 30 }, { "double_click", 30 }, { "swap", 30, 0 }, { "throw", 30 },
 	{ "drop_cursor" },
-	-- last: ends the connection
 	{ "disconnect" },
 }
 
@@ -75,7 +61,7 @@ local function find(name: string): (any?, any?)
 	return nil, nil
 end
 
-local function tame(v: any): boolean -- a value a script can hold: no raw userdata surprises
+local function tame(v: any): boolean
 	local t = type(v)
 	return t == "nil" or t == "boolean" or t == "number" or t == "string" or t == "table" or t == "userdata" or t == "function"
 end

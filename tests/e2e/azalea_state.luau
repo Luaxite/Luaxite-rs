@@ -1,10 +1,8 @@
--- e2e: reading the bot's own state. Prints "E2E PASS azalea_state".
 local function expect(cond: any, msg: string)
 	if not cond then
 		error("E2E FAIL: " .. msg, 2)
 	end
 end
--- Anything not asserted with `expect` is a soft check: a mismatch prints "E2E WARN" (run.sh does not count it) and is logged for review.
 local function soft(label: string, f: (...any) -> ...any, ...: any): (boolean, any)
 	local ok, res = pcall(f, ...)
 	if not ok then
@@ -42,7 +40,6 @@ bot:set_direction(0, 0)
 bot:wait_ticks(2)
 bot:look_at({ x = pos.x + 5, y = pos.y + 1.6, z = pos.z })
 bot:wait_ticks(2)
--- looking at a point east of the bot (+x) turns it to azalea's yaw -90 (x east, z south), pitch about level
 local look = bot:direction()
 expect(math.abs(look.y_rot - 0) > 45, "look_at turned the bot sideways: " .. look.y_rot)
 
@@ -58,7 +55,6 @@ expect(profile.name == "E2EState" and type(profile.uuid) == "string", "profile n
 local account = bot:account()
 expect(account.username == "E2EState" and type(account.uuid) == "string", "account username / uuid")
 
--- self entity
 local me = bot:entity()
 expect(me == bot:entity(), "entity handles compare equal")
 expect(isvec(me:position()) and me:health() > 0, "entity position / health")
@@ -68,7 +64,6 @@ expect(bot:entity_by_minecraft_id(bot:minecraft_id()) == me, "entity_by_minecraf
 expect(bot:entity_by_uuid(profile.uuid) == me, "entity_by_uuid finds self")
 expect(bot:entity_by_minecraft_id(2 ^ 30) == nil, "unknown id is nil")
 
--- tab list: the bot itself is in it
 local found = false
 for _, p in bot:tab_list() do
 	expect(type(p.name) == "string" and type(p.uuid) == "string" and type(p.latency) == "number" and type(p.gamemode) == "string", "PlayerInfo shape")
@@ -81,19 +76,16 @@ for _, e in bot:nearby_entities() do
 	expect(e ~= me, "nearby_entities excludes the bot")
 end
 
--- soft: the rest of the state getters, whatever their exact shape
 for _, name in { "hunger", "eye_position", "movement_state", "crouching", "jumping", "selected_hotbar_slot", "ticks_connected", "logged_in", "is_alive", "username", "uuid", "server_username", "attack_cooldown_remaining_ticks", "has_attack_cooldown", "is_mining", "is_executing_path", "is_calculating_path", "is_goto_target_reached" } do
 	if has(bot, name) then
 		soft("bot:" .. name .. "()", (bot :: any)[name], bot)
 	end
 end
 
--- entity getters
 for _, name in { "position", "health", "physics", "attributes", "minecraft_id" } do
 	expect(select("#", (me :: any)[name](me)) == 1, name .. " returns one value")
 end
 
--- the other player's handle (nil when alone)
 local other = bot:nearest_player()
 if other then
 	soft("player handle", function()
