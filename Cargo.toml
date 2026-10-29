@@ -61,8 +61,12 @@ lune = ["dep:lune-std-datetime", "dep:lune-std-fs", "dep:lune-std-luau", "dep:lu
 
 # lune-utils 0.4.0 does not compile with mlua's `send` feature (`F: MaybeSend` not satisfied in table_builder.rs); this copy adds the bound.
 # Details in vendor/lune-utils/PATCHED.md. Drop it once upstream fixes it.
+# hickory-resolver and rustls-platform-verifier (both reached through azalea) call into the Android JVM (ndk-context), which a native executable run from
+# Termux does not have: "android context was not initialized" panic. Patched copies read resolv.conf / use bundled roots instead (see their PATCHED.md).
 [patch.crates-io]
 lune-utils = { path = "vendor/lune-utils" }
+hickory-resolver = { path = "vendor/hickory-resolver" }
+rustls-platform-verifier = { path = "vendor/rustls-platform-verifier" }
 
 [profile.dev]
 opt-level = 1
