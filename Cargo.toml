@@ -67,6 +67,7 @@ lune = ["dep:lune-std-datetime", "dep:lune-std-fs", "dep:lune-std-luau", "dep:lu
 lune-utils = { path = "vendor/lune-utils" }
 hickory-resolver = { path = "vendor/hickory-resolver" }
 rustls-platform-verifier = { path = "vendor/rustls-platform-verifier" }
+simdnbt = { git = "https://github.com/azalea-rs/simdnbt", rev = "4d426efe074701bebec94b611ae90a78d07a11c3" }
 
 [profile.dev]
 opt-level = 1
