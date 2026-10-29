@@ -97,7 +97,9 @@ jobs:
               run: |
                   case "${{ matrix.method }}" in
                       zigbuild) cargo zigbuild --release --target "${{ matrix.target }}" ;;
-                      ndk)      cargo ndk --target "${{ matrix.abi }}" --platform 24 build --release ;;
+                      # --link-builtins: recent NDKs ship no libgcc and Rust's Android std lacks some compiler builtins, so the C/C++ deps (aws-lc, Luau CodeGen)
+                      # fail to link with undefined __aarch64_cas4_acq_rel / __aarch64_ldadd8_acq_rel / __clear_cache. cargo-ndk's README: "some compiler builtins are missing" -> --link-builtins.
+                      ndk)      ANDROID_NDK_ROOT=$ANDROID_NDK_HOME cargo ndk --target "${{ matrix.abi }}" --platform 24 build --release --link-builtins ;;
                       native)   cargo build --release --target "${{ matrix.target }}" ;;
                   esac
                   ls -l "target/${{ matrix.target }}/release/$BIN${{ matrix.exe }}"
