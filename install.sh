@@ -33,6 +33,12 @@ mkdir -p "$D"&&[ -w "$D" ]||d "cannot write $D"
 X=$D/$N$E;t=$D/.$N.$$
 cp "$Z" "$t"&&chmod 755 "$t"&&mv -f "$t" "$X"
 [ $U = Darwin ]&&xattr -d com.apple.quarantine "$X" 2>/dev/null||true
+if [ $T = 1 ]&&[ -n "${PREFIX:-}" ];then
+h patchelf||{ h pkg&&pkg install -y patchelf >/dev/null 2>&1||true;}
+if h patchelf&&patchelf --print-needed "$X" 2>/dev/null|grep -q 'libc++_shared';then
+[ -e "$PREFIX/lib/libc++_shared.so" ]||{ h pkg&&pkg install -y libc++ >/dev/null 2>&1||true;}
+patchelf --add-rpath "$PREFIX/lib" "$X" 2>/dev/null||patchelf --set-rpath "$PREFIX/lib" "$X"||echo "warning: could not point $X at $PREFIX/lib; run it as: LD_LIBRARY_PATH=$PREFIX/lib $N" >&2
+fi;fi
 "$X" --help >/dev/null 2>&1||echo "warning: $X did not run" >&2
 echo "installed: $X"
 ub(){ mkdir -p "$(dirname "$1")";[ -e "$1" ]||:>"$1";g=$(mktemp);awk -v s="$MB" -v e="$ME" '$0==s{k=1;next}$0==e{k=0;next}!k' "$1">"$g";printf '%s\n' "$2">>"$g";cat "$g">"$1";rm -f "$g";echo "PATH: updated $1";}
