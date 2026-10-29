@@ -99,10 +99,18 @@ jobs:
                       zigbuild) cargo zigbuild --release --target "${{ matrix.target }}" ;;
                       # --link-builtins: recent NDKs ship no libgcc and Rust's Android std lacks some compiler builtins, so the C/C++ deps (aws-lc, Luau CodeGen)
                       # fail to link with undefined __aarch64_cas4_acq_rel / __aarch64_ldadd8_acq_rel / __clear_cache. cargo-ndk's README: "some compiler builtins are missing" -> --link-builtins.
-                      ndk)      ANDROID_NDK_ROOT=$ANDROID_NDK_HOME cargo ndk --target "${{ matrix.abi }}" --platform 24 build --release --link-builtins ;;
+                      # CXXSTDLIB=c++_static: cc-rs links Luau's C++ against libc++_shared.so on Android by default, which Termux does not have ("CANNOT LINK EXECUTABLE ... libc++_shared.so not found").
+                      ndk)      ANDROID_NDK_ROOT=$ANDROID_NDK_HOME CXXSTDLIB=c++_static cargo ndk --target "${{ matrix.abi }}" --platform 24 build --release --link-builtins ;;
                       native)   cargo build --release --target "${{ matrix.target }}" ;;
                   esac
                   ls -l "target/${{ matrix.target }}/release/$BIN${{ matrix.exe }}"
+                  case "${{ matrix.target }}" in
+                      *-linux-android)
+                          readelf -d "target/${{ matrix.target }}/release/$BIN" | grep NEEDED || true
+                          if readelf -d "target/${{ matrix.target }}/release/$BIN" | grep -q 'libc++_shared'; then
+                              echo "error: the binary still needs libc++_shared.so"; exit 1
+                          fi ;;
+                  esac
             - name: smoke test (only where the runner can execute the binary)
               if: matrix.smoke
               run: target/${{ matrix.target }}/release/$BIN${{ matrix.exe }} --help > /dev/null
