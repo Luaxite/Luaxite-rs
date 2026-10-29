@@ -53,7 +53,18 @@ end)
 
 ## Luau
 
-Scripts have access to azalea global and require `@lune/*` modules.
+Scripts have access to azalea global and can `require` other files and `@lune/*` modules.
+
+`require` of files is relative to the script or module that calls it, not to the directory you run `luaxite` from:
+
+```luau
+local util = require("./lib/util")      -- lib/util.luau
+local cfg = require("../shared/config") -- one directory up
+local pkg = require("./pkg")            -- pkg/init.luau
+```
+
+It tries `.luau`, `.lua`, then `init.luau` / `init.lua`. A module runs once; later requires (by any path to the same file) get the cached value. Names starting with `./` or `../` look for a file first, then for a module embedded from `src/`; other names do the reverse.
+
 main.luau is required.
 
 ## Binding your own Rust code

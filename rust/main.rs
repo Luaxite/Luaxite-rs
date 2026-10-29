@@ -13,7 +13,7 @@ const USAGE: &str = "usage: luaxite [<script.luau>...]
                      None: the script embedded at build time (src/main.luau) runs.
   -h, --help         print this and exit
 
-A script makes its bots itself (`azalea.join`, `azalea.swarm`). Like a Roblox script, it ending does not stop its handlers: the process runs
+A script can `require("./other")` files relative to itself (see README). A script makes its bots itself (`azalea.join`, `azalea.swarm`). Like a Roblox script, it ending does not stop its handlers: the process runs
 until every bot / swarm the scripts started is gone, or a script calls `process.exit(code)`.";
 
 fn parse_args() -> anyhow::Result<Vec<PathBuf>> {

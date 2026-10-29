@@ -1,3 +1,11 @@
+-- require: files relative to this script, nested relative requires, init.luau, caching, errors
+local util = require("./lib/util")
+print("require util:", util.name, util.double(21), util.nested.name, util.nested.sibling, util.nested.up)
+print("require cached:", require("./lib/util") == util, require("./lib/../lib/util") == util)
+print("require init:", require("./lib/pkg").name)
+print("require via pcall:", pcall(require, "./lib/util_data"))
+print("require in coroutine:", coroutine.wrap(function() return require("./lib/sub/sibling").name end)())
+print("require missing:", pcall(function() return require("./lib/nope") end))
 print("script start")
 bot:on("login", function()
 	print("login handler")
