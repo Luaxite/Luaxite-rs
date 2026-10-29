@@ -81,7 +81,9 @@ jobs:
                   echo "RUSTUP_TOOLCHAIN=$ch" >> "$GITHUB_ENV"
             - uses: Swatinem/rust-cache@v2
               with:
-                  key: ${{ matrix.target }}-${{ hashFiles('bind/azalea-src/Cargo.lock') }}
+                  # hashFiles(release.yml): build-script output is cached too, and mlua-sys / luau0-src do not rerun when CXXSTDLIB changes, so a stale cache
+                  # keeps linking libc++_shared.so even after the build command above sets CXXSTDLIB=c++_static. Editing this workflow now starts a fresh cache.
+                  key: ${{ matrix.target }}-${{ hashFiles('bind/azalea-src/Cargo.lock', '.github/workflows/release.yml') }}
                   cache-on-failure: true
 
             - name: install cargo-zigbuild (zig is the C/C++ cross compiler for musl)
