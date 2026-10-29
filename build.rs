@@ -167,4 +167,13 @@ fn main() {
     if !scripts.iter().any(|(_, f)| *f == main_file) {
         println!("cargo:rerun-if-changed={}", main_file.display());
     }
+
+    // Android built with CXXSTDLIB=c++_static (release.yml: the binary must not need libc++_shared.so, which Termux does not have): libc++_static.a holds only
+    // the C++ library, the exception / RTTI runtime (__cxa_throw, std::exception, typeinfo vtables) is the separate libc++abi.a, and nothing else links it.
+    println!("cargo:rerun-if-env-changed=CXXSTDLIB");
+    if env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("android")
+        && env::var("CXXSTDLIB").as_deref() == Ok("c++_static")
+    {
+        println!("cargo:rustc-link-lib=c++abi");
+    }
 }
