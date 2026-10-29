@@ -204,7 +204,7 @@ pub fn install(lua: &Lua) -> mlua::Result<Arc<Live>> {
         })?,
     )?;
 
-    // luau[AzaleaLib]: --- Yields until every bot made by `join` / `swarm:add` has disconnected and every swarm has ended (returns at once when there is none). Only needed to run code after that: the process stays up on its own while they are alive, even after the script has ended.
+    // luau[AzaleaLib]: --- Yields until every bot made by `join` / `swarm:add` has disconnected and every swarm has ended (returns at once when there is none). Only needed to run code after that: the process stays up on its own while anything is still running, even after the script has ended.
     // luau[AzaleaLib]: wait: () -> ()
     t.set(
         "wait",

@@ -499,7 +499,9 @@ pub fn module(lua: Lua) -> mlua::Result<Table> {
             let (tx, rx) = watch::channel(None);
             let tracked = Tracked::new(child.id(), cfg!(unix) && o.shell.is_some());
             let kill_wait = kill.clone();
+            let guard = super::lune_task::LiveGuard::new(lua);
             tokio::task::spawn_local(async move {
+                let _guard = guard;
                 let _tracked = tracked;
                 let status = tokio::select! {
                     r = child.wait() => r,
