@@ -49,7 +49,7 @@ why:
 - A: s3 self param (`self`, `&self`, `&mut self`, `&'a self`, `self: T`) -> {name self, ty ""}; param patterns kept verbatim as name (`(a, b)`), `mut ` stripped; generics skipped, not reported
 - A: s4 `#[test]` and `#[cfg(test)]` (on fn or any enclosing item header) -> cfg_test; nested = any enclosing fn body (impl/mod/trait bodies are not); trait method decls without body are kept; reason priority cfg_test>nested>async>generic>self; skips reported only for fns the mode selected
 - A: s5 luaxite_bind verified by a real cargo build on RUSTUP_TOOLCHAIN=stable 1.97 (dep-free scratch crate printed 12); root build with azalea/mlua NOT built here
-- A: s5 tools/bindgen_crates.py (azalea binder) treats every root path dep as a crate to bind and LIB_KINDS includes proc-macro; luaxite_bind resolves as ('luaxite_bind','luaxite_bind') like azalea's own *-macros crates, left as is (end-to-end binder run needs bind/azalea-src, absent)
+- A: s5 tools/bindgen_crates.py (azalea binder) treated every root path dep as a crate to bind (changed: only bind/<n>/ and bind/<n>-src/<n>/ are roots now, root Cargo.toml deps are not) and LIB_KINDS includes proc-macro; luaxite_bind resolves as ('luaxite_bind','luaxite_bind') like azalea's own *-macros crates, left as is (end-to-end binder run needs bind/azalea-src, absent)
 - A: bare `#[bind]` needs `use luaxite_bind::bind;` in the file; rust_binds/luau/*.rs files must add it themselves (or write `#[luaxite_bind::bind]`)
 - A: s8 NO extra rerun-if-changed lines: tools/bindgen.py rerun_lines (printed through build.rs) already lists rust/, src/, bindgen.toml and tools/*.py (covers bind_scan/bind_gen); a test pins that
 - A: build.rs is std-only: `rustc --edition 2024 build.rs` compiles on stable, tests run the real binary

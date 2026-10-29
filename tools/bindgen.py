@@ -3,7 +3,7 @@
 
     python3 tools/bindgen.py --root R --out O
 
-1. tools/bindgen_crates.py: the crate set (roots in R/bind + path deps of R/Cargo.toml, closure over path deps)
+1. tools/bindgen_crates.py: the crate set (roots in R/bind, closure over path deps; R/Cargo.toml's own dependencies are not roots)
 2. tools/bindgen_rdj.py: rustdoc JSON of each crate into O/rdj (cached)
 3. tools/luaxite_gen.py on the JSON -> O/gen_*.rs (+ O/inc/gen_*.rs without `#![..]`), O/bindings.d.luau, O/GEN_REPORT.md; the .d.luau is copied to R/types/
    (only when its content changed, so cargo's rerun-if-changed does not fire every build)
@@ -84,7 +84,7 @@ def run(root, out) -> list[str]:
     out.mkdir(parents=True, exist_ok=True)
     crates = bindgen_crates.resolve(root)
     if not crates:
-        raise CrateError(f"no crates to bind under {root / 'bind'} (put a crate there or add a path dependency to Cargo.toml)")
+        raise CrateError(f"no crates to bind under {root / 'bind'} (put a crate there: bind/<name>/ with a Cargo.toml, or a workspace checkout bind/<name>-src/ holding <name>/)")
     bindgen_rdj.make_all(root, out)
     stage = stage_sources(crates, out)
     copy_glue(root, out)

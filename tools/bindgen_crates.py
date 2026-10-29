@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """bindgen_crates.py - which crates does `bind/` ask us to bind? (stdlib only; PROMPT item I3)
 
-Layout (root R): roots = (a) every direct child `R/bind/*/Cargo.toml` that has a `[package]`, (b) every path dependency in
-`[dependencies]` of R/Cargo.toml. The crate set is the roots plus the closure over `path` dependencies, read with
+Layout (root R): roots = what sits directly in `R/bind/`: (a) a child `R/bind/<n>/` whose Cargo.toml has a `[package]`; (b) a child
+`R/bind/<n>-src/` that is a workspace checkout: its member `R/bind/<n>-src/<n>/` (the checkout's own manifest is not read). Nothing else is a root:
+the dependencies in R/Cargo.toml decide what the host links, not what gets bindings. The crate set is the roots plus the closure over `path` dependencies, read with
 `cargo metadata --no-deps --format-version 1 --manifest-path <dir>/Cargo.toml` (never a full resolve, never the network).
 Output: library packages only, dependencies first (Kahn's algorithm, ties alphabetical, like tools/make_rustdoc_json_ws.sh).
 
@@ -37,21 +38,19 @@ def _load_toml(path: Path) -> dict:
 
 
 def roots(root: Path) -> list[str]:
-    """Crate directories (realpaths) named by the layout: bind/*/ with a [package], then path deps of the root manifest."""
+    """Crate directories (realpaths) named by the layout: bind/<n>/ with a [package]; bind/<n>-src/<n>/ of a workspace checkout bind/<n>-src/."""
     found: list[str] = []
     bind = root / "bind"
     if bind.is_dir():
         for d in sorted(bind.iterdir()):
             m = d / "Cargo.toml"
-            if d.is_dir() and m.is_file() and "package" in _load_toml(m):
+            if not (d.is_dir() and m.is_file()):
+                continue
+            member = d / d.name[:-4] if d.name.endswith("-src") and len(d.name) > 4 else None
+            if member and (member / "Cargo.toml").is_file() and "package" in _load_toml(member / "Cargo.toml"):
+                found.append(_real(member))  # a workspace checkout bind/<n>-src/: its crate <n>/ (the checkout's root manifest is not looked at)
+            elif "package" in _load_toml(m):
                 found.append(_real(d))
-    top = root / "Cargo.toml"
-    if top.is_file():
-        deps = _load_toml(top).get("dependencies") or {}
-        for name in sorted(deps):
-            spec = deps[name]
-            if isinstance(spec, dict) and isinstance(spec.get("path"), str):
-                found.append(_real(root / spec["path"]))
     return list(dict.fromkeys(found))
 
 

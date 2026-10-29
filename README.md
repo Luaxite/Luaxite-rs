@@ -74,6 +74,11 @@ Arguments and returns can be integers, floats, `bool`, `String` or `Option` of t
 
 To use the mlua instance itself, take `&mlua::Lua` as the first parameter (Luau does not see it); other Rust code can call `luau::current_lua()`, and a `Runtime` has `lua()`.
 
+## Binding other crates
+
+Crates get Luau bindings by sitting in `bind/`, nothing else: `bind/<name>/` with its own `Cargo.toml`, or a workspace checkout `bind/<name>-src/` that holds the crate `<name>/` (azalea is `bind/azalea-src/azalea`). Path crates those depend on are bound too.
+A dependency in the root `Cargo.toml` is only linked into the binary, it gets no bindings. To call the crate from your own Rust, add it there as well. `cargo build` regenerates `types/bindings.d.luau`; `GEN_REPORT.md` lists what was left out.
+
 ## Lune
 
 `require("@lune/<name>")` supports nine of Lune's modules:

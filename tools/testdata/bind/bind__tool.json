@@ -27,7 +27,7 @@
      "kind": null,
      "optional": false,
      "rename": null,
-     "path": "@ROOT@/bind/ws/c"
+     "path": "@ROOT@/bind/ws-src/c"
     }
    ]
   }

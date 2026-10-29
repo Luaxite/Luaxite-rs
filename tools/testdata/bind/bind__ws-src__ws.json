@@ -3,9 +3,9 @@
   {
    "name": "ws-a",
    "version": "0.1.0",
-   "id": "path+file://@ROOT@/bind/ws/a#ws-a@0.1.0",
+   "id": "path+file://@ROOT@/bind/ws-src/ws#ws-a@0.1.0",
    "source": null,
-   "manifest_path": "@ROOT@/bind/ws/a/Cargo.toml",
+   "manifest_path": "@ROOT@/bind/ws-src/ws/Cargo.toml",
    "edition": "2021",
    "targets": [
     {
@@ -16,7 +16,7 @@
       "lib"
      ],
      "name": "ws_a",
-     "src_path": "@ROOT@/bind/ws/a/src/lib.rs"
+     "src_path": "@ROOT@/bind/ws-src/ws/src/lib.rs"
     }
    ],
    "dependencies": [
@@ -27,7 +27,7 @@
      "kind": null,
      "optional": false,
      "rename": null,
-     "path": "@ROOT@/bind/ws/b"
+     "path": "@ROOT@/bind/ws-src/b"
     },
     {
      "name": "ws-c",
@@ -36,7 +36,7 @@
      "kind": null,
      "optional": false,
      "rename": null,
-     "path": "@ROOT@/bind/ws/c"
+     "path": "@ROOT@/bind/ws-src/c"
     },
     {
      "name": "serde",
@@ -51,9 +51,9 @@
   {
    "name": "ws-b",
    "version": "0.1.0",
-   "id": "path+file://@ROOT@/bind/ws/b#ws-b@0.1.0",
+   "id": "path+file://@ROOT@/bind/ws-src/b#ws-b@0.1.0",
    "source": null,
-   "manifest_path": "@ROOT@/bind/ws/b/Cargo.toml",
+   "manifest_path": "@ROOT@/bind/ws-src/b/Cargo.toml",
    "edition": "2021",
    "targets": [
     {
@@ -64,7 +64,7 @@
       "lib"
      ],
      "name": "ws_b",
-     "src_path": "@ROOT@/bind/ws/b/src/lib.rs"
+     "src_path": "@ROOT@/bind/ws-src/b/src/lib.rs"
     }
    ],
    "dependencies": [
@@ -75,16 +75,16 @@
      "kind": null,
      "optional": false,
      "rename": null,
-     "path": "@ROOT@/bind/ws/c"
+     "path": "@ROOT@/bind/ws-src/c"
     }
    ]
   },
   {
    "name": "ws-c",
    "version": "0.1.0",
-   "id": "path+file://@ROOT@/bind/ws/c#ws-c@0.1.0",
+   "id": "path+file://@ROOT@/bind/ws-src/c#ws-c@0.1.0",
    "source": null,
-   "manifest_path": "@ROOT@/bind/ws/c/Cargo.toml",
+   "manifest_path": "@ROOT@/bind/ws-src/c/Cargo.toml",
    "edition": "2021",
    "targets": [
     {
@@ -95,7 +95,7 @@
       "lib"
      ],
      "name": "ws_c",
-     "src_path": "@ROOT@/bind/ws/c/src/lib.rs"
+     "src_path": "@ROOT@/bind/ws-src/c/src/lib.rs"
     }
    ],
    "dependencies": []
@@ -103,9 +103,9 @@
   {
    "name": "ws-d",
    "version": "0.1.0",
-   "id": "path+file://@ROOT@/bind/ws/d#ws-d@0.1.0",
+   "id": "path+file://@ROOT@/bind/ws-src/d#ws-d@0.1.0",
    "source": null,
-   "manifest_path": "@ROOT@/bind/ws/d/Cargo.toml",
+   "manifest_path": "@ROOT@/bind/ws-src/d/Cargo.toml",
    "edition": "2021",
    "targets": [
     {
@@ -116,27 +116,27 @@
       "lib"
      ],
      "name": "ws_d",
-     "src_path": "@ROOT@/bind/ws/d/src/lib.rs"
+     "src_path": "@ROOT@/bind/ws-src/d/src/lib.rs"
     }
    ],
    "dependencies": []
   }
  ],
  "workspace_members": [
-  "path+file://@ROOT@/bind/ws/a#ws-a@0.1.0",
-  "path+file://@ROOT@/bind/ws/b#ws-b@0.1.0",
-  "path+file://@ROOT@/bind/ws/c#ws-c@0.1.0",
-  "path+file://@ROOT@/bind/ws/d#ws-d@0.1.0"
+  "path+file://@ROOT@/bind/ws-src/ws#ws-a@0.1.0",
+  "path+file://@ROOT@/bind/ws-src/b#ws-b@0.1.0",
+  "path+file://@ROOT@/bind/ws-src/c#ws-c@0.1.0",
+  "path+file://@ROOT@/bind/ws-src/d#ws-d@0.1.0"
  ],
  "workspace_default_members": [
-  "path+file://@ROOT@/bind/ws/a#ws-a@0.1.0",
-  "path+file://@ROOT@/bind/ws/b#ws-b@0.1.0",
-  "path+file://@ROOT@/bind/ws/c#ws-c@0.1.0",
-  "path+file://@ROOT@/bind/ws/d#ws-d@0.1.0"
+  "path+file://@ROOT@/bind/ws-src/ws#ws-a@0.1.0",
+  "path+file://@ROOT@/bind/ws-src/b#ws-b@0.1.0",
+  "path+file://@ROOT@/bind/ws-src/c#ws-c@0.1.0",
+  "path+file://@ROOT@/bind/ws-src/d#ws-d@0.1.0"
  ],
  "resolve": null,
- "target_directory": "@ROOT@/bind/ws/target",
+ "target_directory": "@ROOT@/bind/ws-src/target",
  "version": 1,
- "workspace_root": "@ROOT@/bind/ws",
+ "workspace_root": "@ROOT@/bind/ws-src",
  "metadata": null
 }

@@ -15,7 +15,8 @@ name = "luaxite"
 path = "rust/main.rs"
 
 [dependencies]
-# Point at the same checkout build.rs binds (every crate under bind/ and every path dependency here is bound), so bindings and library can't drift apart.
+# Point at the same checkout build.rs binds (bindings come from what sits in bind/: bind/azalea-src/ holding azalea/), so bindings and library can't drift apart.
+# A dependency here is only linked; it gets Luau bindings only when it lives in bind/.
 azalea = { path = "bind/azalea-src/azalea" }  # Event::Packet needs azalea's `packet-event` feature (a default one; feature `packets` below names it)
 mlua = { version = "0.12", features = ["luau", "async", "send", "macros"] }
 # mlua-sys 0.13 hardcodes LBC_VERSION_MAX = 11 but accepts any luau0-src ^0.22.0; 0.22.1 (Luau 744) compiles to bytecode v13, so mlua rejects its own
@@ -24,7 +25,7 @@ mlua = { version = "0.12", features = ["luau", "async", "send", "macros"] }
 luau0-src = "=0.22.0"
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "sync", "time", "process", "io-util", "io-std", "net", "signal"] }
 anyhow = "1"
-# `#[bind]` marker (rust_binds/bind): passthrough attribute; tools/bind_scan.py and tools/bind_gen.py do the binding (build.rs). A path dependency inside this tree is a workspace member automatically.
+# `#[bind]` marker (rust_binds/bind): passthrough attribute; tools/bind_scan.py and tools/bind_gen.py do the binding (build.rs). A path dependency inside this tree is a workspace member automatically; it gets no Luau bindings (only bind/ does).
 luaxite_bind = { path = "rust_binds/bind" }
 # Lune's built-in modules for `require("@lune/<n>")` (feature `lune`, rust_binds/luau/lune_libs.rs). fs / serde / regex / datetime / luau come from Lune's own
 # crates (they run on a plain mlua state). net / process / stdio / task are written in-tree (rust_binds/luau/lune_{net,process,stdio,task}.rs) on tokio:

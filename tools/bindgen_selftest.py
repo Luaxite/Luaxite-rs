@@ -49,15 +49,15 @@ def shim(root: Path) -> dict:
     return {"BINDGEN_CARGO": str(w), "BINDGEN_SHIM_ROOT": str(root), "BINDGEN_SHIM_LOG": str(root.parent / (root.name + "-calls.log"))}
 
 
-def layout(deps: str = 'ws-a = { path = "bind/ws/a" }\nserde = "1"\n', crates=("solo", "tool", "ws")) -> Path:
+def layout(deps: str = 'serde = "1"\n', crates=("solo", "tool", "ws")) -> Path:
     """A project root: Cargo.toml (+ the given [dependencies]) and bind/<crates>/Cargo.toml (contents matter only to roots())."""
     r = tmpdir() / "root"
     write(r / "Cargo.toml", f'[package]\nname = "host"\nversion = "0.1.0"\n\n[dependencies]\n{deps}')
     for c in crates:
         if c == "ws":
-            write(r / "bind/ws/Cargo.toml", '[workspace]\nmembers = ["a", "b", "c", "d"]\n')
-            for m in "abcd":
-                write(r / f"bind/ws/{m}/Cargo.toml", f'[package]\nname = "ws-{m}"\nversion = "0.1.0"\n')
+            write(r / "bind/ws-src/Cargo.toml", '[workspace]\nmembers = ["ws", "b", "c", "d"]\n')  # a checkout bind/ws-src/ holding the crate ws/
+            for m, pkg in (("ws", "ws-a"), ("b", "ws-b"), ("c", "ws-c"), ("d", "ws-d")):
+                write(r / f"bind/ws-src/{m}/Cargo.toml", f'[package]\nname = "{pkg}"\nversion = "0.1.0"\n')
         else:
             write(r / f"bind/{c}/Cargo.toml", f'[package]\nname = "{c}"\nversion = "0.1.0"\n')
     (r / "bind/notes").mkdir(parents=True, exist_ok=True)
@@ -78,7 +78,7 @@ def resolve(r: Path) -> list[dict]:
 def test_roots_layout():
     r = layout()
     got = [os.path.relpath(d, r) for d in bindgen_crates.roots(r)]
-    assert got == ["bind/solo", "bind/tool", "bind/ws/a"], got
+    assert got == ["bind/solo", "bind/tool", "bind/ws-src/ws"], got
 
 
 @test
@@ -88,8 +88,8 @@ def test_closure_order_and_filters():
     assert [c["name"] for c in got] == ["ws-c", "ws-b", "solo", "ws-a"], [c["name"] for c in got]
     assert {c["lib"] for c in got} == {"ws_a", "ws_b", "ws_c", "solo"}
     a = got[3]
-    assert a["dir"] == str(r / "bind/ws/a") and a["manifest"] == str(r / "bind/ws/a/Cargo.toml"), a
-    assert a["workspace_root"] == str(r / "bind/ws") and got[2]["workspace_root"] == str(r / "bind/solo")
+    assert a["dir"] == str(r / "bind/ws-src/ws") and a["manifest"] == str(r / "bind/ws-src/ws/Cargo.toml"), a
+    assert a["workspace_root"] == str(r / "bind/ws-src") and got[2]["workspace_root"] == str(r / "bind/solo")
 
 
 @test
@@ -97,13 +97,28 @@ def test_metadata_calls_are_cached():
     r = layout()
     resolve(r)
     calls = (r.parent / "root-calls.log").read_text().split()
-    assert sorted(calls) == ["bind__solo", "bind__tool", "bind__ws__b"], calls
+    assert sorted(calls) == ["bind__solo", "bind__tool", "bind__ws-src__b"], calls
 
 
 @test
-def test_dependency_only_root_pulls_closure():
-    r = layout(deps='ws-b = { path = "bind/ws/b" }\n', crates=("ws",))
-    assert [c["name"] for c in resolve(r)] == ["ws-c", "ws-b"]
+def test_cargo_toml_dependencies_are_not_roots():
+    # a path dependency of the host is linked, never bound: only bind/ decides (ws-src's own crates are not roots either, only ws/)
+    r = layout(deps='extra = { path = "vendored" }\nws-b = { path = "bind/ws-src/b" }\n', crates=())
+    write(r / "vendored/Cargo.toml", '[package]\nname = "extra"\nversion = "0.1.0"\n')
+    write(r / "bind/ws-src/Cargo.toml", '[workspace]\nmembers = ["b"]\n')
+    write(r / "bind/ws-src/b/Cargo.toml", '[package]\nname = "ws-b"\nversion = "0.1.0"\n')
+    assert bindgen_crates.roots(r) == [] and resolve(r) == []
+
+
+@test
+def test_src_checkout_binds_only_its_named_member():
+    r = layout(deps="", crates=())
+    write(r / "bind/xyz-src/Cargo.toml", '[workspace]\nmembers = ["xyz", "other"]\n')
+    for m in ("xyz", "other"):
+        write(r / f"bind/xyz-src/{m}/Cargo.toml", f'[package]\nname = "{m}"\nversion = "0.1.0"\n')
+    write(r / "bind/lone-src/Cargo.toml", '[workspace]\nmembers = []\n')     # a checkout without its crate: nothing
+    write(r / "bind/-src/Cargo.toml", '[workspace]\nmembers = []\n')         # no name before -src: nothing
+    assert [os.path.relpath(d, r) for d in bindgen_crates.roots(r)] == ["bind/xyz-src/xyz"]
 
 
 @test
@@ -136,11 +151,11 @@ def test_cargo_errors_are_one_line():
         raise AssertionError("no error")
     finally:
         os.environ.pop("BINDGEN_CARGO")
-    r2 = layout(deps='ws-x = { path = "bind/missing" }\n', crates=())
+    r2 = layout(deps="", crates=("broken",))  # bind/broken/Cargo.toml exists, no recorded metadata for it
     try:
         resolve(r2)
     except bindgen_crates.CrateError as e:
-        assert "bind/missing" in str(e) and "\n" not in str(e), str(e)
+        assert "bind/broken" in str(e) and "\n" not in str(e), str(e)
     else:
         raise AssertionError("no error")
 
@@ -203,7 +218,7 @@ def run_rdj(r: Path, out: Path | None = None) -> list[dict]:
 @test
 def test_rdj_toolchain_choice_and_flags():
     r = layout()
-    write(r / "bind/ws/rust-toolchain.toml", '[toolchain]\nchannel = "nightly-2026-01-01"\n')
+    write(r / "bind/ws-src/rust-toolchain.toml", '[toolchain]\nchannel = "nightly-2026-01-01"\n')
     res = run_rdj(r)
     assert [(x["name"], x["status"]) for x in res] == [("ws-c", "built"), ("ws-b", "built"), ("solo", "built"), ("ws-a", "built")], res
     got = {l.split()[0]: l.split()[1:] for l in make_log(r)}
@@ -219,11 +234,11 @@ def test_rdj_toolchain_choice_and_flags():
 @test
 def test_rdj_cache():
     r = layout()
-    write(r / "bind/ws/rust-toolchain.toml", '[toolchain]\nchannel = "nightly"\n')
+    write(r / "bind/ws-src/rust-toolchain.toml", '[toolchain]\nchannel = "nightly"\n')
     run_rdj(r)
     n = len(make_log(r))
     assert [x["status"] for x in run_rdj(r)] == ["cached"] * 4 and len(make_log(r)) == n
-    write(r / "bind/ws/c/src/lib.rs", "pub fn changed() {}\n")
+    write(r / "bind/ws-src/c/src/lib.rs", "pub fn changed() {}\n")
     res = run_rdj(r)
     assert {x["name"]: x["status"] for x in res} == {"ws-c": "built", "ws-b": "cached", "solo": "cached", "ws-a": "cached"}, res
     write(r / "rust-toolchain.toml", '[toolchain]\nchannel = "beta"\n')
