@@ -2,13 +2,11 @@ name: rust
 
 # The real binary is compiled ONCE here (job `real`, Linux x86_64, debug) and handed to the jobs that only run it (`lune`, `server`) as an artifact,
 # so nothing below compiles it again. (tests/e2e used to be its own workflow, e2e.yml, which built the same binary twice more.)
-# A pushed `v*` tag only runs release.yml: the commit was already built on its branch.
+# CI runs only when a `ci-*` tag is pushed (or by hand); a plain push or pull request runs nothing. A `v*` tag only runs release.yml.
 
 on:
     push:
-        branches: ["**"]
-        tags-ignore: ["v*"]
-    pull_request:
+        tags: ["ci-*"]
     workflow_dispatch:
 
 permissions:

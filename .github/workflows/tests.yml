@@ -1,8 +1,9 @@
 name: tests
 
+# CI runs only when a `ci-*` tag is pushed (git tag ci-test && git push origin ci-test); a plain push or pull request runs nothing.
 on:
     push:
-    pull_request:
+        tags: ["ci-*"]
 
 jobs:
     python:

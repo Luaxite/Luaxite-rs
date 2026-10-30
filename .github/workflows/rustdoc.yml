@@ -1,8 +1,9 @@
 name: rustdoc front end
 
+# CI runs only when a `ci-*` tag is pushed (or by hand); a plain push or pull request runs nothing.
 on:
     push:
-    pull_request:
+        tags: ["ci-*"]
     workflow_dispatch:
 
 permissions:
