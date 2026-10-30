@@ -96,7 +96,7 @@ local inv = bot:inventory()
 print("inventory", #inv, inv[1], inv[2].kind, inv[2].count, inv[3], inv[4].kind, inv[4].count)
 local menu = bot:menu()
 print("menu", menu.kind, #menu.slots, menu.slots[1].kind, menu.slots[1].count, menu.slots[2], menu.slots[3].kind)
-local n = 0
+n = 0
 for _, slot in ipairs(inv) do n += slot and 1 or 0 end
 print("non-empty", n)
 local pos = { x = 1, y = 64, z = 2 }

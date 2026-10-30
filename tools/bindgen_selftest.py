@@ -518,7 +518,7 @@ def test_build_rs_compiles_and_runs():
     assert p.returncode == 0, p.stderr
     assert (out / "gen_client.rs").is_file() and (r / "types/bindings.d.luau").is_file()
     lines = p.stdout.splitlines()
-    assert all(l.startswith(("cargo:rerun-if-changed=", "cargo:warning=")) for l in lines), p.stdout
+    assert all(l.startswith(("cargo:rerun-if-changed=", "cargo:rerun-if-env-changed=", "cargo:warning=")) for l in lines), p.stdout
     rer = {l.split("=", 1)[1] for l in lines if l.startswith("cargo:rerun-if-changed=")}
     for want in ("build.rs", str(r / "src"), str(r / "src/util"), str(r / "src/main.luau"), str(r / "src/a/b/c.luau")):
         assert want in rer, (want, rer)
