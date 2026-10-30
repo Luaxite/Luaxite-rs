@@ -35,11 +35,12 @@ type Commands = {
 return Module
 ]]
 
---[[ REQUIRE ]]
+
+
 local Commands = {}
 
+--[[ REGISTER ]]
 
+--[[ END REGISTER ]]
 
-
-
-
+return Commands

@@ -1,0 +1,1 @@
+return menu.new({}, { title = "Zenpel" })

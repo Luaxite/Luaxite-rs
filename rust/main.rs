@@ -1,8 +1,8 @@
-// The Luau glue (azalea bindings, Lune libs, #[bind] registration) lives in rust_binds/, so this folder holds only what you edit.
 #[path = "../rust_binds/luau/mod.rs"]
 mod luau;
 
-// `#[bind]` for fns in this file (a bare `#[bind]`, as the scanner accepts, needs the import; `#[zenpel_bind::bind]` does not).
+mod tui_menu;
+
 #[allow(unused_imports)]
 use zenpel_bind::bind;
 use std::{path::PathBuf, sync::Arc};
@@ -22,7 +22,6 @@ itself (see README). A script makes its bots itself (`azalea.join`, `azalea.swar
 not stop its handlers: the process runs until every bot / swarm the scripts started is gone, or a script calls
 `process.exit(code)`."#;
 
-/// What the command line asks for.
 #[derive(Debug, Default, PartialEq, Eq)]
 struct Cli {
     /// Scripts named after `path`. Empty: the embedded main runs.
@@ -109,6 +108,9 @@ async fn main() -> anyhow::Result<()> {
     }
     if runtimes.is_empty() {
         runtimes.push(Arc::new(luau::Runtime::embedded()?));
+    }
+    for runtime in &runtimes {
+        tui_menu::register(runtime.lua())?;
     }
 
     let local = tokio::task::LocalSet::new();

@@ -25,6 +25,8 @@ mlua = { version = "0.12", features = ["luau", "async", "send", "macros"] }
 luau0-src = "=0.22.0"
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "sync", "time", "process", "io-util", "io-std", "net", "signal"] }
 anyhow = "1"
+# `menu` global (rust/tui_menu.rs): the terminal UI. Its crossterm comes through ratatui (`ratatui::crossterm`), so no separate crossterm dependency.
+ratatui = "0.30"
 # `#[bind]` marker (rust_binds/bind): passthrough attribute; tools/bind_scan.py and tools/bind_gen.py do the binding (build.rs). A path dependency inside this tree is a workspace member automatically; it gets no Luau bindings (only bind/ does).
 zenpel_bind = { path = "rust_binds/bind" }
 # Lune's built-in modules for `require("@lune/<n>")` (feature `lune`, rust_binds/luau/lune_libs.rs). fs / serde / regex / datetime / luau come from Lune's own
