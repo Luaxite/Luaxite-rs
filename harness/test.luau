@@ -5,7 +5,7 @@ print("require cached:", require("./lib/util") == util, require("./lib/../lib/ut
 print("require init:", require("./lib/pkg").name)
 print("require via pcall:", pcall(require, "./lib/util_data"))
 print("require in coroutine:", coroutine.wrap(function() return require("./lib/sub/sibling").name end)())
-print("require missing:", pcall(function() return require("./lib/nope") end))
+print("require missing:", pcall(require, "./lib/nope"))
 print("script start")
 bot:on("login", function()
 	print("login handler")
