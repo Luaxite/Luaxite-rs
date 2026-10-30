@@ -1,4 +1,4 @@
-// Harness copy of generated.rs: the committed gen_*.rs (tools/luaxite_gen.py on harness/fake) and no embedded scripts.
+// Harness copy of generated.rs: the committed gen_*.rs (tools/zenpel_gen.py on harness/fake) and no embedded scripts.
 mod gen_client;
 mod gen_events;
 mod gen_types;

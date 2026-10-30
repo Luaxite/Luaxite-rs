@@ -39,7 +39,7 @@ assert(not pcall(serde.decode, "json", "{ nope"), "bad json raises")
 assert(not pcall(serde.encode, "nope" :: any, {}), "unknown format raises")
 assert(not pcall(serde.encode, "json", { f = function() end }), "functions are not serializable")
 
-local text = string.rep("luaxite lune ", 200)
+local text = string.rep("zenpel lune ", 200)
 for _, format in { "brotli", "gzip", "lz4", "zlib", "zstd" } do
 	local packed = serde.compress(format :: any, text)
 	assert(type(packed) == "string" and #packed < #text, format .. " shrinks repetitive text")

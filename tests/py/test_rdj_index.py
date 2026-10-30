@@ -6,7 +6,7 @@ from pathlib import Path
 from _common import FAKE, FAKE_RDJ, ROOT, read
 import rdj
 import rdj_index as ri
-import luaxite_gen as gen
+import zenpel_gen as gen
 
 EVENT_VARIANTS = ["Init", "Login", "Chat", "Tick", "AddPlayer", "KeepAlive", "Disconnect", "ConnectionFailed", "Death"]
 

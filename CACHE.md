@@ -1,22 +1,22 @@
 proto: 2
 task: 3558860047
 ## idx   path | purpose; symbols Lx-y | sig | prov@step (read|skim|inferred|unread)
-rust/main.rs | bin entry: `use luaxite_bind::bind;` L3-5, parse_args, signal handler, run per Runtime | 1251627317/3373 | read@5
+rust/main.rs | bin entry: `use zenpel_bind::bind;` L3-5, parse_args, signal handler, run per Runtime | 1251627317/3373 | read@5
 rust_binds/luau/mod.rs | glue (s10: CURRENT/TASK_LUA/current_lua near top, Runtime::lua; s9: `binds::register(&lua)` in with_source): Handlers, require shim, Runtime{lua,handlers} new/embedded/with_source L322-355 (Lua::new L346) | 686232666/12142 | skim@0
 rust_binds/luau/ | generated.rs = OUT_DIR includes (gen_*, scripts; harness copy differs on purpose), convert, extra_*, real_* (feature real), lune_* (feature lune), generated.rs (OUT_DIR includes) | - | skim@0
 rust_binds/luau/real_hub.rs | EMPTY (1 byte), declared mod.rs L30 (+harness copy), no refs; kept | 3515105045/1 | read@0
 rust_binds/luau/real_packets.rs | packets glue; merge_injected L55-75, #[cfg(test)] 4 assert_eq! L77-103 (rustfmt-wrapped) | 3152814727/6352 | read@1
 build.rs | runs tools/bindgen.py L66-90, then write_binds L62-91 (bind_gen -> OUT_DIR/binds.rs; EMPTY_BINDS L58), embeds src/**.luau -> OUT_DIR/scripts.rs; main L93; std only | 3368258663/5612 | read@8
-Cargo.toml | bin luaxite=rust/main.rs; mlua 0.12 luau,async,send,macros; features real,packets,lune; path dep luaxite_bind=rust_binds/bind | 2002463076/5559 | read@5
+Cargo.toml | bin zenpel=rust/main.rs; mlua 0.12 luau,async,send,macros; features real,packets,lune; path dep zenpel_bind=rust_binds/bind | 2002463076/5559 | read@5
 harness/ | own workspace, fake azalea; runs test.luau; src/luau = copies of rust_binds/luau glue; STAYS PUT | - | skim@0
 harness/src/luau/ | copies of mod,convert,extra_* + gen_*.rs; generated.rs differs on purpose | - | skim@0
 harness/fake/ | fake azalea + rustdoc fixture | - | unread
 tools/sync_harness.sh | cp rust_binds/luau/{mod,convert,extra_*}.rs -> harness/src/luau | 2044519931/454 | read@0
 tools/check.sh | verify script; steps 1-6 incl harness build (skips w/o cargo) | 1839602376/7222 | skim@0
 tools/bind_scan.py | bind scanner; FN named groups pub/mods/name L24; walk L75 close_of L94 split_top L102 parse_param L112 signature L124 (params,ret,body,generic) attrs_before L157 file_mode L176 brace_kind L190 enclosing L198 skip_reason L214 scan_text L227 (yields label,line,fn,mode,params,ret) scan_root L247 main L256 | 287084658/8970 | read@4
-tools/ | bindgen*.py, luaxite_gen.py, rdj*.py, golden*, coverage*, fuzz/, testdata/ | - | unread
+tools/ | bindgen*.py, zenpel_gen.py, rdj*.py, golden*, coverage*, fuzz/, testdata/ | - | unread
 tests/py/ | stdlib unittest suite (_common.py ROOT, FAKE=harness/fake, run(), TOOLS on sys.path); 282 tests; test_packets_race.py L27 regex; test_bind_scan.py (29, s4) | 2200485911/1357 | read@1
-rust_binds/bind/ | crate luaxite_bind: Cargo.toml (proc-macro, no deps), src/lib.rs `#[proc_macro_attribute] bind` passthrough | 465961607/691 | read@5
+rust_binds/bind/ | crate zenpel_bind: Cargo.toml (proc-macro, no deps), src/lib.rs `#[proc_macro_attribute] bind` passthrough | 465961607/691 | read@5
 tools/bind_gen.py | register() generator; module_path L23 arg_ok L36 split_sig L41 statement L54 generate L68 main L88; imports bind_scan (split_top) | 485747434/4204 | read@7
 tests/py/test_bind_gen.py | exact-text asserts on tmp trees (Text/Lua/Optional/Results/Cli), rustfmt syntax check (25) | 2740479566/9437 | read@7
 tests/py/test_bind_wiring.py | static wiring of mod binds / register call / harness sync (5) | 1243414367/1708 | read@9

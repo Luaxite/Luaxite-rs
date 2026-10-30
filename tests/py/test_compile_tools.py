@@ -18,7 +18,7 @@ end
 """
 
 
-def msg(level, text, pkg="path+file:///w/luaxite#0.1.0", target="luaxite"):
+def msg(level, text, pkg="path+file:///w/zenpel#0.1.0", target="zenpel"):
     return json.dumps({"reason": "compiler-message", "package_id": pkg, "target": {"name": target}, "message": {"level": level, "message": text}})
 
 
@@ -80,7 +80,7 @@ class CargoWarnings(unittest.TestCase):
         self.assertIn("other packages (not judged): 2 warning(s)", p.stdout)
 
     def test_old_package_id_form(self):
-        p = self.go([msg("warning", "w", pkg="luaxite 0.1.0 (path+file:///w)")])
+        p = self.go([msg("warning", "w", pkg="zenpel 0.1.0 (path+file:///w)")])
         self.assertIn("1 warning(s)", p.stdout)
 
     def test_missing_log_and_empty_log_are_exit_2(self):
@@ -88,17 +88,17 @@ class CargoWarnings(unittest.TestCase):
         self.assertEqual(self.go(["not json", ""]).returncode, 2)
 
     def test_render_diagnostics_log_has_no_messages_and_says_why(self):
-        p = self.go(['{"reason":"compiler-artifact","package_id":"path+file:///w/luaxite#0.1.0","fresh":false}', '{"reason":"build-finished","success":true}'])
+        p = self.go(['{"reason":"compiler-artifact","package_id":"path+file:///w/zenpel#0.1.0","fresh":false}', '{"reason":"build-finished","success":true}'])
         self.assertEqual(p.returncode, 2)
         self.assertIn("json-render-diagnostics", p.stderr)
 
     def test_errors_are_printed_rendered(self):
-        line = json.dumps({"reason": "compiler-message", "package_id": "path+file:///w/luaxite#0.1.0", "target": {"name": "luaxite"},
+        line = json.dumps({"reason": "compiler-message", "package_id": "path+file:///w/zenpel#0.1.0", "target": {"name": "zenpel"},
                            "message": {"level": "error", "message": "the trait bound `Option<()>: IntoLua` is not satisfied",
                                        "rendered": "error[E0277]: the trait bound `Option<()>: IntoLua` is not satisfied\n --> gen_types.rs:1:1\n"}})
         p = self.go([line])
         self.assertEqual(p.returncode, 1)
-        self.assertIn("error in luaxite:", p.stdout)
+        self.assertIn("error in zenpel:", p.stdout)
         self.assertIn("--> gen_types.rs:1:1", p.stdout)
 
 

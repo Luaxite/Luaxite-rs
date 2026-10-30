@@ -1,7 +1,7 @@
 """Ctrl-C / SIGTERM (slices 1-2): children run in their own process group (`process_group(0)`), so the terminal's SIGINT never
 reaches them. rust/main.rs catches SIGINT and SIGTERM, kills the tracked children (`luau::Runtime::kill_children`) and exits 130 /
 143. The binary is not built by the harness, so this checks the structure; tests/e2e/lune_process_sigint.luau + run.sh run the
-real thing (SIGINT to a running luaxite with a live create() child)."""
+real thing (SIGINT to a running zenpel with a live create() child)."""
 import re
 import unittest
 

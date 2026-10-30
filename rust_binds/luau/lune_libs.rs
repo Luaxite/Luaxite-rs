@@ -54,7 +54,7 @@ pub fn timeout_with_default(
 
 const UNSUPPORTED: &[(&str, &str)] = &[(
     "roblox",
-    "it is built on Lune's task scheduler, which luaxite does not run",
+    "it is built on Lune's task scheduler, which zenpel does not run",
 )];
 
 pub fn require(lua: &Lua, loaded: &Table, name: &str) -> mlua::Result<Value> {
@@ -70,7 +70,7 @@ pub fn require(lua: &Lua, loaded: &Table, name: &str) -> mlua::Result<Value> {
     }
     if let Some((_, why)) = UNSUPPORTED.iter().find(|(n, _)| *n == lib) {
         return Err(mlua::Error::runtime(format!(
-            "module '@lune/{lib}' is not supported by luaxite: {why}"
+            "module '@lune/{lib}' is not supported by zenpel: {why}"
         )));
     }
     let lua = lua.clone();

@@ -46,7 +46,7 @@ class Modes(unittest.TestCase):
         self.assertEqual(names("\n//BIND *all\n" + self.SRC), ["d"])
 
     def test_attr_forms(self):
-        src = "#[bind]\nfn a() {}\n#[luaxite_bind::bind]\nfn b() {}\n#[bind(name = \"x\")]\nfn c() {}\n#[bindx]\nfn d() {}\n"
+        src = "#[bind]\nfn a() {}\n#[zenpel_bind::bind]\nfn b() {}\n#[bind(name = \"x\")]\nfn c() {}\n#[bindx]\nfn d() {}\n"
         self.assertEqual(names(src), ["a", "b", "c"])
 
     def test_attr_stacked_with_others(self):

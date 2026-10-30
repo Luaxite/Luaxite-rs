@@ -1,4 +1,4 @@
--- luau-lsp stub (see .luaurc): the luaxite binary provides @lune/net
+-- luau-lsp stub (see .luaurc): the zenpel binary provides @lune/net
 --
 -- Behavior notes (not typed here; the binary is the source of truth):
 --   net.request(config)

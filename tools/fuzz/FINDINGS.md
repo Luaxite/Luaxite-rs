@@ -1,4 +1,4 @@
-# Fuzzing tools/luaxite_gen.py: what broke and how it was fixed
+# Fuzzing tools/zenpel_gen.py: what broke and how it was fixed
 
 To run it: `cd tools/fuzz && python3 run.py` (510 cases), `python3 run.py --wave2` (105 more), and `cases3.py` (6 more).
 Each case is the fake azalea crate plus one piece of ugly Rust. `python3 tools/fuzz/regress.py` checks that every fix below still holds, and check.sh runs it.

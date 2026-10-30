@@ -34,6 +34,6 @@ jobs:
             - run: |
                   mkdir -p /tmp/out/rust /tmp/out/luau
                   cp harness/src/luau/extra_*.rs /tmp/out/rust/
-                  python3 tools/luaxite_gen.py --azalea harness/fake --rustdoc /tmp/fixture --rust-out /tmp/out/rust --luau-out /tmp/out/luau
+                  python3 tools/zenpel_gen.py --azalea harness/fake --rustdoc /tmp/fixture --rust-out /tmp/out/rust --luau-out /tmp/out/luau
             - run: GOLDEN_ALLOW=1 sh tools/golden.sh compare fake /tmp/out/rust /tmp/out/luau
             - run: python3 tools/rdj_selftest.py

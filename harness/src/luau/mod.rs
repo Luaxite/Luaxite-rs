@@ -347,7 +347,7 @@ fn install_require(lua: &Lua) -> mlua::Result<()> {
                 }
                 #[cfg(not(feature = "lune"))]
                 return Err(mlua::Error::runtime(format!(
-                    "module '{name}' not available: luaxite was built without the `lune` cargo feature"
+                    "module '{name}' not available: zenpel was built without the `lune` cargo feature"
                 )));
             }
             if name.starts_with('@') {

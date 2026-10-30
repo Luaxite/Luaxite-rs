@@ -1,4 +1,4 @@
-# bindgen.toml - the data tables of tools/luaxite_gen.py (read with stdlib tomllib; `--config PATH` picks another file).
+# bindgen.toml - the data tables of tools/zenpel_gen.py (read with stdlib tomllib; `--config PATH` picks another file).
 # Edit here, not in the generator. A wrong key/type stops the generator with `error: bindgen.toml: key `..`: ..`.
 # Absent file = built-in empty tables. Stay in Python (not expressible here, they hold nulls): SKIP_DIRS, BUILTIN, keyword sets.
 

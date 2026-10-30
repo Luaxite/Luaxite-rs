@@ -39,7 +39,7 @@ def generate(rustdoc=str(FAKE_RDJ), azalea=str(FAKE), with_extras=True, config=N
     if with_extras:
         for f in (ROOT / "harness/src/luau").glob("extra_*.rs"):
             shutil.copy(f, rust)
-    cmd = [sys.executable, TOOLS / "luaxite_gen.py", "--azalea", azalea, "--rustdoc", rustdoc, "--rust-out", rust, "--luau-out", luau]
+    cmd = [sys.executable, TOOLS / "zenpel_gen.py", "--azalea", azalea, "--rustdoc", rustdoc, "--rust-out", rust, "--luau-out", luau]
     if config:
         cmd += ["--config", config]
     return rust, luau, run(cmd)

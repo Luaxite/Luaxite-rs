@@ -110,7 +110,7 @@ impl Verifier {
             }
         }
 
-        // PATCHED (luaxite): Android has no JVM to ask in a native executable, so it uses the bundled Mozilla roots like wasm32 does.
+        // PATCHED (zenpel): Android has no JVM to ask in a native executable, so it uses the bundled Mozilla roots like wasm32 does.
         #[cfg(any(target_arch = "wasm32", target_os = "android"))]
         {
             root_store.add_parsable_certificates(

@@ -1,4 +1,4 @@
-"""rust_binds/bind (crate luaxite_bind): the passthrough `#[bind]` attribute and its wiring into the root crate."""
+"""rust_binds/bind (crate zenpel_bind): the passthrough `#[bind]` attribute and its wiring into the root crate."""
 import os
 import shutil
 import tempfile
@@ -16,7 +16,7 @@ CRATE = ROOT / "rust_binds" / "bind"
 class Wiring(unittest.TestCase):
     def test_manifest_is_a_proc_macro_without_dependencies(self):
         m = tomllib.loads((CRATE / "Cargo.toml").read_text())
-        self.assertEqual(m["package"]["name"], "luaxite_bind")
+        self.assertEqual(m["package"]["name"], "zenpel_bind")
         self.assertEqual(m["package"]["edition"], "2024")
         self.assertIs(m["lib"]["proc-macro"], True)
         self.assertFalse(any(k in m for k in ("dependencies", "build-dependencies")))
@@ -28,14 +28,14 @@ class Wiring(unittest.TestCase):
 
     def test_root_depends_on_it_by_path(self):
         root = tomllib.loads((ROOT / "Cargo.toml").read_text())
-        self.assertEqual(root["dependencies"]["luaxite_bind"], {"path": "rust_binds/bind"})
+        self.assertEqual(root["dependencies"]["zenpel_bind"], {"path": "rust_binds/bind"})
         self.assertNotIn("rust_binds/bind", root["workspace"].get("exclude", []))
 
     def test_main_imports_the_attribute(self):
-        self.assertIn("use luaxite_bind::bind;", _common.read("rust/main.rs"))
+        self.assertIn("use zenpel_bind::bind;", _common.read("rust/main.rs"))
 
     def test_harness_is_untouched(self):
-        self.assertNotIn("luaxite_bind", _common.read("harness/Cargo.toml"))
+        self.assertNotIn("zenpel_bind", _common.read("harness/Cargo.toml"))
 
     def test_scanner_does_not_select_the_crate_itself(self):
         self.assertEqual([r for r in bind_scan.scan_root(ROOT) if r[0].startswith("rust_binds/bind/")], [])
@@ -49,12 +49,12 @@ class Compiles(unittest.TestCase):
             (d / "src").mkdir()
             (d / "Cargo.toml").write_text(
                 f'[package]\nname = "t"\nversion = "0.1.0"\nedition = "2024"\n[workspace]\n'
-                f'[dependencies]\nluaxite_bind = {{ path = "{CRATE.as_posix()}" }}\n'
+                f'[dependencies]\nzenpel_bind = {{ path = "{CRATE.as_posix()}" }}\n'
             )
             (d / "src" / "main.rs").write_text(
-                "#[allow(unused_imports)]\nuse luaxite_bind::bind;\n"
+                "#[allow(unused_imports)]\nuse zenpel_bind::bind;\n"
                 "#[bind]\npub fn add(a: i32, b: i32) -> i32 { a + b }\n"
-                "#[luaxite_bind::bind]\nfn twice(x: i32) -> i32 { x * 2 }\n"
+                "#[zenpel_bind::bind]\nfn twice(x: i32) -> i32 { x * 2 }\n"
                 '#[bind(name = "x")]\nfn three() -> i32 { 3 }\n'
                 "fn main() { println!(\"{}\", add(1, 2) + twice(3) + three()); }\n"
             )

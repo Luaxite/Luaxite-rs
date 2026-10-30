@@ -29,7 +29,7 @@ class StrictBool(unittest.TestCase):
             self.assertIn(f"opts.{setter}(b.0)", src)
 
     def test_generator_params_are_strict(self):
-        src = read("tools/luaxite_gen.py")
+        src = read("tools/zenpel_gen.py")
         self.assertIn('return TypeInfo("LBool", "boolean", from_lua=lambda x: f"{x}.0")', src)
 
 

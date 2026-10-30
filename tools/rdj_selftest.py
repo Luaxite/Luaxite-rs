@@ -276,13 +276,13 @@ def test_main_cli():
 
 
 def generator():
-    """tools/luaxite_gen.py as a module (stdlib only)."""
+    """tools/zenpel_gen.py as a module (stdlib only)."""
     if "gen" not in _cache:
         try:
-            import luaxite_gen
+            import zenpel_gen
         except ImportError as e:
             raise AssertionError(f"cannot import the generator ({e})")
-        _cache["gen"] = luaxite_gen
+        _cache["gen"] = zenpel_gen
     return _cache["gen"]
 
 
@@ -1008,7 +1008,7 @@ def test_generator_cli_modes():
         (out / "rust").mkdir(parents=True)
         for f in (ROOT / "harness" / "src" / "luau").glob("extra_*.rs"):
             shutil.copy(f, out / "rust")
-        p = subprocess.run([sys.executable, str(ROOT / "tools" / "luaxite_gen.py"), "--azalea", fake, "--rust-out", str(out / "rust"),
+        p = subprocess.run([sys.executable, str(ROOT / "tools" / "zenpel_gen.py"), "--azalea", fake, "--rust-out", str(out / "rust"),
                             "--luau-out", str(out / "luau"), *a], capture_output=True, text=True)
         return p, out
 
@@ -1034,7 +1034,7 @@ def run_generator(azalea_root, rdj_dir, out_dir, extra=()):
     import subprocess
     out = Path(out_dir)
     (out / "rust").mkdir(parents=True, exist_ok=True)
-    p = subprocess.run([sys.executable, str(ROOT / "tools" / "luaxite_gen.py"), "--azalea", str(azalea_root),
+    p = subprocess.run([sys.executable, str(ROOT / "tools" / "zenpel_gen.py"), "--azalea", str(azalea_root),
                         "--rustdoc", str(rdj_dir), "--rust-out", str(out / "rust"), "--luau-out", str(out / "luau"), *extra],
                        capture_output=True, text=True)
     rep = out / "luau" / "GEN_REPORT.json"
@@ -1384,7 +1384,7 @@ def test_mutation_never_crashes():
 
 @test
 def test_config_toml_schema_errors():
-    import luaxite_gen as g
+    import zenpel_gen as g
     base = (ROOT / "bindgen.toml").read_text()
     cfg = g.load_config()
     assert sorted(cfg) == sorted(["DENY_METHODS", "PATH_OVERRIDES", "RENAMES", "HANDWRITTEN_GOALS", "CLASSES", "EVENT_ARG_NAMES",
@@ -1448,7 +1448,7 @@ def test_config_flag_and_builtin_defaults():
     """`--config PATH` (default <root>/bindgen.toml): same tables as the default; a missing default file = built-in empty
     tables; an explicit missing/invalid PATH is one `error: <file>: ..` line (no traceback)."""
     import subprocess
-    import luaxite_gen as g
+    import zenpel_gen as g
     assert g.CONFIG_PATH == ROOT / "bindgen.toml" and g.CONFIG_PATH.is_file()
     saved = g.CONFIG_PATH
     try:
@@ -1471,7 +1471,7 @@ def test_config_flag_and_builtin_defaults():
         (out / "rust").mkdir(parents=True)
         for f in (ROOT / "harness" / "src" / "luau").glob("extra_*.rs"):
             shutil.copy(f, out / "rust")
-        p = subprocess.run([sys.executable, str(ROOT / "tools" / "luaxite_gen.py"), "--azalea", str(ROOT / "harness" / "fake"),
+        p = subprocess.run([sys.executable, str(ROOT / "tools" / "zenpel_gen.py"), "--azalea", str(ROOT / "harness" / "fake"),
                             "--rustdoc", str(ROOT / "harness/fake/rustdoc"), "--rust-out", str(out / "rust"), "--luau-out", str(out / "luau"), *a],
                            capture_output=True, text=True)
         return p, out
@@ -1532,7 +1532,7 @@ def toy_project(tmp: Path):
 def test_generic_class_discovery_on_toy_crate():
     """No `[classes]` configured and no `azalea` crate: pub non-generic structs/enums with pub inherent methods become classes
     (named after the type, `Lua<Type>` struct), the rest is listed; the azalea config binds exactly its own classes."""
-    import luaxite_gen as g
+    import zenpel_gen as g
     import rdj_index as ri
     root, d = toy_project(Path(tmpdir()))
     saved = dict(g.CLASSES)
@@ -1574,7 +1574,7 @@ def test_generator_cli_on_toy_crate():
     cfg.write_text("deny_methods = []\n" + "".join(f"[{k}]\n" for k in ("classes", "scalar", "records", "accessors", "path_overrides", "renames",
                    "handwritten_goals", "event_arg_names", "hidden_events", "goal_param_names", "extra_events", "hand_classes", "hand_globals")))
     out = tmp / "out"
-    p = subprocess.run([sys.executable, str(ROOT / "tools" / "luaxite_gen.py"), "--azalea", str(root), "--rustdoc", str(d), "--rust-out", str(out / "rs"),
+    p = subprocess.run([sys.executable, str(ROOT / "tools" / "zenpel_gen.py"), "--azalea", str(root), "--rustdoc", str(d), "--rust-out", str(out / "rs"),
                         "--luau-out", str(out / "lu"), "--config", str(cfg)], capture_output=True, text=True)
     assert p.returncode == 0 and "Traceback" not in p.stderr, p.stderr
     assert sorted(f.name for f in (out / "rs").iterdir()) == ["gen_client.rs", "gen_types.rs"]

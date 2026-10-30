@@ -10,7 +10,7 @@ from pathlib import Path
 sys.dont_write_bytecode = True
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-import luaxite_gen as g
+import zenpel_gen as g
 import rdj_index
 
 ix = rdj_index.RdjIndex(HERE.parent / "harness" / "fake", HERE.parent / "harness" / "fake" / "rustdoc")

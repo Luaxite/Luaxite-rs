@@ -48,13 +48,13 @@ run coroutine_async 30 tests/e2e/coroutine_async.luau
 run lune_stdio 30 tests/e2e/lune_stdio.luau /dev/null
 run lune_process 30 tests/e2e/lune_process.luau
 CLI_ARGS="debug=true debug true --verbose -x"; export CLI_ARGS
-run lune_process_args 30 tests/e2e/lune_process_args.luau   # luaxite path <script> <args...>: the args reach process.args
+run lune_process_args 30 tests/e2e/lune_process_args.luau   # zenpel path <script> <args...>: the args reach process.args
 unset CLI_ARGS
 run lune_process_idle 30 tests/e2e/lune_process_idle.luau   # create() child must not hold the program open (timeout 30s < the child's sleep)
 run lune_net 30 tests/e2e/lune_net.luau
 
-# Ctrl-C: SIGINT (sent by `timeout` after 3s, to luaxite only: its children are in their own process groups) must kill the running create()
-# child and end luaxite with exit code 130. The script never ends by itself, so run.sh checks the exit code + the child and prints the PASS line.
+# Ctrl-C: SIGINT (sent by `timeout` after 3s, to zenpel only: its children are in their own process groups) must kill the running create()
+# child and end zenpel with exit code 130. The script never ends by itself, so run.sh checks the exit code + the child and prints the PASS line.
 alive() { # alive PID: running (a zombie does not count)
     kill -0 "$1" 2> /dev/null || return 1
     st=$(sed 's/.*) //' "/proc/$1/stat" 2> /dev/null | cut -c1)
@@ -69,7 +69,7 @@ sigint_test() {
     rc=$?
     cat "$log"
     if grep -F '[luau]' "$log" | grep -qvF 'e2e-expected'; then echo "FAIL $name: [luau] error"; fail=1; return; fi
-    [ "$rc" -eq 130 ] || { echo "FAIL $name: luaxite exit code $rc after SIGINT, want 130"; fail=1; return; }
+    [ "$rc" -eq 130 ] || { echo "FAIL $name: zenpel exit code $rc after SIGINT, want 130"; fail=1; return; }
     [ -s "$pidf" ] || { echo "FAIL $name: the child never wrote its pid"; fail=1; return; }
     cpid=$(cat "$pidf")
     i=0
@@ -86,7 +86,7 @@ case $(uname -s) in
 esac
 
 # Grandchildren of an exited child: lune_process_orphan.luau starts `sleep 100 &` from a shell = true create() and exec() child (both shells
-# exit at once) and ends through process.exit; the sleeps must be gone once luaxite has exited (kill_all kills the exited children's groups).
+# exit at once) and ends through process.exit; the sleeps must be gone once zenpel has exited (kill_all kills the exited children's groups).
 orphan_test() {
     name=lune_process_orphan
     dir=/tmp/e2e-$name.d
@@ -100,7 +100,7 @@ orphan_test() {
         i=0
         while alive "$spid"; do
             i=$((i + 1))
-            [ "$i" -gt 20 ] && { echo "FAIL $name: $kind: grandchild $spid still running after luaxite exited"; kill -9 "$spid" 2> /dev/null; fail=1; break; }
+            [ "$i" -gt 20 ] && { echo "FAIL $name: $kind: grandchild $spid still running after zenpel exited"; kill -9 "$spid" 2> /dev/null; fail=1; break; }
             sleep 0.1
         done
     done

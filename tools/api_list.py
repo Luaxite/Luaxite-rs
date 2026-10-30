@@ -3,10 +3,10 @@
 
     python3 tools/api_list.py [--dluau types/bindings.d.luau] [--config bindgen.toml] [--out API_list.md] [--json-out API.json]
 
-Reads the declarations tools/luaxite_gen.py wrote (`type ..`, `declare extern type X with .. end`, `declare name: X`) and lists one entry per
+Reads the declarations tools/zenpel_gen.py wrote (`type ..`, `declare extern type X with .. end`, `declare name: X`) and lists one entry per
 declaration, no doc comments. API.json holds it as data (`types`, `globals`, `classes[].members[]`); API_list.md is only the text view of it:
 
-    # Luaxite Luau API
+    # Zenpel Luau API
     ## Types       every `type ..` line (a multi-line union is joined onto one line)
     ## Globals     `declare name: Class`, by name
     ## `name`      a library global (a class of `name: (..) -> ..` members, e.g. `goal`): `declare function name.fn(..): R`, by name
@@ -25,7 +25,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
-TITLE = "# Luaxite Luau API"
+TITLE = "# Zenpel Luau API"
 INTRO = "Declarations for everything scripts can use. Generated; do not edit by hand."
 
 

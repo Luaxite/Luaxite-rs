@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-rdj_index.py - the rustdoc-JSON front end: fills the generator's data model (Def / Method, tools/luaxite_gen.py)
+rdj_index.py - the rustdoc-JSON front end: fills the generator's data model (Def / Method, tools/zenpel_gen.py)
 from rustdoc JSON. Slice 4 adds the type definitions (`build_defs`);
 slice 5 adds the impls (`build_impls`: methods, client traits, Goal impls), slice 6 the public paths
 (`RdjPaths`: re-exports, globs, canonical `azalea::..` path); the `RdjIndex` interface itself follows in slice 8. Imports the generator for the dataclasses only.
@@ -17,7 +17,7 @@ from typing import Optional
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import rdj
 from rdj import RdjError, convert_type, doc_summary, attr_texts, inner_kind, payload, render_type, visibility
-import luaxite_gen as gen
+import zenpel_gen as gen
 
 STRIPPED = ("<stripped>", ("other", "_"), False)
 

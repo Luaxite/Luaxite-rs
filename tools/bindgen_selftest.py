@@ -350,7 +350,7 @@ def test_bindgen_on_fake_crate():
     import api_list
     want = api_list.build((out / "bindings.d.luau").read_text(), r / "bindgen.toml")
     assert (out / "API_list.md").read_text() == want and (r / "types/API_list.md").read_text() == want
-    assert want.startswith("# Luaxite Luau API\n") and "- `declare function Bot:chat(content: string): ()`" in want and "declare bot: Bot" in want
+    assert want.startswith("# Zenpel Luau API\n") and "- `declare function Bot:chat(content: string): ()`" in want and "declare bot: Bot" in want
     api = api_list.build_dict((out / "bindings.d.luau").read_text(), r / "bindgen.toml")
     assert (out / "API.json").read_text() == api_list.dumps(api) and (r / "types/API.json").read_text() == api_list.dumps(api)
     bot = next(c for c in api["classes"] if c["name"] == "Bot")

@@ -172,7 +172,7 @@ fn request_timeout(secs: Option<f64>) -> mlua::Result<Option<Duration>> {
 fn build_client(decompress: bool) -> reqwest::Client {
     reqwest::Client::builder()
         .connect_timeout(CONNECT_TIMEOUT)
-        .user_agent(concat!("luaxite/", env!("CARGO_PKG_VERSION")))
+        .user_agent(concat!("zenpel/", env!("CARGO_PKG_VERSION")))
         .gzip(decompress)
         .deflate(decompress)
         .brotli(decompress)

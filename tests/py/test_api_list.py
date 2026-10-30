@@ -92,7 +92,7 @@ class Parsing(unittest.TestCase):
 
     def test_empty_and_junk_input(self):
         for d in ("", "-- only a comment\n", "garbage {{{\n"):
-            self.assertEqual(api_list.build(d, None), "# Luaxite Luau API\n\nDeclarations for everything scripts can use. Generated; do not edit by hand.\n")
+            self.assertEqual(api_list.build(d, None), "# Zenpel Luau API\n\nDeclarations for everything scripts can use. Generated; do not edit by hand.\n")
 
     def test_backticks_in_a_declaration(self):
         self.assertEqual(api_list.code("a`b"), "``a`b``")

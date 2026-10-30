@@ -1,4 +1,4 @@
-# Luaxite Luau API
+# Zenpel Luau API
 
 Declarations for everything scripts can use. Generated; do not edit by hand.
 

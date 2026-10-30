@@ -68,12 +68,12 @@ jobs:
                       .
                       bind/azalea-src -> /tmp/azl-rdj-target    # make_rustdoc_json.sh's default CARGO_TARGET_DIR
                   cache-on-failure: true
-            # build.rs runs tools/bindgen.py: crates under bind/ -> rustdoc JSON -> bindings (into target/*/build/luaxite*/out; a nightly cargo with the
-            # new build-dir layout writes build/luaxite/<hash>/out, an older one build/luaxite-<hash>/out, so the report is found, not globbed)
+            # build.rs runs tools/bindgen.py: crates under bind/ -> rustdoc JSON -> bindings (into target/*/build/zenpel*/out; a nightly cargo with the
+            # new build-dir layout writes build/zenpel/<hash>/out, an older one build/zenpel-<hash>/out, so the report is found, not globbed)
             - run: cargo build
             - name: generated report and ledger
               run: |
-                  report=$(find target/debug/build -path '*/luaxite*/out/GEN_REPORT.json' -exec ls -t {} + | head -1)
+                  report=$(find target/debug/build -path '*/zenpel*/out/GEN_REPORT.json' -exec ls -t {} + | head -1)
                   test -n "$report" || { echo "no GEN_REPORT.json under target/debug/build (did build.rs run?)"; exit 1; }
                   echo "report: $report"
                   mkdir -p gen && cp "$report" gen/GEN_REPORT.json
@@ -96,13 +96,13 @@ jobs:
             - name: the binary for the jobs that only run it
               run: |
                   mkdir -p dist
-                  cp target/debug/luaxite dist/luaxite
-                  strip --strip-debug dist/luaxite    # the debug info is most of a debug build's size, and the e2e jobs do not need it
-                  ls -l dist/luaxite
+                  cp target/debug/zenpel dist/zenpel
+                  strip --strip-debug dist/zenpel    # the debug info is most of a debug build's size, and the e2e jobs do not need it
+                  ls -l dist/zenpel
             - uses: actions/upload-artifact@v4
               with:
-                  name: luaxite-linux-debug
-                  path: dist/luaxite
+                  name: zenpel-linux-debug
+                  path: dist/zenpel
                   retention-days: 1
                   compression-level: 6
             - uses: actions/upload-artifact@v4
@@ -145,7 +145,7 @@ jobs:
             - run: cargo check --all-targets ${{ matrix.flags }}
 
     projects:
-        # test projects (tests/projects): each has its own src/ and is built as its own luaxite binary, so no test depends on the repo's src/ and the
+        # test projects (tests/projects): each has its own src/ and is built as its own zenpel binary, so no test depends on the repo's src/ and the
         # binary build has no test options. Independent of `real`: its own build, in target/projects.
         runs-on: ubuntu-24.04
         timeout-minutes: 90
@@ -183,10 +183,10 @@ jobs:
             - uses: actions/checkout@v4
             - uses: actions/download-artifact@v4
               with:
-                  name: luaxite-linux-debug
+                  name: zenpel-linux-debug
                   path: target/debug
-            - run: chmod +x target/debug/luaxite    # an artifact does not keep the executable bit
-            - run: LUNE_ONLY=1 sh tests/e2e/run.sh target/debug/luaxite
+            - run: chmod +x target/debug/zenpel    # an artifact does not keep the executable bit
+            - run: LUNE_ONLY=1 sh tests/e2e/run.sh target/debug/zenpel
 
     server:
         # the binary of `real` against a vanilla server of the Minecraft version azalea targets (offline mode, flat world)
@@ -198,9 +198,9 @@ jobs:
             - uses: ./.github/actions/azalea
             - uses: actions/download-artifact@v4
               with:
-                  name: luaxite-linux-debug
+                  name: zenpel-linux-debug
                   path: target/debug
-            - run: chmod +x target/debug/luaxite    # an artifact does not keep the executable bit
+            - run: chmod +x target/debug/zenpel    # an artifact does not keep the executable bit
             - name: find the server jar for azalea's Minecraft version
               id: mc
               run: |
@@ -236,7 +236,7 @@ jobs:
                   done
                   # always day: reset the time every 5s instead of stopping the clock (the server keeps sending time packets)
                   nohup sh -c 'while sleep 5; do echo "time set day" >> cmd.txt; done' > /dev/null 2>&1 &
-            - run: sh tests/e2e/run.sh target/debug/luaxite localhost
+            - run: sh tests/e2e/run.sh target/debug/zenpel localhost
             - name: stop the server (flushes the world to disk)
               if: always()
               run: |

@@ -3,7 +3,7 @@ Needs `rustdoc` (nightly/-Z unstable-options or RUSTC_BOOTSTRAP=1) and AZL_RDJ_F
 import os, re, shutil, subprocess, sys, json, time
 from pathlib import Path
 
-ROOT = Path(os.environ.get("LUAXITE", Path(__file__).resolve().parents[2]))
+ROOT = Path(os.environ.get("ZENPEL", Path(__file__).resolve().parents[2]))
 BASE = (ROOT / "harness/fake/azalea/src/lib.rs").read_text()
 EXTRAS = list((ROOT / "harness/src/luau").glob("extra_*.rs"))
 ENV = {**os.environ, "RUSTC_BOOTSTRAP": "1"}
@@ -37,7 +37,7 @@ def gen(d, tag, out):
     ro, lo = d / f"rust_{tag}", d / f"luau_{tag}"
     for x in (ro, lo): shutil.rmtree(x, ignore_errors=True); x.mkdir()
     for e in EXTRAS: shutil.copy(e, ro)
-    p = subprocess.run([sys.executable, str(ROOT / "tools/luaxite_gen.py"), "--azalea", str(d), "--rustdoc", str(out),
+    p = subprocess.run([sys.executable, str(ROOT / "tools/zenpel_gen.py"), "--azalea", str(d), "--rustdoc", str(out),
                         "--rust-out", str(ro), "--luau-out", str(lo)], capture_output=True, text=True, timeout=60, cwd=ROOT, env=ENV)
     return p.returncode, (p.stdout + p.stderr).strip(), ro, lo
 

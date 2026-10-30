@@ -2,16 +2,16 @@
 #[path = "../rust_binds/luau/mod.rs"]
 mod luau;
 
-// `#[bind]` for fns in this file (a bare `#[bind]`, as the scanner accepts, needs the import; `#[luaxite_bind::bind]` does not).
+// `#[bind]` for fns in this file (a bare `#[bind]`, as the scanner accepts, needs the import; `#[zenpel_bind::bind]` does not).
 #[allow(unused_imports)]
-use luaxite_bind::bind;
+use zenpel_bind::bind;
 use std::{path::PathBuf, sync::Arc};
 
-const USAGE: &str = r#"usage: luaxite [<arg>...]
-       luaxite path <script.luau>... [<arg>...]
+const USAGE: &str = r#"usage: zenpel [<arg>...]
+       zenpel path <script.luau>... [<arg>...]
 
   <arg>...             every argument is passed, unchanged and in order, to the scripts as `process.args`
-                       (`require("@lune/process")`): `luaxite debug=true`, `luaxite debug true`, `luaxite --verbose`.
+                       (`require("@lune/process")`): `zenpel debug=true`, `zenpel debug true`, `zenpel --verbose`.
   path <script.luau>...  run these scripts instead of the embedded main (src/main.luau), each in its own Luau state, all
                        in one process. After `path`, every argument ending in .luau or .lua is a script; the others
                        are still passed to `process.args`.
@@ -35,7 +35,7 @@ fn is_script(arg: &str) -> bool {
     arg.ends_with(".luau") || arg.ends_with(".lua")
 }
 
-/// `luaxite [<arg>...]` / `luaxite path <script>... [<arg>...]`. `Ok(None)` = help was asked for.
+/// `zenpel [<arg>...]` / `zenpel path <script>... [<arg>...]`. `Ok(None)` = help was asked for.
 fn parse_cli(argv: impl IntoIterator<Item = String>) -> anyhow::Result<Option<Cli>> {
     let mut cli = Cli::default();
     let mut in_path = false;

@@ -152,7 +152,7 @@ class TestsOwnTheirModules(unittest.TestCase):
     def test_the_binary_build_has_no_test_options(self):
         build = read("build.rs")
         self.assertNotIn("tests/", build)
-        self.assertNotRegex(build, r'var_os\("LUAXITE_[A-Z_]*"\)')
+        self.assertNotRegex(build, r'var_os\("ZENPEL_[A-Z_]*"\)')
         run = read("tests/projects/run.sh")
         self.assertIn('cp -R "$proj/src" "$scratch/src"', run)
         self.assertNotIn('"$root/src"', run)

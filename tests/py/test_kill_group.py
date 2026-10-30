@@ -148,7 +148,7 @@ class KillGroup(unittest.TestCase):
         self.assertIn("process.exit(0)", e2e)
         self.assertIn("kill_all();", fn_body(self.src, 'lua.create_function(|_, code: Option<i32>|'))
 
-    def test_run_sh_checks_both_grandchildren_are_dead_after_luaxite_exits(self):
+    def test_run_sh_checks_both_grandchildren_are_dead_after_zenpel_exits(self):
         run = read("tests/e2e/run.sh")
         self.assertIn("name=lune_process_orphan", run)
         body = run[run.index("orphan_test() {"):]
@@ -156,7 +156,7 @@ class KillGroup(unittest.TestCase):
         self.assertIn("run $name 30 tests/e2e/$name.luau", body)
         self.assertIn("for kind in create exec; do", body)
         self.assertIn('while alive "$spid"; do', body)
-        self.assertIn("still running after luaxite exited", body)
+        self.assertIn("still running after zenpel exited", body)
         self.assertIn("MINGW*", body[body.index("orphan_test ;;") - 200:])
         self.assertGreater(body.index("orphan_test ;;"), body.index("orphan_test() {"))
 

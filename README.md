@@ -1,6 +1,6 @@
-<p align="left"> <img src="https://raw.githubusercontent.com/Luaxite/Luaxite-rs/main/logo.svg" width="100"> </p>
+<p align="left"> <img src="https://raw.githubusercontent.com/Zenpel/Zenpel/main/logo.svg" width="100"> </p>
 
-# Luaxite /luˈæk.saɪt/
+# Zenpel /luˈæk.saɪt/
 
 A small project that lets you code Minecraft bots in Luau instead of Rust, using [Azalea](https://github.com/azalea-rs/azalea).
 
@@ -12,7 +12,7 @@ You can add extra Cargo dependencies.
 ### Linux, macOS, and Termux
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Luaxite/Luaxite-rs/HEAD/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/Zenpel/Zenpel/HEAD/install.sh | sh
 ```
 
 ### Windows
@@ -20,15 +20,15 @@ curl -fsSL https://raw.githubusercontent.com/Luaxite/Luaxite-rs/HEAD/install.sh 
 Run in PowerShell 5.1+:
 
 ```powershell
-irm https://raw.githubusercontent.com/Luaxite/Luaxite-rs/HEAD/install.ps1 | iex
+irm https://raw.githubusercontent.com/Zenpel/Zenpel/HEAD/install.ps1 | iex
 ```
 
 ## Running a script
 
 ```bash
-luaxite                       # runs the script embedded at build time (src/main.luau)
-luaxite path bot.luau         # runs bot.luau instead of main
-luaxite path a.luau b.luau    # runs several scripts, each in its own Luau state, in one process
+zenpel                       # runs the script embedded at build time (src/main.luau)
+zenpel path bot.luau         # runs bot.luau instead of main
+zenpel path a.luau b.luau    # runs several scripts, each in its own Luau state, in one process
 ```
 
 ### Arguments
@@ -36,9 +36,9 @@ luaxite path a.luau b.luau    # runs several scripts, each in its own Luau state
 Every argument is passed, unchanged, to `process.args` of `require("@lune/process")`:
 
 ```bash
-luaxite debug=true            # process.args == { "debug=true" }
-luaxite debug true            # process.args == { "debug", "true" }
-luaxite path bot.luau debug=true
+zenpel debug=true            # process.args == { "debug=true" }
+zenpel debug true            # process.args == { "debug", "true" }
+zenpel path bot.luau debug=true
 ```
 
 `path` is the one keyword: the `.luau` / `.lua` files after it are the scripts to run instead of main, and are not arguments.
@@ -49,7 +49,7 @@ The process exits when nothing is left to run (bots, swarms, tasks, servers, chi
 ## Example
 
 ```luau
-local bot = azalea.join { account = "Luaxite", address = "localhost" }
+local bot = azalea.join { account = "Zenpel", address = "localhost" }
 
 bot:on("spawn", function()
     bot:chat("spawned")
@@ -70,7 +70,7 @@ end)
 
 Scripts have access to azalea global and can `require` other files and `@lune/*` modules.
 
-`require` of files is relative to the script or module that calls it, not to the directory you run `luaxite` from:
+`require` of files is relative to the script or module that calls it, not to the directory you run `zenpel` from:
 
 ```luau
 local util = require("./lib/util")      -- lib/util.luau
@@ -89,7 +89,7 @@ Rust code under `rust/` (`main.rs` and any module it declares) can be exposed to
 
 `#[bind]` binds this function.
 ```rust
-use luaxite_bind::bind;
+use zenpel_bind::bind;
 
 #[bind]
 pub fn Name() {
@@ -137,7 +137,7 @@ Their edge cases may differ from real Lune.
 The API documentation contains signatures, types, and definitions, but no usage examples.
 Refer to the [Azalea documentation](https://azalea.matdoes.dev/azalea/) for usage examples.
 
-[View the API documentation](https://github.com/Luaxite/Luaxite-rs/releases/tag/api-latest).
+[View the API documentation](https://github.com/Zenpel/Zenpel/releases/tag/api-latest).
 
 ## License
 

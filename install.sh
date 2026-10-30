@@ -1,7 +1,7 @@
 #!/bin/sh
 # install.sh [--no-modify-path]
 set -eu
-R=Luaxite/Luaxite-rs N=luaxite D= M=1 O=0 W=0 T=0 E= MB="# >>> luaxite >>>" ME="# <<< luaxite <<<"
+R=Zenpel/Zenpel N=zenpel D= M=1 O=0 W=0 T=0 E= MB="# >>> zenpel >>>" ME="# <<< zenpel <<<"
 d(){ printf 'error: %s\n' "$*" >&2;exit 1;}
 h(){ command -v "$1" >/dev/null 2>&1;}
 for i;do case $i in --no-modify-path)M=0;;-h|--help)sed -n 2p "$0";exit;;*)d "unknown option: $i";;esac;done
@@ -44,7 +44,7 @@ echo "installed: $X"
 ub(){ mkdir -p "$(dirname "$1")";[ -e "$1" ]||:>"$1";g=$(mktemp);awk -v s="$MB" -v e="$ME" '$0==s{k=1;next}$0==e{k=0;next}!k' "$1">"$g";printf '%s\n' "$2">>"$g";cat "$g">"$1";rm -f "$g";echo "PATH: updated $1";}
 if [ $M = 1 ]&&[ $O = 0 ];then
 if [ $W = 1 ];then
-if h powershell.exe;then w=$D;h cygpath&&w=$(cygpath -w "$D");LUAXITE_DIR=$w powershell.exe -NoProfile -NonInteractive -Command '$d=$env:LUAXITE_DIR;$p=[Environment]::GetEnvironmentVariable("Path","User");if(-not $p){$p=""};$q=@($p -split ";"|Where-Object{$_ -ne ""});if($q -notcontains $d){[Environment]::SetEnvironmentVariable("Path",(($q+$d) -join ";"),"User")}' >/dev/null;else echo "add $D to your user PATH by hand" >&2;fi
+if h powershell.exe;then w=$D;h cygpath&&w=$(cygpath -w "$D");ZENPEL_DIR=$w powershell.exe -NoProfile -NonInteractive -Command '$d=$env:ZENPEL_DIR;$p=[Environment]::GetEnvironmentVariable("Path","User");if(-not $p){$p=""};$q=@($p -split ";"|Where-Object{$_ -ne ""});if($q -notcontains $d){[Environment]::SetEnvironmentVariable("Path",(($q+$d) -join ";"),"User")}' >/dev/null;else echo "add $D to your user PATH by hand" >&2;fi
 else
 case $D in "$HOME")r='$HOME';;"$HOME"/*)r='$HOME'"${D#"$HOME"}";;*)r=$D;;esac
 b="$MB

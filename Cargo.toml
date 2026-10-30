@@ -1,5 +1,5 @@
 [package]
-name = "luaxite"
+name = "zenpel"
 version = "0.1.0"
 edition = "2024"
 
@@ -11,7 +11,7 @@ exclude = ["bind", "vendor"]
 
 # Your Rust lives in rust/; the generated-binding glue lives in rust_binds/; src/ holds only the .luau scripts that build.rs embeds.
 [[bin]]
-name = "luaxite"
+name = "zenpel"
 path = "rust/main.rs"
 
 [dependencies]
@@ -26,7 +26,7 @@ luau0-src = "=0.22.0"
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "sync", "time", "process", "io-util", "io-std", "net", "signal"] }
 anyhow = "1"
 # `#[bind]` marker (rust_binds/bind): passthrough attribute; tools/bind_scan.py and tools/bind_gen.py do the binding (build.rs). A path dependency inside this tree is a workspace member automatically; it gets no Luau bindings (only bind/ does).
-luaxite_bind = { path = "rust_binds/bind" }
+zenpel_bind = { path = "rust_binds/bind" }
 # Lune's built-in modules for `require("@lune/<n>")` (feature `lune`, rust_binds/luau/lune_libs.rs). fs / serde / regex / datetime / luau come from Lune's own
 # crates (they run on a plain mlua state). net / process / stdio / task are written in-tree (rust_binds/luau/lune_{net,process,stdio,task}.rs) on tokio:
 # Lune's versions need Lune's task-scheduler crate, which keeps Rc/Cell values in Lua app data (does not build with mlua's `send`) and must drive the

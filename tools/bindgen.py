@@ -5,14 +5,14 @@
 
 1. tools/bindgen_crates.py: the crate set (roots in R/bind, closure over path deps; R/Cargo.toml's own dependencies are not roots)
 2. tools/bindgen_rdj.py: rustdoc JSON of each crate into O/rdj (cached)
-3. tools/luaxite_gen.py on the JSON -> O/gen_*.rs (+ O/inc/gen_*.rs without `#![..]`), O/bindings.d.luau, O/GEN_REPORT.md; the .d.luau is copied to R/types/
+3. tools/zenpel_gen.py on the JSON -> O/gen_*.rs (+ O/inc/gen_*.rs without `#![..]`), O/bindings.d.luau, O/GEN_REPORT.md; the .d.luau is copied to R/types/
    (only when its content changed, so cargo's rerun-if-changed does not fire every build)
 4. tools/api_list.py on that .d.luau -> O/API.json (the API list as data: what tools and CI read) and O/API_list.md (its text view for
    people, never parsed), both copied to R/types/ the same way
 The generator reads the hand-written glue next to its output: R/rust/luau/{extra,real}_*.rs are copied to O first.
 
 stdout carries only `cargo:rerun-if-changed=PATH` and `cargo:warning=LINE` lines. Any failure: `error: ...` on stderr, exit 1, no stdout.
-Env (tests): BINDGEN_GENERATOR = script run instead of tools/luaxite_gen.py.
+Env (tests): BINDGEN_GENERATOR = script run instead of tools/zenpel_gen.py.
 """
 from __future__ import annotations
 
@@ -88,7 +88,7 @@ def run(root, out) -> list[str]:
     bindgen_rdj.make_all(root, out)
     stage = stage_sources(crates, out)
     copy_glue(root, out)
-    gen = os.environ.get("BINDGEN_GENERATOR") or str(HERE / "luaxite_gen.py")
+    gen = os.environ.get("BINDGEN_GENERATOR") or str(HERE / "zenpel_gen.py")
     cmd = [sys.executable, gen, "--azalea", str(stage), "--rustdoc", str(out / "rdj"), "--rust-out", str(out), "--luau-out", str(out)]
     cmd += ["--config", str(root / "bindgen.toml") if (root / "bindgen.toml").is_file() else "builtin"]
     p = subprocess.run(cmd, capture_output=True, text=True)

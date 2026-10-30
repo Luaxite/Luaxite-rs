@@ -1,5 +1,5 @@
 --!nocheck
--- Run by tests/e2e/run.sh as: luaxite path tests/e2e/lune_process_args.luau debug=true debug true --verbose -x
+-- Run by tests/e2e/run.sh as: zenpel path tests/e2e/lune_process_args.luau debug=true debug true --verbose -x
 -- `path` and the script are not arguments; everything else reaches process.args unchanged, in order.
 local process = require("@lune/process")
 

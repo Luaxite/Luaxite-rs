@@ -1,8 +1,8 @@
 # golden sha1 of the generated files, set 'fake'. Written by tools/golden.sh (see allowed_diff.json / ALLOWED_DIFF.md).
 # src: fake @ 61bcab3d72
-2428708cb45e5fef3e6c282827a02ea1c7c9b7bc  rust/gen_client.rs
-2a9426a31ff923d36c4e3a7938d9a443a4841909  rust/gen_events.rs
-b36c20f6cc4139b757aed5d1e542029cc413681c  rust/gen_types.rs
-cb7a7bfd2fea0446fb5b9d8134260b88b84ff491  luau/azalea.d.luau
+88b795a0e800b69e13e5b60c1f96eda68ef32e36  rust/gen_client.rs
+8b2e1809210216e9835e451cd8107fc7e6e9a8a2  rust/gen_events.rs
+e555b7b01da056b058225a09fcd95bf68752d89a  rust/gen_types.rs
+a11233ebea1052f74dacc45d624ab38a0f86e599  luau/azalea.d.luau
 edda17ca1ca933714b4955d39a1df8815755687f  luau/GEN_REPORT.json
 a06ca58313bd3acd65deae87e0c309ee7065180e  luau/GEN_REPORT.md

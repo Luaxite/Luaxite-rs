@@ -13,7 +13,7 @@ assert(not regex.new("(\\d+)-(\\d+)"):isMatch("10"), "regex isMatch (no match)")
 assert(luau.load("return 1 + 1")() == 2, "luau.load")
 assert(DateTime.now().unixTimestamp > 0, "datetime.now")
 
-local path = "luaxite-e2e-lune.tmp"
+local path = "zenpel-e2e-lune.tmp"
 fs.writeFile(path, "hello")
 assert(fs.isFile(path), "fs.isFile after writeFile")
 assert(fs.readFile(path) == "hello", "fs.readFile")

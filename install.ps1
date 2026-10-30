@@ -1,7 +1,7 @@
 # install.ps1 [-NoModifyPath]
-# Windows installer for luaxite (PowerShell 5.1+, built into Windows 10/11). Counterpart of install.sh.
-#   irm https://raw.githubusercontent.com/Luaxite/Luaxite-rs/HEAD/install.ps1 | iex
-#   iex "& { $(irm https://raw.githubusercontent.com/Luaxite/Luaxite-rs/HEAD/install.ps1) } -NoModifyPath"
+# Windows installer for zenpel (PowerShell 5.1+, built into Windows 10/11). Counterpart of install.sh.
+#   irm https://raw.githubusercontent.com/Zenpel/Zenpel/HEAD/install.ps1 | iex
+#   iex "& { $(irm https://raw.githubusercontent.com/Zenpel/Zenpel/HEAD/install.ps1) } -NoModifyPath"
 param([switch]$NoModifyPath)
 
 # Through `irm | iex` this runs in the caller's own session scope: remember the settings below and put them back when done (the finally at the
@@ -14,8 +14,8 @@ try {
     $ProgressPreference = 'SilentlyContinue'   # progress bars make Invoke-WebRequest very slow on 5.1
     [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
 
-    $Repo = 'Luaxite/Luaxite-rs'
-    $Name = 'luaxite'
+    $Repo = 'Zenpel/Zenpel'
+    $Name = 'zenpel'
 
     # CPU -> release target (assets are named <target>.zip, same as install.sh)
     $cpu = if ($env:PROCESSOR_ARCHITEW6432) { $env:PROCESSOR_ARCHITEW6432 } else { $env:PROCESSOR_ARCHITECTURE }
@@ -38,7 +38,7 @@ try {
         $src = Get-ChildItem -Path $extract -Recurse -File -Filter "$Name.exe" | Select-Object -First 1
         if (-not $src) { throw "error: no $Name.exe in payload" }
 
-        # where to install: over an existing luaxite when its folder is writable, else the default folder
+        # where to install: over an existing zenpel when its folder is writable, else the default folder
         $dir = $null
         $overwrite = $false
         $existing = Get-Command "$Name.exe" -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
@@ -66,7 +66,7 @@ try {
         } catch { [Console]::Error.WriteLine("warning: $exe did not run") }
         Write-Host "installed: $exe"
 
-        # PATH (user scope), unless it was installed over an existing luaxite (already on PATH) or -NoModifyPath
+        # PATH (user scope), unless it was installed over an existing zenpel (already on PATH) or -NoModifyPath
         $onPath = $overwrite
         if (-not $NoModifyPath -and -not $overwrite) {
             # Read the user PATH raw (DoNotExpandEnvironmentNames) and write it back as ExpandString: GetEnvironmentVariable / SetEnvironmentVariable would

@@ -1,7 +1,7 @@
 local fs = require("@lune/fs")
 local DateTime = require("@lune/datetime")
 
-local root = "luaxite-e2e-fs.tmp"
+local root = "zenpel-e2e-fs.tmp"
 if fs.isDir(root) then
 	fs.removeDir(root)
 end

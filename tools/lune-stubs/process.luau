@@ -1,4 +1,4 @@
--- luau-lsp stub (see .luaurc): the luaxite binary provides @lune/process
+-- luau-lsp stub (see .luaurc): the zenpel binary provides @lune/process
 --
 -- Behavior notes (not typed here; the binary is the source of truth):
 --   process.exec(program, args?, options?)

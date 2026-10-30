@@ -9,7 +9,7 @@ import unittest
 from pathlib import Path
 
 from _common import ROOT
-import luaxite_gen as g
+import zenpel_gen as g
 
 RUST_DIR = ROOT / "rust_binds" / "luau"
 FN_DECL = re.compile(r"function (\w+)\(")

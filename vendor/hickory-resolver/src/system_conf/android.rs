@@ -1,4 +1,4 @@
-// PATCHED (luaxite): upstream asks the Android Java VM for the DNS servers through
+// PATCHED (zenpel): upstream asks the Android Java VM for the DNS servers through
 // `ndk_context::android_context()`, which *panics* ("android context was not initialized")
 // in a plain native executable such as one run from Termux (there is no JavaVM / Activity).
 // This version never touches JNI: it reads the first `resolv.conf` it can find and, when none

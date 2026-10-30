@@ -5,9 +5,9 @@
 
 Plain `json`, not `json-render-diagnostics`: that one renders the diagnostics on stderr and leaves no `compiler-message` in the JSON, so
 there would be nothing to count. The errors are printed here in their rendered (rustc) form, since `json` leaves them out of the build log.
-    python3 tools/cargo_warnings.py build.json [--package luaxite] [--strict]
+    python3 tools/cargo_warnings.py build.json [--package zenpel] [--strict]
 
-Only the packages named with --package (default: luaxite, which includes its build.rs and the generated bindings) are judged; the other
+Only the packages named with --package (default: zenpel, which includes its build.rs and the generated bindings) are judged; the other
 packages (azalea and the crates it pulls in) are only counted. Exit status: 1 when a judged package has an error, or (--strict) a warning;
 2 when the log is missing or has no cargo messages; else 0.
 """
@@ -56,12 +56,12 @@ def scan(lines):
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("log", help="cargo JSON log (a file, or - for stdin)")
-    ap.add_argument("--package", action="append", default=None, help="package to judge (repeatable; default luaxite)")
+    ap.add_argument("--package", action="append", default=None, help="package to judge (repeatable; default zenpel)")
     ap.add_argument("--strict", action="store_true", help="warnings in a judged package fail too")
     ap.add_argument("--show", type=int, default=20, help="print at most this many messages per judged package")
     ap.add_argument("--show-errors", type=int, default=10, help="print at most this many errors in full (rendered), from any package")
     a = ap.parse_args(argv)
-    judged = a.package or ["luaxite"]
+    judged = a.package or ["zenpel"]
     if a.log == "-":
         lines = sys.stdin.read().splitlines()
     elif Path(a.log).is_file():
