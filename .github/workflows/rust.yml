@@ -86,13 +86,13 @@ jobs:
             - name: a failing script exits non-zero
               run: |
                   echo 'error("e2e-expected")' > /tmp/fail.luau
-                  if cargo run -q -- /tmp/fail.luau; then exit 1; fi
+                  if cargo run -q -- path /tmp/fail.luau; then exit 1; fi
             - name: an erroring task.spawn thread exits non-zero
               run: |
                   printf 'local task = require("@lune/task")\ntask.spawn(function()\n\terror("e2e-expected")\nend)\n' > /tmp/fail_task.luau
-                  if cargo run -q -- /tmp/fail_task.luau; then exit 1; fi
-            - name: unknown flag is an error
-              run: if cargo run -q -- --nope; then exit 1; fi
+                  if cargo run -q -- path /tmp/fail_task.luau; then exit 1; fi
+            - name: path without a script is an error
+              run: if cargo run -q -- path; then exit 1; fi
             - name: the binary for the jobs that only run it
               run: |
                   mkdir -p dist
