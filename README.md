@@ -1,6 +1,6 @@
 <p align="left"> <img src="https://raw.githubusercontent.com/Zenpel/Zenpel/main/logo.svg" width="100"> </p>
 
-# Zenpel /luˈæk.saɪt/
+# Zenpel /ˈzɛn.pɛl/
 
 A small project that lets you code Minecraft bots in Luau instead of Rust, using [Azalea](https://github.com/azalea-rs/azalea).
 
