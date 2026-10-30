@@ -7,14 +7,14 @@ mod luau;
 use luaxite_bind::bind;
 use std::{path::PathBuf, sync::Arc};
 
-const USAGE: &str = "usage: luaxite [<script.luau>...]
+const USAGE: &str = r#"usage: luaxite [<script.luau>...]
 
   <script.luau>...   scripts to run, each in its own Luau state, all in one process.
                      None: the script embedded at build time (src/main.luau) runs.
   -h, --help         print this and exit
 
 A script can `require("./other")` files relative to itself (see README). A script makes its bots itself (`azalea.join`, `azalea.swarm`). Like a Roblox script, it ending does not stop its handlers: the process runs
-until every bot / swarm the scripts started is gone, or a script calls `process.exit(code)`.";
+until every bot / swarm the scripts started is gone, or a script calls `process.exit(code)`."#;
 
 fn parse_args() -> anyhow::Result<Vec<PathBuf>> {
     let mut scripts = Vec::new();
