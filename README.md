@@ -26,8 +26,23 @@ irm https://raw.githubusercontent.com/Luaxite/Luaxite-rs/HEAD/install.ps1 | iex
 ## Running a script
 
 ```bash
-luaxite bot.luau
+luaxite                       # runs the script embedded at build time (src/main.luau)
+luaxite path bot.luau         # runs bot.luau instead of main
+luaxite path a.luau b.luau    # runs several scripts, each in its own Luau state, in one process
 ```
+
+### Arguments
+
+Every argument is passed, unchanged, to `process.args` of `require("@lune/process")`:
+
+```bash
+luaxite debug=true            # process.args == { "debug=true" }
+luaxite debug true            # process.args == { "debug", "true" }
+luaxite path bot.luau debug=true
+```
+
+`path` is the one keyword: the `.luau` / `.lua` files after it are the scripts to run instead of main, and are not arguments.
+`-h` / `--help` as the first argument prints the usage.
 
 The process exits when nothing is left to run (bots, swarms, tasks, servers, child processes), or when `process.exit` is called.
 
@@ -65,7 +80,7 @@ local pkg = require("./pkg")            -- pkg/init.luau
 
 It tries `.luau`, `.lua`, then `init.luau` / `init.lua`. A module runs once; later requires (by any path to the same file) get the cached value. Names starting with `./` or `../` look for a file first, then for a module embedded from `src/`; other names do the reverse.
 
-main.luau is required.
+With no `path`, `src/main.luau` (embedded at build time) is the script that runs.
 
 ## Binding your own Rust code
 

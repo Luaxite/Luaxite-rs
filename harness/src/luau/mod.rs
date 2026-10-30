@@ -452,6 +452,14 @@ fn install_require(lua: &Lua) -> mlua::Result<()> {
     lua.globals().set("require", require)
 }
 
+/// Sets `process.args` (`require("@lune/process")`) for every script. Call it before creating a `Runtime`; later calls are ignored.
+/// Without the `lune` feature there is no `@lune/process` and this does nothing.
+#[allow(dead_code, unused_variables)]
+pub fn set_process_args(args: Vec<String>) {
+    #[cfg(feature = "lune")]
+    lune_process::set_args(args);
+}
+
 pub struct Runtime {
     lua: Lua,
     handlers: Arc<Handlers>,

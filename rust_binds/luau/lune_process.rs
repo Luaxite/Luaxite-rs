@@ -4,7 +4,7 @@ use lune_utils::{
 };
 use mlua::{Lua, Table, UserData, UserDataMethods, Value};
 use std::process::Stdio;
-use std::sync::{Arc, Mutex as StdMutex};
+use std::sync::{Arc, Mutex as StdMutex, OnceLock};
 use std::time::Duration;
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWriteExt};
 use tokio::process::Command;
@@ -13,6 +13,13 @@ use tokio::sync::{Mutex, Notify, watch};
 use super::lune_libs::{
     DEFAULT_EXEC_TIMEOUT_SECS, MAX_BYTES, read_capped, timeout_with_default, too_big,
 };
+
+/// `process.args` of every script: the command line's arguments (set once by main, before the first `Runtime`).
+static ARGS: OnceLock<Vec<String>> = OnceLock::new();
+
+pub(super) fn set_args(args: Vec<String>) {
+    let _ = ARGS.set(args);
+}
 
 const STDIO_KINDS: &str = "default, inherit, forward, none";
 
@@ -381,7 +388,8 @@ pub fn module(lua: Lua) -> mlua::Result<Table> {
     )?;
     process.set(
         "args",
-        ProcessArgs::empty().into_plain_lua_table(lua.clone())?,
+        ProcessArgs::from_iter(ARGS.get().cloned().unwrap_or_default())
+            .into_plain_lua_table(lua.clone())?,
     )?;
     let mut cwd = get_current_dir().to_string_lossy().into_owned();
     if !cwd.ends_with(std::path::MAIN_SEPARATOR) {

@@ -17,7 +17,8 @@ run() { # run NAME LIMIT SCRIPT [STDIN_FILE]
     log=/tmp/e2e-$name.log
     # Luau's print() writes through C stdio, which is fully buffered into a file: if `timeout` kills a hung run, every line is lost.
     # stdbuf -oL makes it line-buffered, so the log shows how far the script got (and whether "E2E PASS" was printed before a hang).
-    timeout "$limit" $lb "$bin" "$script" < "${4:-/dev/stdin}" > "$log" 2>&1
+    # `path` runs the script instead of the embedded main; CLI_ARGS (word-split on purpose) are the arguments that reach process.args.
+    timeout "$limit" $lb "$bin" path "$script" ${CLI_ARGS:-} < "${4:-/dev/stdin}" > "$log" 2>&1
     cat "$log"
     if grep -F '[luau]' "$log" | grep -vF 'a handler or task raised an error (printed above)' | grep -qvF 'e2e-expected'; then echo "FAIL $name: [luau] error"; fail=1; fi
     case $script in tests/*) grep -q "E2E PASS $name" "$log" || { echo "FAIL $name: no PASS line"; fail=1; } ;; esac
@@ -46,6 +47,9 @@ run lune_task 30 tests/e2e/lune_task.luau
 run coroutine_async 30 tests/e2e/coroutine_async.luau
 run lune_stdio 30 tests/e2e/lune_stdio.luau /dev/null
 run lune_process 30 tests/e2e/lune_process.luau
+CLI_ARGS="debug=true debug true --verbose -x"; export CLI_ARGS
+run lune_process_args 30 tests/e2e/lune_process_args.luau   # luaxite path <script> <args...>: the args reach process.args
+unset CLI_ARGS
 run lune_process_idle 30 tests/e2e/lune_process_idle.luau   # create() child must not hold the program open (timeout 30s < the child's sleep)
 run lune_net 30 tests/e2e/lune_net.luau
 
@@ -61,7 +65,7 @@ sigint_test() {
     log=/tmp/e2e-$name.log
     pidf=/tmp/e2e-$name.pid
     rm -f "$pidf"
-    SIGINT_PID_FILE=$pidf timeout --preserve-status -k 10 -s INT 3 $lb "$bin" tests/e2e/$name.luau < /dev/null > "$log" 2>&1
+    SIGINT_PID_FILE=$pidf timeout --preserve-status -k 10 -s INT 3 $lb "$bin" path tests/e2e/$name.luau < /dev/null > "$log" 2>&1
     rc=$?
     cat "$log"
     if grep -F '[luau]' "$log" | grep -qvF 'e2e-expected'; then echo "FAIL $name: [luau] error"; fail=1; return; fi
